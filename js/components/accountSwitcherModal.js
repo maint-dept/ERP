@@ -8,6 +8,7 @@ import { authService } from '../services/authService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { replaceEmojiInHtml, icon } from './icons.js?v=4.47.0';
 
 let currentSearchTab = 'ALL'; // 'ALL' | 'ADMINS' | 'AUTHORIZED' | 'NO_ACCESS'
 let currentSearchQuery = '';
@@ -348,7 +349,7 @@ export function renderAccountSwitcherModal() {
 
   const { adminUsers, factoryUsers, totalCount } = filterUsers(allUsers, currentSearchQuery, currentSearchTab, empMap);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-account-switcher-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">
       <div class="modal-dialog modal-account-switcher-dialog" style="width: 660px; max-width: 95vw; max-height: 90vh; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); box-shadow: 0 24px 65px rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; overflow: hidden;">
         
@@ -439,7 +440,7 @@ export function renderAccountSwitcherModal() {
 
       </div>
     </div>
-  `;
+  `);
 }
 
 /**
@@ -498,7 +499,7 @@ function renderModalResultsContent(adminUsers, factoryUsers, currentUser, empMap
     `;
   }
 
-  return html;
+  return replaceEmojiInHtml(html);
 }
 
 /**

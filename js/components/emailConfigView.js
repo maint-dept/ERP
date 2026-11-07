@@ -8,6 +8,7 @@ import { emailService, getEmailApiBaseUrl } from '../services/emailService.js';
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
 import { notificationService } from '../services/notificationService.js';
+import { icon } from './icons.js?v=4.47.0';
 
 export function renderEmailConfigView() {
   const config = emailService.getConfig();
@@ -217,7 +218,7 @@ export function renderEmailConfigView() {
                     value="${config.smtpPass || ''}" 
                     style="padding-right: 36px; font-size: 12.5px; height: 34px;"
                   />
-                  <span id="btn-toggle-smtp-pass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.75; font-size: 14px;" title="Toggle Password Visibility">👁️</span>
+                  <span id="btn-toggle-smtp-pass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.75; font-size: 14px; display: inline-flex; align-items: center;" title="Toggle Password Visibility">${icon('eye', 14)}</span>
                 </div>
                 <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">16-character Google App Password (auto-strips spaces).</div>
               </div>
@@ -596,10 +597,10 @@ export function initEmailConfigEvents() {
     btnTogglePass.addEventListener('click', () => {
       if (inputPass.type === 'password') {
         inputPass.type = 'text';
-        btnTogglePass.textContent = '🙈';
+        btnTogglePass.innerHTML = icon('eyeOff', 14);
       } else {
         inputPass.type = 'password';
-        btnTogglePass.textContent = '👁️';
+        btnTogglePass.innerHTML = icon('eye', 14);
       }
     });
   }

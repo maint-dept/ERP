@@ -8,6 +8,7 @@ import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
 import { router } from '../services/router.js';
+import { icon } from './icons.js?v=4.47.0';
 
 let modalMode = 'LOGIN'; // 'LOGIN' or 'FIRST_PASSWORD_CHANGE'
 let pendingUserId = null;
@@ -25,8 +26,8 @@ export function renderLoginModal() {
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.15);">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-              ${modalMode === 'LOGIN' ? '🔐' : '🔑'}
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;">
+              ${modalMode === 'LOGIN' ? icon('lock', { size: 20, color: '#fff' }) : icon('key', { size: 20, color: '#fff' })}
             </div>
             <div>
               <h2 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: 0.3px;">
@@ -39,7 +40,7 @@ export function renderLoginModal() {
           </div>
 
           <button type="button" id="btn-close-login-modal" class="btn btn-ghost btn-sm" style="color: #fff; font-size: 18px; padding: 4px 8px;" title="Close">
-            ✕
+            ${icon('close', { size: 16, color: '#fff' })}
           </button>
         </div>
 
@@ -60,8 +61,8 @@ export function renderLoginModal() {
                 </div>
               </div>
 
-              <button type="button" id="btn-modal-logout" class="btn btn-danger btn-sm" style="font-size: 11px; padding: 4px 10px;">
-                🚪 Logout
+              <button type="button" id="btn-modal-logout" class="btn btn-danger btn-sm" style="font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;">
+                ${icon('logOut', { size: 12, color: '#fff' })} Logout
               </button>
             </div>
 
@@ -96,15 +97,16 @@ export function renderLoginModal() {
 
               <div id="login-error-message" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171;"></div>
 
-              <button type="submit" class="btn btn-primary" style="font-weight: 800; height: 42px; justify-content: center; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 13.5px; border-radius: 8px;">
-                🔐 Sign In to Maintenance ERP
+              <button type="submit" class="btn btn-primary" style="font-weight: 800; height: 42px; justify-content: center; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 13.5px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;">
+                ${icon('lock', { size: 16, color: '#fff' })} Sign In to Maintenance ERP
               </button>
             </form>
           ` : `
             <!-- First-Time Password Setup Form -->
             <form id="form-first-password" style="display: flex; flex-direction: column; gap: 14px;">
-              <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #fbbf24; line-height: 1.4;">
-                ⚠️ <strong>First Login Security Notice:</strong> The administrator requires you to set your own secure password before accessing the system.
+              <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #fbbf24; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px;">
+                <span style="flex-shrink: 0; margin-top: 1px;">${icon('alertTriangle', { size: 15, color: '#f59e0b' })}</span>
+                <div><strong>First Login Security Notice:</strong> The administrator requires you to set your own secure password before accessing the system.</div>
               </div>
 
               <div class="form-group">
@@ -119,15 +121,16 @@ export function renderLoginModal() {
 
               <div id="first-pwd-error-message" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171;"></div>
 
-              <button type="submit" class="btn btn-primary" style="font-weight: 800; height: 42px; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); font-size: 13.5px;">
-                💾 Save Password
+              <button type="submit" class="btn btn-primary" style="font-weight: 800; height: 42px; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px;">
+                ${icon('save', { size: 16, color: '#fff' })} Save Password
               </button>
             </form>
           `}
 
           <!-- Security Policy Callout -->
-          <div style="background: rgba(15, 23, 42, 0.6); border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 11px; color: var(--text-muted); line-height: 1.5;">
-            🔒 <strong>Access Control Policy:</strong> Only authorized accounts created by the Super Administrator can access the ERP. Permissions are strictly enforced based on your assigned role and individual privileges.
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px 14px; font-size: 11px; color: var(--text-muted); line-height: 1.5; display: flex; align-items: flex-start; gap: 8px;">
+            <span style="flex-shrink: 0; margin-top: 1px;">${icon('shield', { size: 14, color: '#38bdf8' })}</span>
+            <div><strong>Access Control Policy:</strong> Only authorized accounts created by the Super Administrator can access the ERP. Permissions are strictly enforced based on your assigned role and individual privileges.</div>
           </div>
 
         </div>
@@ -193,7 +196,7 @@ export function initLoginModalEvents() {
       const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Signing in...';
+        submitBtn.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">${icon('refresh', { size: 14, color: '#fff' })}</span> Signing in...`;
       }
 
       try {
@@ -268,7 +271,7 @@ export function initLoginModalEvents() {
       } catch (err) {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = '💾 Save Password';
+          submitBtn.innerHTML = `${icon('save', { size: 16, color: '#fff' })} Save Password`;
         }
         if (firstErrBox) {
           firstErrBox.textContent = err.message || 'Failed to update password.';

@@ -36,6 +36,7 @@ import { realtimeService } from './services/realtimeService.js?v=4.47.0';
 import { homepageService } from './services/homepageService.js?v=4.47.0';
 import { webPushService } from './services/webPushService.js?v=4.47.0';
 import { notificationGateway } from './services/notificationGatewayService.js?v=4.47.0';
+import { icon, enhanceDomIcons } from './components/icons.js?v=4.47.0';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -638,6 +639,7 @@ class ERPApplication {
         window.__appLoaded = true;
         initHomepageEvents();
         this.initModalEvents();
+        enhanceDomIcons(root);
         return;
       }
 
@@ -656,6 +658,7 @@ class ERPApplication {
         window.__appLoaded = true;
         initLoginViewEvents(isAdminGateway);
         this.initModalEvents();
+        enhanceDomIcons(root);
         return;
       }
 
@@ -686,7 +689,7 @@ class ERPApplication {
               <!-- Global Top Maintenance Alert Ribbon for Administrators -->
               <div id="admin-maintenance-top-ribbon" style="background: linear-gradient(90deg, #92400e, #b45309, #d97706); color: #fff; padding: 6px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 40; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 15px;">🛠️</span>
+                  <span style="display: inline-flex; align-items: center;">${icon('tools', { size: 14, color: '#fef08a' })}</span>
                   <span>SYSTEM MAINTENANCE MODE IS ACTIVE &mdash; Regular users cannot log in.</span>
                   ${authService.getMaintenanceModeConfig().estimatedEnd ? `<span style="opacity: 0.9;">(ETA: ${authService.getMaintenanceModeConfig().estimatedEnd})</span>` : ''}
                 </div>
@@ -694,8 +697,8 @@ class ERPApplication {
                   <button id="btn-ribbon-disable-maint" class="btn btn-xs" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-weight: 700; padding: 2px 10px; border-radius: 4px; cursor: pointer;">
                     Turn Off
                   </button>
-                  <button id="btn-ribbon-open-maint-settings" class="btn btn-xs btn-ghost" style="color: #fef08a; padding: 2px 6px; font-weight: 700; cursor: pointer;">
-                    ⚙️ Settings &rarr;
+                  <button id="btn-ribbon-open-maint-settings" class="btn btn-xs btn-ghost" style="color: #fef08a; padding: 2px 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>${icon('settings', { size: 12, color: '#fef08a' })}</span> <span>Settings &rarr;</span>
                   </button>
                 </div>
               </div>
@@ -724,6 +727,7 @@ class ERPApplication {
 
       window.__appLoaded = true;
       this.initComponentEvents();
+      enhanceDomIcons(root);
 
       // Restore scroll and viewport positions
       restoreAppState(savedState);
@@ -1015,6 +1019,7 @@ class ERPApplication {
           }
           if (loaded.beforeRender) loaded.beforeRender();
           container.innerHTML = loaded.render();
+          enhanceDomIcons(container);
           if (typeof loaded.initEvents === 'function') {
             loaded.initEvents();
           }
@@ -1039,7 +1044,7 @@ class ERPApplication {
           console.error(`[App] Error loading lazy module '${activeView}':`, err);
           container.innerHTML = `
             <div style="padding: 30px; text-align: center; background: var(--bg-surface); border: 1px solid #ef4444; border-radius: var(--radius-lg); margin: 20px;">
-              <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+              <div style="margin-bottom: 8px;">${icon('alertTriangle', { size: 32, color: '#f59e0b' })}</div>
               <h3 style="color: #f87171; font-weight: 700; margin-bottom: 8px;">Module Loading Notice</h3>
               <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">An error occurred while loading module '${activeView}': ${err.message}</p>
               <button onclick="router.navigate('dashboard')" class="btn btn-primary btn-sm">Return to Dashboard</button>
@@ -1051,6 +1056,7 @@ class ERPApplication {
 
       // Synchronous render (Dashboard, already-cached lazy module, or standalone)
       container.innerHTML = this.getActiveViewHtml(activeView);
+      enhanceDomIcons(container);
       this.initViewEvents(activeView);
       if (activeSubtab) {
         this.switchSubtabInActiveView(activeView, activeSubtab);
@@ -1095,6 +1101,7 @@ class ERPApplication {
       if (modalLayer) {
         modalLayer.innerHTML = this.getActiveModalHtml();
         this.initModalEvents();
+        enhanceDomIcons(modalLayer);
       }
       const hasModal = !!(state.get('activeModal'));
       document.body.classList.toggle('modal-open', hasModal);
@@ -1169,8 +1176,8 @@ class ERPApplication {
         return `
           <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; background: radial-gradient(circle at 50% 30%, #1c1917 0%, #0c0a09 100%); min-height: 70vh;">
             <div style="max-width: 540px; width: 100%; background: rgba(28, 25, 23, 0.95); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 16px; padding: 36px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.7);">
-              <div style="width: 64px; height: 64px; background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 20px; box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);">
-                🛠️
+              <div style="width: 64px; height: 64px; background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);">
+                ${icon('tools', { size: 32, color: '#f59e0b' })}
               </div>
               <h2 style="font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px;">
                 System Under Maintenance
@@ -1180,11 +1187,11 @@ class ERPApplication {
               </p>
               <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; margin-bottom: 24px; text-align: left; font-size: 13px; color: #cbd5e1; line-height: 1.6;">
                 ${maint.message || 'Routine scheduled maintenance and server upgrade is currently in progress. Normal operations will resume shortly.'}
-                ${maint.estimatedEnd ? `<div style="margin-top: 10px; font-weight: 700; color: #fde68a;">⏳ Estimated Completion: ${maint.estimatedEnd}</div>` : ''}
+                ${maint.estimatedEnd ? `<div style="margin-top: 10px; font-weight: 700; color: #fde68a;">Estimated Completion: ${maint.estimatedEnd}</div>` : ''}
               </div>
               <div style="display: flex; gap: 12px; justify-content: center;">
-                <button id="btn-maint-user-logout" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; padding: 10px 24px;">
-                  🔒 Sign Out / Return to Homepage
+                <button id="btn-maint-user-logout" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; padding: 10px 24px; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>${icon('lock', { size: 14 })}</span> <span>Sign Out / Return to Homepage</span>
                 </button>
               </div>
             </div>
@@ -1214,8 +1221,8 @@ class ERPApplication {
             <div style="max-width: 580px; width: 100%; background: var(--bg-surface, #1e293b); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 16px; padding: 36px 30px; text-align: center; box-shadow: 0 20px 45px rgba(0,0,0,0.5); position: relative; overflow: hidden;">
               <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);"></div>
               
-              <div style="width: 72px; height: 72px; margin: 0 auto 18px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: flex; align-items: center; justify-content: center; font-size: 34px; border: 1px solid rgba(239, 68, 68, 0.3); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);">
-                🔒
+              <div style="width: 72px; height: 72px; margin: 0 auto 18px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.3); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);">
+                ${icon('lock', { size: 34, color: '#ef4444' })}
               </div>
 
               <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;">
@@ -1240,11 +1247,11 @@ class ERPApplication {
               </div>
 
               <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <button id="btn-no-access-logout" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 8px 18px;">
-                  🚪 Sign Out
+                <button id="btn-no-access-logout" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>${icon('arrowLeft', { size: 13, color: '#ef4444' })}</span> <span>Sign Out</span>
                 </button>
-                <button id="btn-no-access-check" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 8px 20px;">
-                  🔄 Check Access / Refresh
+                <button id="btn-no-access-check" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 8px 20px; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>${icon('refresh', { size: 13, color: '#fff' })}</span> <span>Check Access / Refresh</span>
                 </button>
               </div>
             </div>
@@ -1271,7 +1278,7 @@ class ERPApplication {
       console.error('Component render error:', viewErr);
       return `
         <div style="padding: 30px; text-align: center; background: var(--bg-surface); border: 1px solid #ef4444; border-radius: var(--radius-lg); margin: 20px;">
-          <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+          <div style="margin-bottom: 8px;">${icon('alertTriangle', { size: 32, color: '#f59e0b' })}</div>
           <h3 style="color: #f87171; font-weight: 700; margin-bottom: 8px;">View Render Notice</h3>
           <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">An error occurred while loading this view: ${viewErr.message}</p>
           <button onclick="state.set('currentView', 'dashboard')" class="btn btn-primary btn-sm">Return to Dashboard</button>

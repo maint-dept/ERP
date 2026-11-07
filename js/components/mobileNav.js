@@ -4,12 +4,13 @@
  * Optimized for One-Handed Factory Floor Operation (Thumb-Friendly, 60-120fps)
  */
 
-import { router } from '../services/router.js?v=4.46.1';
-import { state } from '../state.js?v=4.46.1';
-import { authService } from '../services/authService.js?v=4.46.1';
-import { moduleLoader } from '../services/moduleLoader.js?v=4.46.1';
-import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.1';
-import { openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.46.1';
+import { router } from '../services/router.js?v=4.47.0';
+import { state } from '../state.js?v=4.47.0';
+import { authService } from '../services/authService.js?v=4.47.0';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.47.0';
+import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.47.0';
+import { openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.47.0';
+import { icon } from './icons.js?v=4.47.0';
 
 export function renderMobileBottomNav(currentView = null) {
   const user = authService.getCurrentUser();
@@ -31,17 +32,17 @@ export function renderMobileBottomNav(currentView = null) {
   // Fallbacks if user lacks access to specific views
   const primaryView1 = canInventory ? 'inventory' : (canTransfers ? 'transfers' : 'dashboard');
   const primaryLabel1 = canInventory ? 'Inventory' : (canTransfers ? 'Transfers' : 'Dashboard');
-  const primaryIcon1 = canInventory ? '📦' : (canTransfers ? '🔄' : '📊');
+  const primaryIcon1 = canInventory ? icon('box', { size: 18 }) : (canTransfers ? icon('transfers', { size: 18 }) : icon('chart', { size: 18 }));
 
   const primaryView2 = canRelocate ? 'relocate' : (canTransfers ? 'transfers' : 'qr-codes');
   const primaryLabel2 = canRelocate ? 'Relocate' : (canTransfers ? 'Transfers' : 'QR Codes');
-  const primaryIcon2 = canRelocate ? '🔄' : (canTransfers ? '🚚' : '🏷️');
+  const primaryIcon2 = canRelocate ? icon('transfers', { size: 18 }) : (canTransfers ? icon('truck', { size: 18 }) : icon('tag', { size: 18 }));
 
   return `
     <div class="mobile-bottom-nav-inner">
       <!-- 1. Dashboard -->
       <button type="button" class="mobile-bottom-nav-item ${cv === 'dashboard' ? 'active' : ''}" data-nav-view="dashboard" title="Dashboard">
-        <span class="mobile-bottom-nav-icon">📊</span>
+        <span class="mobile-bottom-nav-icon">${icon('chart', { size: 18 })}</span>
         <span class="mobile-bottom-nav-label">Dashboard</span>
       </button>
 
@@ -54,7 +55,7 @@ export function renderMobileBottomNav(currentView = null) {
       <!-- 3. Center Highlight: Instant Camera QR Scanner -->
       <button type="button" class="mobile-bottom-nav-item mobile-bottom-nav-scanner" id="btn-mobile-nav-qr" title="Scan Machine QR Code">
         <div class="mobile-nav-scanner-circle">
-          <span class="mobile-bottom-nav-icon scanner-icon">📷</span>
+          <span class="mobile-bottom-nav-icon scanner-icon">${icon('camera', { size: 20 })}</span>
         </div>
         <span class="mobile-bottom-nav-label" style="margin-top: 2px;">Scan QR</span>
       </button>
@@ -67,7 +68,7 @@ export function renderMobileBottomNav(currentView = null) {
 
       <!-- 5. Menu Drawer Toggle -->
       <button type="button" class="mobile-bottom-nav-item" id="btn-mobile-nav-menu" title="Open Full Menu">
-        <span class="mobile-bottom-nav-icon">☰</span>
+        <span class="mobile-bottom-nav-icon">${icon('menu', { size: 18 })}</span>
         <span class="mobile-bottom-nav-label">Menu</span>
       </button>
     </div>

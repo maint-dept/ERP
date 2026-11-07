@@ -14,9 +14,10 @@ import { excelService, formatDisplayLine, mapFieldKeyToTableKey, isColumnKeyVisi
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.1';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.1';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.47.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.47.0';
 import { state } from '../state.js';
+import { icon } from './icons.js?v=4.47.0';
 
 // Local UI state for collapsible advanced filters
 let showAdvancedFilters = false;
@@ -187,30 +188,30 @@ export function renderRowActionsMenuContent(m) {
   if (isViewOnly) {
     let html = `
       <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; border-bottom: 1px solid rgba(255,255,255,0.08); background: ${meta.isAmb ? 'rgba(244, 63, 94, 0.1)' : 'rgba(56, 189, 248, 0.05)'}; display: flex; align-items: center; justify-content: space-between;">
-        <span>${meta.isAmb ? '🚑 Ambulance Standby' : '🌐 Cross-Floor Idle'}</span>
+        <span style="display: inline-flex; align-items: center; gap: 4px;">${meta.isAmb ? `${icon('ambulance', { size: 12, color: '#f43f5e' })} Ambulance Standby` : `${icon('globe', { size: 12, color: '#38bdf8' })} Cross-Floor Idle`}</span>
         <span class="badge" style="font-size: 9px; padding: 1px 4px; background: ${meta.isAmb ? 'rgba(244, 63, 94, 0.25); color: #fda4af' : 'rgba(56, 189, 248, 0.2); color: #38bdf8'};">View-Only</span>
       </div>
     `;
     if (authService.canRequestTransfer()) {
       html += `
         <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 800; background: ${meta.isAmb ? 'rgba(244, 63, 94, 0.12)' : 'rgba(56, 189, 248, 0.1)'}; display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 14px;">${meta.isAmb ? '🚑' : '🔄'}</span> ${meta.isAmb ? 'Request Ambulance Swap' : 'Request Machine Transfer'}
+          <span>${meta.isAmb ? icon('ambulance', { size: 14, color: '#f43f5e' }) : icon('transfers', { size: 14, color: '#38bdf8' })}</span> ${meta.isAmb ? 'Request Ambulance Swap' : 'Request Machine Transfer'}
         </button>
         <div class="actions-menu-divider"></div>
       `;
     }
     html += `
       <button type="button" class="actions-menu-item btn-passport-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🔍</span> Machine Details &amp; Lifetime
+        <span>${icon('search', { size: 14, color: '#38bdf8' })}</span> Machine Details &amp; Lifetime
       </button>
       <button type="button" class="actions-menu-item btn-timeline-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🕒</span> Timeline &amp; Transfer Log
+        <span>${icon('clock', { size: 14 })}</span> Timeline &amp; Transfer Log
       </button>
       <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">⚙️</span> Spare Parts Usage
+        <span>${icon('settings', { size: 14 })}</span> Spare Parts Usage
       </button>
       <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
+        <span>${icon('tag', { size: 14, color: '#38bdf8' })}</span> Pocket Card (Offline HUD)
       </button>
     `;
     return html;
@@ -218,20 +219,20 @@ export function renderRowActionsMenuContent(m) {
 
   let html = `
     <button type="button" class="actions-menu-item btn-passport-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 14px;">🔍</span> Machine Details &amp; Lifetime
+      <span>${icon('search', { size: 14, color: '#38bdf8' })}</span> Machine Details &amp; Lifetime
     </button>
     <button type="button" class="actions-menu-item btn-timeline-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 14px;">🕒</span> Timeline &amp; Transfer Log
+      <span>${icon('clock', { size: 14 })}</span> Timeline &amp; Transfer Log
     </button>
     <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 14px;">⚙️</span> Spare Parts Usage
+      <span>${icon('settings', { size: 14 })}</span> Spare Parts Usage
     </button>
   `;
 
   if (authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(m)) {
     html += `
       <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🔄</span> Transfer Machine
+        <span>${icon('transfers', { size: 14 })}</span> Transfer Machine
       </button>
     `;
   }
@@ -240,10 +241,10 @@ export function renderRowActionsMenuContent(m) {
     html += `
       <div class="actions-menu-divider"></div>
       <button type="button" class="actions-menu-item btn-toggle-ambulance-machine" data-id="${m.id}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🚑</span> ${meta.isAmb ? 'Remove Ambulance Status' : 'Set as Ambulance Machine'}
+        <span>${icon('ambulance', { size: 14, color: '#f43f5e' })}</span> ${meta.isAmb ? 'Remove Ambulance Status' : 'Set as Ambulance Machine'}
       </button>
       <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">✏️</span> Edit Machine
+        <span>${icon('edit', { size: 14 })}</span> Edit Machine
       </button>
     `;
   }
@@ -251,14 +252,14 @@ export function renderRowActionsMenuContent(m) {
   html += `
     <div class="actions-menu-divider"></div>
     <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
+      <span>${icon('tag', { size: 14, color: '#38bdf8' })}</span> Pocket Card (Offline HUD)
     </button>
   `;
 
   if (authService.hasAccess('machines', 'DELETE') && authService.canOperateMachine(m)) {
     html += `
       <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🗑️</span> Delete Machine
+        <span>${icon('trash', { size: 14, color: '#ef4444' })}</span> Delete Machine
       </button>
     `;
   }
@@ -1169,33 +1170,33 @@ export function renderInventoryTable() {
           
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-              <span>📦</span> Machine Inventory ${scopeBadgeHtml}
+              <span>${icon('box', { size: 16, color: '#38bdf8' })}</span> Machine Inventory ${scopeBadgeHtml}
             </h1>
             
             <!-- Inline KPI Pills (Dynamically calculated based on User Access & Filter View - Click to Filter) -->
             <div class="inventory-inline-kpis">
               <div class="kpi-pill kpi-total ${!filters.status || filters.status === 'ALL' ? 'active-kpi' : ''}" data-kpi-status="ALL" title="${showCrossFloorIdle ? 'Total standby & idle machines across other factory floors (Click to view all)' : 'Total machines matching current scope (Click to view all)'}" style="cursor: pointer;">
-                <span class="kpi-dot">🏭</span>
+                <span class="kpi-dot" style="display: inline-flex; align-items: center;">${icon('factory', { size: 12, color: '#38bdf8' })}</span>
                 <strong class="kpi-val">${isInitialSyncPending ? '...' : countTotalMachines}</strong>
                 <span class="kpi-lbl">${showCrossFloorIdle ? 'Idle Other Floors' : 'Total'}</span>
               </div>
               <div class="kpi-pill kpi-running ${(filters.status === 'RUNNING' || filters.status === 'ACTIVE') ? 'active-kpi' : ''}" data-kpi-status="RUNNING" title="Operational running machines in current scope (Click to filter Running)" style="${showCrossFloorIdle ? 'display: none;' : ''}; cursor: pointer;">
-                <span class="kpi-dot">🟢</span>
+                <span class="kpi-dot" style="display: inline-flex; align-items: center;">${icon('dotGreen', { size: 9 })}</span>
                 <strong class="kpi-val" style="color: #34d399;">${isInitialSyncPending ? '...' : totalRunning}</strong>
                 <span class="kpi-lbl">Running</span>
               </div>
               <div class="kpi-pill kpi-usable ${(filters.status === 'USABLE' || filters.status === 'USABLE_IDLE') ? 'active-kpi' : ''}" data-kpi-status="USABLE" title="Ready-to-use standby usable idle machines (Click to filter Usable Idle)" style="cursor: pointer;">
-                <span class="kpi-dot">🔵</span>
+                <span class="kpi-dot" style="display: inline-flex; align-items: center;">${icon('dotBlue', { size: 9 })}</span>
                 <strong class="kpi-val" style="color: #38bdf8;">${isInitialSyncPending ? '...' : totalUsableIdle}</strong>
                 <span class="kpi-lbl">Usable</span>
               </div>
               <div class="kpi-pill kpi-repair ${(filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE') ? 'active-kpi' : ''}" data-kpi-status="REPAIRABLE" title="Repairable / maintenance idle machines (Click to filter Repairable Idle)" style="cursor: pointer;">
-                <span class="kpi-dot">🟡</span>
+                <span class="kpi-dot" style="display: inline-flex; align-items: center;">${icon('dotYellow', { size: 9 })}</span>
                 <strong class="kpi-val" style="color: #fbbf24;">${isInitialSyncPending ? '...' : totalRepairableIdle}</strong>
                 <span class="kpi-lbl">Repairable</span>
               </div>
               <div class="kpi-pill kpi-ambulance ${filters.status === 'AMBULANCE' ? 'active-kpi' : ''}" data-kpi-status="AMBULANCE" title="Standby ambulance machines ready for emergency line replacement (Click to filter Ambulance)" style="cursor: pointer;">
-                <span class="kpi-dot">🚑</span>
+                <span class="kpi-dot" style="display: inline-flex; align-items: center;">${icon('ambulance', { size: 12, color: '#f43f5e' })}</span>
                 <strong class="kpi-val" style="color: #f43f5e;">${isInitialSyncPending ? '...' : totalAmbulance}</strong>
                 <span class="kpi-lbl">Ambulance</span>
               </div>
@@ -1206,43 +1207,43 @@ export function renderInventoryTable() {
           <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-left: auto;">
             
             ${authService.hasAccess('machines', 'ADD') ? `
-              <button id="btn-add-machine-modal" class="btn btn-primary btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px;">
-                ➕ Add Machine
+              <button id="btn-add-machine-modal" class="btn btn-primary btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
+                <span>${icon('plus', { size: 13 })}</span> <span>Add Machine</span>
               </button>
             ` : ''}
 
-            <button id="btn-inventory-sync-db" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.12);" title="Refresh Machine Inventory">
-              🔄 Refresh
+            <button id="btn-inventory-sync-db" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.12); display: inline-flex; align-items: center; gap: 4px;" title="Refresh Machine Inventory">
+              <span>${icon('refresh', { size: 13, color: '#34d399' })}</span> <span>Refresh</span>
             </button>
 
-            <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Physical Machine Verification &amp; Relocation">
-              📍 Relocate &amp; Verify
+            <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); display: inline-flex; align-items: center; gap: 4px;" title="Physical Machine Verification &amp; Relocation">
+              <span>${icon('mapPin', { size: 13, color: '#38bdf8' })}</span> <span>Relocate &amp; Verify</span>
             </button>
 
-            <button id="btn-inventory-qr-codes" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.12);" title="QR Code &amp; Label Studio: Generate, Preview, A4 Print">
-              🏁 QR Codes
+            <button id="btn-inventory-qr-codes" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.12); display: inline-flex; align-items: center; gap: 4px;" title="QR Code &amp; Label Studio: Generate, Preview, A4 Print">
+              <span>${icon('qr', { size: 13, color: '#c084fc' })}</span> <span>QR Codes</span>
             </button>
 
             ${authService.hasAccess('machines', 'DELETE') ? `
-              <button id="btn-top-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px; background: ${selectedIds.size > 0 ? '#dc2626' : 'rgba(220, 38, 38, 0.18)'}; border: 1px solid ${selectedIds.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedIds.size > 0 ? '#fff' : '#fca5a5'}; cursor: ${selectedIds.size > 0 ? 'pointer' : 'not-allowed'}; opacity: ${selectedIds.size > 0 ? '1' : '0.6'};" ${selectedIds.size === 0 ? 'disabled' : ''} title="${selectedIds.size > 0 ? `Delete ${selectedIds.size} selected machine(s)` : 'Select machines to delete'}">
-                🗑️ Delete Selected ${selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+              <button id="btn-top-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px; background: ${selectedIds.size > 0 ? '#dc2626' : 'rgba(220, 38, 38, 0.18)'}; border: 1px solid ${selectedIds.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedIds.size > 0 ? '#fff' : '#fca5a5'}; cursor: ${selectedIds.size > 0 ? 'pointer' : 'not-allowed'}; opacity: ${selectedIds.size > 0 ? '1' : '0.6'}; display: inline-flex; align-items: center; gap: 4px;" ${selectedIds.size === 0 ? 'disabled' : ''} title="${selectedIds.size > 0 ? `Delete ${selectedIds.size} selected machine(s)` : 'Select machines to delete'}">
+                <span>${icon('trash', { size: 13 })}</span> <span>Delete Selected ${selectedIds.size > 0 ? `(${selectedIds.size})` : ''}</span>
               </button>
             ` : ''}
 
             ${(authService.hasAccess('excel_import', 'IMPORT') || authService.hasAccess('machines', 'IMPORT')) ? `
-              <button id="btn-import-excel-modal" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;" title="Upload Excel file">
-                📥 Import
+              <button id="btn-import-excel-modal" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;" title="Upload Excel file">
+                <span>${icon('upload', { size: 13 })}</span> <span>Import</span>
               </button>
             ` : ''}
 
             ${(authService.hasAccess('excel_export', 'EXPORT') || authService.hasAccess('machines', 'EXPORT')) ? `
-              <button id="btn-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;" title="Export filtered machines to Excel">
-                📤 Export
+              <button id="btn-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;" title="Export filtered machines to Excel">
+                <span>${icon('download', { size: 13 })}</span> <span>Export</span>
               </button>
             ` : ''}
 
-            <button id="btn-download-template" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;" title="Download Excel template">
-              📋 Template
+            <button id="btn-download-template" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;" title="Download Excel template">
+              <span>${icon('spreadsheet', { size: 13 })}</span> <span>Template</span>
             </button>
 
             <!-- More Dropdown -->
@@ -1251,25 +1252,25 @@ export function renderInventoryTable() {
                 ⋯ More ▾
               </button>
               <div id="more-actions-dropdown-menu" class="actions-dropdown-menu" style="min-width: 170px;">
-                <button type="button" class="actions-menu-item" id="btn-export-csv">
-                  📄 Export CSV
+                <button type="button" class="actions-menu-item" id="btn-export-csv" style="display: flex; align-items: center; gap: 8px;">
+                  <span>${icon('fileText', { size: 14 })}</span> Export CSV
                 </button>
-                <button type="button" class="actions-menu-item" id="btn-generate-pdf">
-                  🖨️ Print Inventory
+                <button type="button" class="actions-menu-item" id="btn-generate-pdf" style="display: flex; align-items: center; gap: 8px;">
+                  <span>${icon('printer', { size: 14 })}</span> Print Inventory
                 </button>
-                <button type="button" class="actions-menu-item" id="btn-column-visibility-toggle">
-                  👁️ Columns (${visibleCols.size})
+                <button type="button" class="actions-menu-item" id="btn-column-visibility-toggle" style="display: flex; align-items: center; gap: 8px;">
+                  <span>${icon('eye', { size: 14 })}</span> Columns (${visibleCols.size})
                 </button>
                 ${authService.hasAccess('machines', 'DELETE') && allMachines.length > 0 ? `
                   <div class="actions-menu-divider"></div>
-                  <button type="button" class="actions-menu-item danger-item" id="btn-clear-all-inventory" style="color: #ef4444; font-weight: 700;">
-                    🗑️ Delete All Machines (${allMachines.length})
+                  <button type="button" class="actions-menu-item danger-item" id="btn-clear-all-inventory" style="color: #ef4444; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <span>${icon('trash', { size: 14, color: '#ef4444' })}</span> Delete All Machines (${allMachines.length})
                   </button>
                 ` : ''}
                 ${(authService.hasAccess('machines', 'DELETE') && queryResult.total > 0 && hasActiveFilters) ? `
                   <div class="actions-menu-divider"></div>
-                  <button type="button" class="actions-menu-item danger-item" id="btn-delete-all-filtered">
-                    🗑️ Delete Filtered (${queryResult.total})
+                  <button type="button" class="actions-menu-item danger-item" id="btn-delete-all-filtered" style="display: flex; align-items: center; gap: 8px;">
+                    <span>${icon('trash', { size: 14, color: '#ef4444' })}</span> Delete Filtered (${queryResult.total})
                   </button>
                 ` : ''}
               </div>
@@ -1286,7 +1287,7 @@ export function renderInventoryTable() {
             
             <!-- Unified Search Input -->
             <div class="filter-search-wrap" style="flex: 2 1 240px; min-width: 220px; position: relative;">
-              <span class="filter-search-icon" style="left: 10px; font-size: 12px;">🔍</span>
+              <span class="filter-search-icon" style="left: 10px; display: inline-flex; align-items: center; color: #38bdf8;">${icon('search', { size: 13, color: '#38bdf8' })}</span>
               <input 
                 type="text" 
                 id="filter-search-input" 
@@ -1295,17 +1296,17 @@ export function renderInventoryTable() {
                 value="${filters.search || ''}"
                 style="height: 30px; font-size: 12px; padding-left: 36px !important; padding-right: ${filters.search ? '58px' : '32px'} !important;"
               />
-              <div class="filter-search-actions" style="right: 5px;">
-                <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 22px; width: 24px; font-size: 12px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
+              <div class="filter-search-actions" style="right: 5px; display: flex; align-items: center; gap: 3px;">
+                <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 22px; width: 24px; display: inline-flex; align-items: center; justify-content: center;" title="Scan Machine QR Code / Barcode with Camera">${icon('camera', { size: 12 })}</button>
                 ${filters.search ? `
-                  <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; font-size: 11px;" title="Clear Search">✕</button>
+                  <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; display: inline-flex; align-items: center; justify-content: center;" title="Clear Search">${icon('close', { size: 10 })}</button>
                 ` : ''}
               </div>
             </div>
 
             <!-- Mobile Filter Drawer Toggle Button (Visible on screens <= 768px) -->
             <button type="button" id="btn-toggle-mobile-filter-drawer" class="mobile-filter-drawer-toggle" title="Toggle Location & Machine Filters">
-              <span>⚙️ Filters &amp; Location</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px;">${icon('sliders', { size: 13, color: '#38bdf8' })} Filters &amp; Location</span>
               ${activeTags.length > 0 ? `<span class="badge" style="background: #0284c7; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 800;">${activeTags.length}</span>` : ''}
               <span id="mobile-filter-drawer-arrow" style="font-size: 10px;">▾</span>
             </button>
@@ -1369,19 +1370,19 @@ export function renderInventoryTable() {
               <select id="filter-status-select" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
                 ${showCrossFloorIdle ? `
                   <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Idle Machines</option>
-                  <option value="USABLE" ${filters.status === 'USABLE' || filters.status === 'USABLE_IDLE' ? 'selected' : ''}>✨ Usable Idle (${totalUsableIdle})</option>
-                  <option value="REPAIRABLE" ${filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>🟡 Repairable Idle (${totalRepairableIdle})</option>
-                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🔧 In Maintenance</option>
-                  <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
-                  <option value="AMBULANCE" ${filters.status === 'AMBULANCE' ? 'selected' : ''}>🚑 Ambulance Machine (${totalAmbulance})</option>
+                  <option value="USABLE" ${filters.status === 'USABLE' || filters.status === 'USABLE_IDLE' ? 'selected' : ''}>Usable Idle (${totalUsableIdle})</option>
+                  <option value="REPAIRABLE" ${filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>Repairable Idle (${totalRepairableIdle})</option>
+                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>In Maintenance</option>
+                  <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>Breakdown</option>
+                  <option value="AMBULANCE" ${filters.status === 'AMBULANCE' ? 'selected' : ''}>Ambulance Machine (${totalAmbulance})</option>
                 ` : `
                   <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
-                  <option value="RUNNING" ${filters.status === 'RUNNING' || filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Running / Active</option>
-                  <option value="USABLE" ${filters.status === 'USABLE' || filters.status === 'USABLE_IDLE' || filters.status === 'IDLE' ? 'selected' : ''}>🔵 Usable Idle (${totalUsableIdle})</option>
-                  <option value="REPAIRABLE" ${filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>🟡 Repairable Idle (${totalRepairableIdle})</option>
-                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🔧 In Maintenance</option>
-                  <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
-                  <option value="AMBULANCE" ${filters.status === 'AMBULANCE' ? 'selected' : ''}>🚑 Ambulance Machine (${totalAmbulance})</option>
+                  <option value="RUNNING" ${filters.status === 'RUNNING' || filters.status === 'ACTIVE' ? 'selected' : ''}>Running / Active</option>
+                  <option value="USABLE" ${filters.status === 'USABLE' || filters.status === 'USABLE_IDLE' || filters.status === 'IDLE' ? 'selected' : ''}>Usable Idle (${totalUsableIdle})</option>
+                  <option value="REPAIRABLE" ${filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>Repairable Idle (${totalRepairableIdle})</option>
+                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>In Maintenance</option>
+                  <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>Breakdown</option>
+                  <option value="AMBULANCE" ${filters.status === 'AMBULANCE' ? 'selected' : ''}>Ambulance Machine (${totalAmbulance})</option>
                 `}
               </select>
             </div>
@@ -1397,18 +1398,18 @@ export function renderInventoryTable() {
               </button>
 
               <button id="btn-show-all-columns-quick" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 10px; color: #34d399; height: 30px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 6px; background: rgba(52, 211, 153, 0.1);" title="Show all available columns from Excel and system">
-                <span>👁️ All Columns</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;">${icon('eye', { size: 13, color: '#34d399' })} All Columns</span>
               </button>
 
               <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 10px; color: #38bdf8; height: 30px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.1);" title="Configure visible and frozen columns">
-                <span>❄️ Columns &amp; Freeze ▾</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;">${icon('settings', { size: 13, color: '#38bdf8' })} Columns &amp; Freeze ▾</span>
                 ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.3); color: #fff; font-size: 10px; padding: 1px 5px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
               </button>
 
               <!-- Quick Horizontal Scroll Deck -->
               <div style="display: inline-flex; align-items: center; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; overflow: hidden; height: 30px; background: rgba(15, 23, 42, 0.7);" title="Scroll columns horizontally">
-                <button type="button" id="btn-scroll-table-left" class="btn btn-ghost btn-xs" style="padding: 0 8px; height: 100%; border-radius: 0; color: #38bdf8; font-weight: 800; border-right: 1px solid rgba(255,255,255,0.08);" title="Scroll columns left">◀</button>
-                <button type="button" id="btn-scroll-table-right" class="btn btn-ghost btn-xs" style="padding: 0 8px; height: 100%; border-radius: 0; color: #38bdf8; font-weight: 800;" title="Scroll columns right">▶</button>
+                <button type="button" id="btn-scroll-table-left" class="btn btn-ghost btn-xs" style="padding: 0 8px; height: 100%; border-radius: 0; color: #38bdf8; font-weight: 800; border-right: 1px solid rgba(255,255,255,0.08); display: inline-flex; align-items: center; justify-content: center;" title="Scroll columns left">${icon('chevronLeft', { size: 12 })}</button>
+                <button type="button" id="btn-scroll-table-right" class="btn btn-ghost btn-xs" style="padding: 0 8px; height: 100%; border-radius: 0; color: #38bdf8; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;" title="Scroll columns right">${icon('chevronRight', { size: 12 })}</button>
               </div>
             </div>
 
@@ -1450,11 +1451,11 @@ export function renderInventoryTable() {
           ${showCrossFloorIdle ? `
             <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 5px 12px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: #e0f2fe;">
               <div style="display: flex; align-items: center; gap: 6px;">
-                <span>👁️</span>
+                <span style="display: inline-flex; align-items: center;">${icon('eye', { size: 14, color: '#38bdf8' })}</span>
                 <span><strong>Cross-Floor Idle View Active:</strong> Showing standby &amp; idle machines across <strong>all factory floors</strong> (Usable Idle, Standby, Repairable Idle &amp; Central Idle). Click <strong>Options ▾ &gt; Request Machine Transfer</strong> on any idle machine to request it for your floor.</span>
               </div>
-              <button id="btn-banner-exit-cross-idle" type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); cursor: pointer; white-space: nowrap;">
-                🔙 Return to Default View
+              <button id="btn-banner-exit-cross-idle" type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                <span>${icon('arrowLeft', { size: 11, color: '#38bdf8' })}</span> <span>Return to Default View</span>
               </button>
             </div>
           ` : ''}
@@ -1465,7 +1466,7 @@ export function renderInventoryTable() {
         <div id="inventory-bulk-actions-bar" style="display: ${selectedIds.size > 0 ? 'flex' : 'none'}; background: rgba(15, 23, 42, 0.98); border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 6px 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span style="font-weight: 800; color: #fff; font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
-              <span>☑️</span> <strong id="bulk-selected-count" style="color: #38bdf8;">${selectedIds.size}</strong> machine(s) selected
+              <span style="display: inline-flex; align-items: center;">${icon('checkCircle', { size: 14, color: '#38bdf8' })}</span> <strong id="bulk-selected-count" style="color: #38bdf8;">${selectedIds.size}</strong> machine(s) selected
             </span>
             <button id="btn-select-all-filtered" class="btn btn-ghost btn-sm" style="display: ${selectedIds.size < queryResult.total ? 'inline-block' : 'none'}; color: #38bdf8; font-size: 11px; font-weight: 700; text-decoration: underline; padding: 2px 5px;">
               Select all ${queryResult.total} machines in current filter
@@ -1473,11 +1474,11 @@ export function renderInventoryTable() {
           </div>
           <div style="display: flex; gap: 6px; align-items: center;">
             ${authService.hasAccess('machines', 'DELETE') ? `
-              <button id="btn-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 800; background: #dc2626; border-color: #ef4444; color: #fff; padding: 4px 12px; font-size: 11.5px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);">
-                🗑️ Delete Selected (${selectedIds.size})
+              <button id="btn-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 800; background: #dc2626; border-color: #ef4444; color: #fff; padding: 4px 12px; font-size: 11.5px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4); display: inline-flex; align-items: center; gap: 4px;">
+                <span>${icon('trash', { size: 13 })}</span> <span>Delete Selected (${selectedIds.size})</span>
               </button>
             ` : ''}
-            <button id="btn-bulk-clear" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11.5px;">✕ Clear Selection</button>
+            <button id="btn-bulk-clear" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;"><span>${icon('close', { size: 11 })}</span> Clear Selection</button>
           </div>
         </div>
 
@@ -3328,7 +3329,7 @@ export function syncInventorySelectionDOM(selectedIdsInput) {
         }
       }
       const bulkDelBtn = document.getElementById('btn-bulk-delete');
-      if (bulkDelBtn) bulkDelBtn.innerHTML = `🗑️ Delete Selected (${selectedIds.size})`;
+      if (bulkDelBtn) bulkDelBtn.innerHTML = `<span>${icon('trash', { size: 13 })}</span> <span>Delete Selected (${selectedIds.size})</span>`;
     } else {
       bulkBar.style.display = 'none';
     }
@@ -3344,7 +3345,7 @@ export function syncInventorySelectionDOM(selectedIdsInput) {
       topBulkDelBtn.style.background = '#dc2626';
       topBulkDelBtn.style.borderColor = '#ef4444';
       topBulkDelBtn.style.color = '#fff';
-      topBulkDelBtn.innerHTML = `🗑️ Delete Selected (${selectedIds.size})`;
+      topBulkDelBtn.innerHTML = `<span>${icon('trash', { size: 13 })}</span> <span>Delete Selected (${selectedIds.size})</span>`;
       topBulkDelBtn.title = `Delete ${selectedIds.size} selected machine(s)`;
     } else {
       topBulkDelBtn.setAttribute('disabled', 'true');
@@ -3353,7 +3354,7 @@ export function syncInventorySelectionDOM(selectedIdsInput) {
       topBulkDelBtn.style.background = 'rgba(220, 38, 38, 0.18)';
       topBulkDelBtn.style.borderColor = 'rgba(239, 68, 68, 0.35)';
       topBulkDelBtn.style.color = '#fca5a5';
-      topBulkDelBtn.innerHTML = '🗑️ Delete Selected';
+      topBulkDelBtn.innerHTML = `<span>${icon('trash', { size: 13 })}</span> <span>Delete Selected</span>`;
       topBulkDelBtn.title = 'Select machines to delete';
     }
   }

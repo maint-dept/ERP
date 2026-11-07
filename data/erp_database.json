@@ -320819,7 +320819,10 @@
       "brandId": "brd-1791365588525-v0qg",
       "name": "Standard",
       "status": "ACTIVE",
-      "createdAt": "2026-10-09T11:29:35.469Z"
+      "createdAt": "2026-10-09T11:29:35.469Z",
+      "machineName": "Single Needle Lock Stitch Machine",
+      "machineNameId": "mn-1792077157398-8mma",
+      "updatedAt": "2026-11-07T15:04:13.490Z"
     }
   ],
   "categories": [
@@ -321077,7 +321080,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T14:52:56.762Z"
+        "updatedAt": "2026-11-07T11:17:56.213Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321095,8 +321098,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T14:52:56.762Z",
-        "lastSync": "11/7/2026, 9:53:03 AM"
+        "updatedAt": "2026-11-07T11:17:56.214Z",
+        "lastSync": "11/7/2026, 9:25:12 PM"
       }
     ],
     "emailConfig": {
@@ -333013,7 +333016,7 @@
       },
       "createdAt": "2026-01-01T00:00:00Z",
       "lastLoginAt": "2026-11-07T14:25:19.785Z",
-      "updatedAt": "2026-11-07T14:52:57.691Z",
+      "updatedAt": "2026-11-07T14:25:19.786Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
@@ -344351,6 +344354,21 @@
       "timestamp": "2026-11-07T14:25:19.787Z",
       "createdAt": "2026-11-07T14:25:19.787Z",
       "updatedAt": "2026-11-07T14:25:19.787Z"
+    },
+    {
+      "id": "aud-1794063980680-110",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "BROADCAST_ALERT",
+      "entity": "NOTIFICATIONS",
+      "entityId": "notif-custom-1794063980680-461",
+      "details": "Dispatched [EMERGENCY] custom alert: \"Sewing Line Stoppage Alert\" to ALL",
+      "oldData": null,
+      "newData": null,
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-07T15:06:20.680Z",
+      "createdAt": "2026-11-07T15:06:20.680Z",
+      "updatedAt": "2026-11-07T15:06:20.680Z"
     }
   ],
   "notifications": [

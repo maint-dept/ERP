@@ -4,9 +4,10 @@
  */
 
 import { state } from '../state.js';
+import { replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 export function renderQuickHelpModal() {
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-quick-help-overlay">
       <div class="modal-dialog modal-dialog-lg">
         <div class="modal-header">
@@ -77,7 +78,7 @@ export function renderQuickHelpModal() {
         </div>
       </div>
     </div>
-  `;
+  `);
 }
 
 export function initQuickHelpEvents() {

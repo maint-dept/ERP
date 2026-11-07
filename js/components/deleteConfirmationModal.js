@@ -11,6 +11,7 @@
  */
 
 import { notificationService } from '../services/notificationService.js';
+import { icon } from './icons.js?v=4.47.0';
 
 let activeDeleteModalOverlay = null;
 
@@ -108,7 +109,7 @@ export function openDeleteConfirmationModal(options = {}) {
               align-items: center;
               justify-content: center;
               font-size: 18px;
-            ">🗑️</div>
+            ">${icon('trash', { size: 18, color: '#f87171' })}</div>
             <div>
               <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #f87171; letter-spacing: -0.2px;">
                 ${escapeHtml(title)}
@@ -122,12 +123,15 @@ export function openDeleteConfirmationModal(options = {}) {
             color: #94a3b8;
             border: none;
             background: transparent;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             padding: 4px 8px;
             line-height: 1;
             border-radius: 6px;
-          " title="Cancel & Close">✕</button>
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          " title="Cancel & Close">${icon('close', { size: 16, color: '#94a3b8' })}</button>
         </div>
 
         <!-- Modal Body -->
@@ -143,7 +147,7 @@ export function openDeleteConfirmationModal(options = {}) {
             align-items: flex-start;
             gap: 10px;
           ">
-            <span style="font-size: 18px; line-height: 1.2;">⚠️</span>
+            <span style="font-size: 16px; line-height: 1; margin-top: 2px;">${icon('alertTriangle', { size: 16, color: '#ef4444' })}</span>
             <div style="font-size: 12.5px; color: #fca5a5; line-height: 1.5;">
               <strong>Irreversible Action:</strong> Once confirmed, this data will be permanently wiped from the database. Deleted records cannot be recovered.
             </div>
@@ -356,7 +360,7 @@ export function openDeleteConfirmationModal(options = {}) {
         submitBtn.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.55)';
         inputEl.style.borderColor = '#22c55e';
         inputEl.style.boxShadow = '0 0 0 2px rgba(34, 197, 94, 0.2)';
-        feedbackEl.innerHTML = '<span style="color: #4ade80;">✅ Exact match verified: Click button below to delete</span>';
+        feedbackEl.innerHTML = `<span style="color: #4ade80; display: inline-flex; align-items: center; gap: 5px;">${icon('checkCircle', { size: 14, color: '#4ade80' })} Exact match verified: Click button below to delete</span>`;
       } else {
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.45';
@@ -370,11 +374,11 @@ export function openDeleteConfirmationModal(options = {}) {
         } else if (val.toUpperCase() === 'DELETE' && val !== 'DELETE') {
           inputEl.style.borderColor = '#f59e0b';
           inputEl.style.boxShadow = '0 0 0 2px rgba(245, 158, 11, 0.2)';
-          feedbackEl.innerHTML = '<span style="color: #fbbf24;">⚠️ Must be uppercase: Type <code>DELETE</code> (not lowercase)</span>';
+          feedbackEl.innerHTML = `<span style="color: #fbbf24; display: inline-flex; align-items: center; gap: 5px;">${icon('alertTriangle', { size: 14, color: '#fbbf24' })} Must be uppercase: Type <code>DELETE</code> (not lowercase)</span>`;
         } else {
           inputEl.style.borderColor = '#ef4444';
           inputEl.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.2)';
-          feedbackEl.innerHTML = '<span style="color: #f87171;">❌ Does not match: Type exact word <code>DELETE</code></span>';
+          feedbackEl.innerHTML = `<span style="color: #f87171; display: inline-flex; align-items: center; gap: 5px;">${icon('xCircle', { size: 14, color: '#f87171' })} Does not match: Type exact word <code>DELETE</code></span>`;
         }
       }
     });

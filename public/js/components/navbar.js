@@ -3,15 +3,16 @@
  * Clean, User-Friendly Navbar with Streamlined Actions & Account Dropdown
  */
 
-import { authService } from '../services/authService.js?v=4.46.1';
-import { notificationService } from '../services/notificationService.js?v=4.46.1';
-import { state } from '../state.js?v=4.46.1';
-import { storage } from '../db/storage.js?v=4.46.1';
-import { syncManager } from '../db/syncManager.js?v=4.46.1';
-import { router } from '../services/router.js?v=4.46.1';
-import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.1';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.1';
-import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.46.1';
+import { authService } from '../services/authService.js?v=4.47.0';
+import { notificationService } from '../services/notificationService.js?v=4.47.0';
+import { state } from '../state.js?v=4.47.0';
+import { storage } from '../db/storage.js?v=4.47.0';
+import { syncManager } from '../db/syncManager.js?v=4.47.0';
+import { router } from '../services/router.js?v=4.47.0';
+import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.47.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.47.0';
+import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.47.0';
+import { icon } from './icons.js?v=4.47.0';
 import { 
   getEmployeeMap, 
   getUserCardNumber, 
@@ -159,8 +160,8 @@ export function renderNavbar() {
               ${escapeHtml(u.name || u.username)}
             </div>
             <div style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
-              <span style="font-weight: 700; color: ${isTargetSuper ? '#38bdf8' : '#f59e0b'};">
-                ${isTargetSuper ? '🛡️ Super Admin' : '👑 Admin'}
+              <span style="font-weight: 700; color: ${isTargetSuper ? '#38bdf8' : '#f59e0b'}; display: inline-flex; align-items: center; gap: 4px;">
+                ${isTargetSuper ? `${icon('shield', { size: 12, color: '#38bdf8' })} Super Admin` : `${icon('crown', { size: 12, color: '#f59e0b' })} Admin`}
               </span>
               ${uCard ? `<span style="color: #94a3b8; font-family: var(--font-mono);">#${escapeHtml(uCard)}</span>` : ''}
             </div>
@@ -257,7 +258,7 @@ export function renderNavbar() {
         </button>
 
         <div class="nav-smart-search-box">
-          <span class="nav-search-icon" style="font-size: 13px; color: #38bdf8; line-height: 1; pointer-events: none; flex-shrink: 0;">🔍</span>
+          <span class="nav-search-icon" style="color: #38bdf8; line-height: 1; pointer-events: none; flex-shrink: 0; display: inline-flex; align-items: center;">${icon('search', { size: 14, color: '#38bdf8' })}</span>
           <input 
             type="text" 
             id="inp-universal-smart-search" 
@@ -270,7 +271,7 @@ export function renderNavbar() {
             id="btn-nav-search-clear" 
             title="Clear Search"
             style="display: none; background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px 6px; line-height: 1; flex-shrink: 0;"
-          >✕</button>
+          >${icon('close', { size: 12 })}</button>
 
           <!-- Integrated QR / Barcode Scanner Button attached right beside search bar -->
           <button 
@@ -279,7 +280,7 @@ export function renderNavbar() {
             class="btn btn-xs btn-header-qr" 
             title="Scan Machine QR Tag / Barcode" 
           >
-            <span style="font-size: 13px;">📷</span>
+            <span style="display: inline-flex; align-items: center;">${icon('camera', { size: 13 })}</span>
             <span class="desktop-only" style="letter-spacing: 0.3px;">Scan</span>
           </button>
         </div>
@@ -293,10 +294,10 @@ export function renderNavbar() {
       <div class="header-right">
         <!-- Mobile Search & Scan Quick Triggers (<= 768px) -->
         <button id="btn-mobile-search-trigger" class="nav-icon-btn mobile-only" type="button" title="Search Machines" aria-label="Search Machines">
-          <span style="font-size: 15px;">🔍</span>
+          <span style="display: inline-flex; align-items: center;">${icon('search', { size: 16 })}</span>
         </button>
         <button id="btn-mobile-qr-trigger" class="nav-icon-btn mobile-only" type="button" title="Scan Machine QR Tag" aria-label="Scan QR Code">
-          <span style="font-size: 15px;">📷</span>
+          <span style="display: inline-flex; align-items: center;">${icon('camera', { size: 16 })}</span>
         </button>
 
         <!-- Real-Time SSE Live Status Indicator (Silent Background Process - Hidden from UI) -->
@@ -306,18 +307,18 @@ export function renderNavbar() {
 
         <!-- Persistent Database Store Status -->
         <div id="nav-db-status" class="nav-db-status-pill" style="cursor: pointer;" title="System Cloud Active &amp; Synchronized (Click to Sync Now)">
-          <span style="font-size: 13px; line-height: 1;">☁️</span>
+          <span style="display: inline-flex; align-items: center;">${icon('database', { size: 13, color: '#38bdf8' })}</span>
           <span class="db-status-text">System Synced</span>
         </div>
 
         <!-- Daylight / Dark Mode Switcher -->
         <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme: Switch to ${currentTheme === 'light' ? 'Dark' : 'Daylight / Light'} Mode" aria-label="Toggle Theme" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; color: #f8fafc; transition: all 0.2s;">
-          <span class="theme-icon" style="font-size: 15px;">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
+          <span class="theme-icon" style="display: inline-flex; align-items: center;">${currentTheme === 'light' ? icon('moon', { size: 15, color: '#38bdf8' }) : icon('sun', { size: 15, color: '#f59e0b' })}</span>
         </button>
 
         <!-- Notification Bell -->
         <button id="btn-notifications-toggle" class="nav-icon-btn" type="button" title="Notifications (${unreadNotifs} unread)" aria-label="Notifications">
-          <span class="bell-icon" style="font-size: 15px;">🔔</span>
+          <span class="bell-icon" style="display: inline-flex; align-items: center;">${icon('bell', { size: 15 })}</span>
           <span id="nav-bell-badge-container">
             ${unreadNotifs > 0 ? `<span class="nav-badge danger" style="position: absolute; top: 2px; right: 2px; font-size: 10px; padding: 1px 5px; animation: pulse 2s infinite;">${unreadNotifs}</span>` : ''}
           </span>
@@ -326,7 +327,7 @@ export function renderNavbar() {
         ${(isSuperAdmin || isAdmin) && authService.isMaintenanceModeActive() ? `
           <!-- Maintenance Mode Active Warning Badge -->
           <button id="btn-nav-maint-badge" class="btn btn-xs" style="background: rgba(245, 158, 11, 0.2); border: 1.5px solid #f59e0b; color: #fbbf24; font-weight: 800; font-size: 11.5px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);" title="System Maintenance Mode is ACTIVE. Non-admins cannot log in. Click to manage.">
-            <span>🛠️</span>
+            <span>${icon('tools', { size: 13, color: '#fbbf24' })}</span>
             <span>Maintenance Mode ON</span>
           </button>
         ` : ''}
@@ -334,7 +335,7 @@ export function renderNavbar() {
         ${impersonator ? `
           <!-- Impersonation Quick Return Pill in Top Header -->
           <button id="btn-nav-exit-impersonation" class="btn btn-xs" style="background: rgba(2, 132, 199, 0.2); border: 1.5px solid #38bdf8; color: #38bdf8; font-weight: 700; font-size: 11.5px; padding: 3px 9px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);" title="Exit impersonation and return to your Admin account">
-            <span>🎭</span>
+            <span>${icon('users', { size: 13, color: '#38bdf8' })}</span>
             <span>Return to ${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}</span>
           </button>
         ` : ''}
@@ -348,7 +349,7 @@ export function renderNavbar() {
             <div class="user-avatar-circle">${userInitial}</div>
             <div class="nav-profile-meta">
               <span class="nav-profile-name" id="nav-profile-username">${displayName}</span>
-              <span class="nav-profile-role-badge" style="${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? 'background: rgba(239, 68, 68, 0.25) !important; color: #f87171 !important; border-color: rgba(239, 68, 68, 0.5) !important;' : ''}">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? '🔒 No Access' : shortRole}</span>
+              <span class="nav-profile-role-badge" style="${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? 'background: rgba(239, 68, 68, 0.25) !important; color: #f87171 !important; border-color: rgba(239, 68, 68, 0.5) !important;' : ''}">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? `${icon('lock', { size: 11 })} No Access` : shortRole}</span>
             </div>
             <svg class="nav-profile-caret" width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
@@ -362,7 +363,7 @@ export function renderNavbar() {
               <div class="nav-user-dropdown-info">
                 <div class="nav-user-dropdown-name">${displayName}</div>
                 <div class="nav-user-dropdown-email">@${user?.username || 'user'}${user?.email ? ` • ${user.email}` : ''}</div>
-                <div class="nav-user-dropdown-role-badge">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? '🔒' : (isSuperAdmin ? '🛡️' : (isAdmin ? '👑' : '👤'))} ${roleName}</div>
+                <div class="nav-user-dropdown-role-badge" style="display: inline-flex; align-items: center; gap: 4px;">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? icon('lock', { size: 12, color: '#f87171' }) : (isSuperAdmin ? icon('shield', { size: 12, color: '#38bdf8' }) : (isAdmin ? icon('crown', { size: 12, color: '#f59e0b' }) : icon('user', { size: 12 })))} ${roleName}</div>
               </div>
             </div>
 
@@ -374,7 +375,7 @@ export function renderNavbar() {
                   <span>Cloud Synced</span>
                 </div>
                 <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="display: inline-flex; align-items: center; gap: 5px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1); padding: 3px 8px; border-radius: 6px;" title="Toggle Light / Dark Theme">
-                  <span class="dropdown-theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
+                  <span class="dropdown-theme-icon" style="display: inline-flex; align-items: center;">${currentTheme === 'light' ? icon('moon', { size: 14, color: '#38bdf8' }) : icon('sun', { size: 14, color: '#f59e0b' })}</span>
                   <span>${currentTheme === 'light' ? 'Dark Mode' : 'Daylight Mode'}</span>
                 </button>
               </div>
@@ -384,13 +385,13 @@ export function renderNavbar() {
               <!-- Active Impersonation Session Banner -->
               <div class="nav-user-dropdown-section" style="background: rgba(2, 132, 199, 0.15); border: 1.5px dashed #38bdf8; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
                 <div style="font-size: 11px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                  <span>🎭</span> Viewing as User
+                  <span>${icon('users', { size: 13, color: '#38bdf8' })}</span> Viewing as User
                 </div>
                 <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 8px; line-height: 1.35;">
                   Currently logged in as <strong>${displayName}</strong> from <strong>${impersonator.name}</strong> (${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}).
                 </div>
-                <button type="button" id="btn-return-to-admin" class="btn btn-primary btn-xs btn-block" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; height: 30px;">
-                  🔙 Return to ${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'} (${impersonator.name})
+                <button type="button" id="btn-return-to-admin" class="btn btn-primary btn-xs btn-block" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <span>${icon('arrowLeft', { size: 13 })}</span> Return to ${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'} (${impersonator.name})
                 </button>
               </div>
               <div class="nav-user-dropdown-divider"></div>
@@ -400,19 +401,19 @@ export function renderNavbar() {
                 
                 <!-- Section Header with Quick Popup Trigger -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <div class="nav-user-dropdown-section-title" style="margin-bottom: 0;">
-                    <span>🎭</span> ${isSuperAdmin ? 'Switch Role / Account' : 'Login to User Account'}
+                  <div class="nav-user-dropdown-section-title" style="margin-bottom: 0; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>${icon('users', { size: 13, color: '#38bdf8' })}</span> ${isSuperAdmin ? 'Switch Role / Account' : 'Login to User Account'}
                   </div>
                   <button type="button" id="btn-open-switcher-popup-nav" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 5px; background: rgba(56, 189, 248, 0.1); cursor: pointer;" title="Open full searchable account switcher popup">
-                    <span>🔍 Search Popup</span>
-                    <span style="font-size: 10px;">↗</span>
+                    <span>${icon('search', { size: 11, color: '#38bdf8' })} Search Popup</span>
+                    <span style="font-size: 10px;">&nearr;</span>
                   </button>
                 </div>
 
                 <!-- 1. Super Admin & Admin Accounts (Kept Separate) -->
                 <div class="switcher-mgmt-wrapper" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px;">
                   <div style="font-size: 10px; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
-                    <span>👑</span> Administrators &amp; Managers
+                    <span>${icon('crown', { size: 12, color: '#f59e0b' })}</span> Administrators &amp; Managers
                   </div>
                   <div class="switcher-mgmt-list" style="display: flex; flex-direction: column; gap: 6px;">
                     ${adminCardsHtml}
@@ -423,14 +424,14 @@ export function renderNavbar() {
                 <div class="switcher-users-wrapper">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-                      <span>👥</span> Factory Users
+                      <span>${icon('users', { size: 12, color: '#38bdf8' })}</span> Factory Users
                     </div>
                     <span style="font-size: 10px; font-weight: 700; color: #94a3b8;" id="nav-dropdown-users-count">${factoryUsers.length} accounts</span>
                   </div>
 
                   <!-- Search Input Box -->
                   <div style="position: relative; display: flex; align-items: center; margin-bottom: 6px;">
-                    <span style="position: absolute; left: 8px; font-size: 12px; color: #38bdf8; pointer-events: none;">🔍</span>
+                    <span style="position: absolute; left: 8px; color: #38bdf8; pointer-events: none; display: inline-flex; align-items: center;">${icon('search', { size: 12, color: '#38bdf8' })}</span>
                     <input 
                       type="text" 
                       id="inp-nav-dropdown-search" 
@@ -445,13 +446,13 @@ export function renderNavbar() {
                       id="btn-nav-dropdown-search-clear" 
                       style="position: absolute; right: 6px; background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 2px 4px; display: none;"
                       title="Clear"
-                    >✕</button>
+                    >${icon('close', { size: 10 })}</button>
                   </div>
 
                   <!-- Live Search Matches Container -->
                   <div id="nav-dropdown-search-results" class="custom-scrollbar" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
                     <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #94a3b8; background: rgba(15, 23, 42, 0.4); border-radius: 6px; line-height: 1.4;">
-                      Type a <strong>Card #</strong> or <strong>Name</strong> above to search across ${factoryUsers.length} factory accounts, or click <button type="button" class="btn-open-switcher-popup-text" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Open Search Popup ↗</button>
+                      Type a <strong>Card #</strong> or <strong>Name</strong> above to search across ${factoryUsers.length} factory accounts, or click <button type="button" class="btn-open-switcher-popup-text" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Open Search Popup &nearr;</button>
                     </div>
                   </div>
                 </div>
@@ -467,7 +468,7 @@ export function renderNavbar() {
             <div class="nav-user-dropdown-items">
               ${(isSuperAdmin || isAdmin) ? `
                 <button type="button" id="btn-navbar-send-alert" class="nav-user-dropdown-item" title="Broadcast Custom Notification or Instant Factory Alert">
-                  <span class="dropdown-item-icon">📢</span>
+                  <span class="dropdown-item-icon">${icon('bell', { size: 15, color: '#38bdf8' })}</span>
                   <div class="dropdown-item-content">
                     <span class="dropdown-item-title" style="color: #38bdf8;">Send Factory Alert</span>
                     <span class="dropdown-item-desc">Broadcast emergency sirens &amp; floor notices</span>
@@ -476,7 +477,7 @@ export function renderNavbar() {
               ` : ''}
 
               <button type="button" id="btn-navbar-change-pwd" class="nav-user-dropdown-item" title="Change your account password & profile">
-                <span class="dropdown-item-icon">🔑</span>
+                <span class="dropdown-item-icon">${icon('key', { size: 15 })}</span>
                 <div class="dropdown-item-content">
                   <span class="dropdown-item-title">Change Password</span>
                   <span class="dropdown-item-desc">Update credentials & security</span>
@@ -484,7 +485,7 @@ export function renderNavbar() {
               </button>
 
               <button type="button" id="btn-navbar-home" class="nav-user-dropdown-item" title="View Public Landing Page">
-                <span class="dropdown-item-icon">🏠</span>
+                <span class="dropdown-item-icon">${icon('dashboard', { size: 15 })}</span>
                 <div class="dropdown-item-content">
                   <span class="dropdown-item-title">Public Homepage</span>
                   <span class="dropdown-item-desc">Open visitor portal & company overview</span>
@@ -493,7 +494,7 @@ export function renderNavbar() {
 
               <!-- Native PWA Install App Button -->
               <button type="button" id="btn-navbar-install-pwa" class="nav-user-dropdown-item" style="display: none;" title="Install AMG ERP on your device">
-                <span class="dropdown-item-icon">📱</span>
+                <span class="dropdown-item-icon">${icon('phone', { size: 15, color: '#38bdf8' })}</span>
                 <div class="dropdown-item-content">
                   <span class="dropdown-item-title" style="color: #38bdf8;">Install Mobile App</span>
                   <span class="dropdown-item-desc">Add to Home Screen for fast offline access</span>
@@ -506,7 +507,7 @@ export function renderNavbar() {
             <!-- Sign Out -->
             <div class="nav-user-dropdown-footer">
               <button type="button" id="btn-navbar-logout" class="nav-user-dropdown-item nav-user-dropdown-logout" title="End your active session">
-                <span class="dropdown-item-icon">🚪</span>
+                <span class="dropdown-item-icon">${icon('arrowLeft', { size: 15, color: '#ef4444' })}</span>
                 <div class="dropdown-item-content">
                   <span class="dropdown-item-title">Sign Out</span>
                 </div>
@@ -662,11 +663,11 @@ export function initNavbarEvents() {
       const topThemeBtn = document.getElementById('btn-theme-toggle');
       if (topThemeBtn) {
         const topIcon = topThemeBtn.querySelector('.theme-icon') || topThemeBtn;
-        topIcon.innerHTML = isLight ? '🌙' : '☀️';
+        topIcon.innerHTML = isLight ? icon('moon', { size: 15, color: '#38bdf8' }) : icon('sun', { size: 15, color: '#f59e0b' });
         topThemeBtn.title = isLight ? 'Theme: Switch to Dark Mode' : 'Theme: Switch to Daylight / Light Mode';
       }
-      const icon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
-      icon.innerHTML = isLight ? '🌙' : '☀️';
+      const dropThemeIcon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
+      dropThemeIcon.innerHTML = isLight ? icon('moon', { size: 14, color: '#38bdf8' }) : icon('sun', { size: 14, color: '#f59e0b' });
       const text = dropdownThemeBtn.querySelector('span:last-child');
       if (text) text.textContent = isLight ? 'Dark Mode' : 'Daylight Mode';
     });
@@ -775,7 +776,7 @@ export function initNavbarEvents() {
       btn.onclick = (e) => {
         e.stopPropagation();
         const uName = btn.getAttribute('data-user-name') || 'User';
-        alert(`🔒 Access Denied: User '${uName}' currently has No Access (Pending Admin Assignment). Assign a role or permissions in User Management first.`);
+        alert(`Access Denied: User '${uName}' currently has No Access (Pending Admin Assignment). Assign a role or permissions in User Management first.`);
       };
     });
   };
@@ -814,8 +815,8 @@ export function initNavbarEvents() {
 
       if (factoryMatches.length === 0) {
         dropdownResultsContainer.innerHTML = `
-          <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 6px;">
-            ⚠️ No factory accounts match "<strong>${escapeHtml(cleanQ)}</strong>"
+          <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>${icon('alertTriangle', { size: 13, color: '#f87171' })}</span> No factory accounts match "<strong>${escapeHtml(cleanQ)}</strong>"
           </div>
         `;
         return;
@@ -837,19 +838,19 @@ export function initNavbarEvents() {
                   <span style="font-size: 11.5px; font-weight: 700; color: #f8fafc;">${escapeHtml(u.name || u.username)}</span>
                   ${cardNum ? `<span style="font-size: 9.5px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 0 4px; border-radius: 3px; border: 1px solid rgba(56, 189, 248, 0.3); font-family: var(--font-mono);">#${escapeHtml(cardNum)}</span>` : ''}
                 </div>
-                <div style="font-size: 10px; color: ${status.hasAccess ? '#34d399' : '#f87171'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  ${status.hasAccess ? `✓ ${escapeHtml(status.roleName)}` : '🔒 No Access (Pending Admin Assignment)'}
+                <div style="font-size: 10px; color: ${status.hasAccess ? '#34d399' : '#f87171'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                  ${status.hasAccess ? `${icon('check', { size: 11, color: '#34d399' })} ${escapeHtml(status.roleName)}` : `${icon('lock', { size: 11, color: '#f87171' })} No Access (Pending Admin Assignment)`}
                 </div>
               </div>
             </div>
             <div style="flex-shrink: 0;">
               ${status.hasAccess ? `
-                <button type="button" class="btn btn-primary btn-xs btn-nav-switch-user" data-user-id="${u.id}" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: linear-gradient(135deg, #0284c7, #0369a1); cursor: pointer;" title="Enter ${escapeHtml(u.name)}'s account">
-                  Enter ➔
+                <button type="button" class="btn btn-primary btn-xs btn-nav-switch-user" data-user-id="${u.id}" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: linear-gradient(135deg, #0284c7, #0369a1); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Enter ${escapeHtml(u.name)}'s account">
+                  <span>Enter</span> <span>${icon('arrowRight', { size: 10 })}</span>
                 </button>
               ` : `
-                <button type="button" class="btn btn-ghost btn-xs btn-nav-blocked-user" data-user-name="${escapeHtml(u.name)}" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); cursor: not-allowed;" title="No Access (Pending Admin Assignment)">
-                  🔒 Blocked
+                <button type="button" class="btn btn-ghost btn-xs btn-nav-blocked-user" data-user-name="${escapeHtml(u.name)}" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); cursor: not-allowed; display: inline-flex; align-items: center; gap: 3px;" title="No Access (Pending Admin Assignment)">
+                  <span>${icon('lock', { size: 10, color: '#f87171' })}</span> Blocked
                 </button>
               `}
             </div>
@@ -983,14 +984,14 @@ export function initNavbarEvents() {
       document.body.classList.toggle('theme-light', isLight);
       document.documentElement.classList.toggle('theme-light', isLight);
       localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
-      const icon = themeBtn.querySelector('.theme-icon') || themeBtn;
-      icon.innerHTML = isLight ? '🌙' : '☀️';
+      const themeIconEl = themeBtn.querySelector('.theme-icon') || themeBtn;
+      themeIconEl.innerHTML = isLight ? icon('moon', { size: 15, color: '#38bdf8' }) : icon('sun', { size: 15, color: '#f59e0b' });
       themeBtn.title = isLight ? 'Theme: Switch to Dark Mode' : 'Theme: Switch to Daylight / Light Mode';
 
       const dropdownThemeBtn = document.getElementById('btn-dropdown-theme-toggle');
       if (dropdownThemeBtn) {
         const dropIcon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
-        dropIcon.innerHTML = isLight ? '🌙' : '☀️';
+        dropIcon.innerHTML = isLight ? icon('moon', { size: 14, color: '#38bdf8' }) : icon('sun', { size: 14, color: '#f59e0b' });
         const text = dropdownThemeBtn.querySelector('span:last-child');
         if (text) text.textContent = isLight ? 'Dark Mode' : 'Daylight Mode';
       }
@@ -1136,7 +1137,7 @@ export function initNavbarEvents() {
         if (matches.length === 0) {
           searchDropdown.innerHTML = `
             <div style="padding: 24px 16px; text-align: center; color: #94a3b8; font-size: 13px;">
-              <div style="font-size: 28px; margin-bottom: 6px;">🔍</div>
+              <div style="margin-bottom: 8px;">${icon('search', { size: 28, color: '#38bdf8' })}</div>
               <div>No machines found matching <strong style="color: #f8fafc;">"${escapeHtml(q)}"</strong></div>
               <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Try searching by Serial Number (e.g. D/N-A-92, 450), Brand (Juki, Brother), or Line Name</div>
             </div>
@@ -1152,11 +1153,11 @@ export function initNavbarEvents() {
             <div class="universal-search-item" data-idx="${idx}">
               <div class="search-item-header">
                 <div class="search-item-tags">
-                  <span class="search-tag-badge">🏷️ ${escapeHtml(serialTag)}</span>
+                  <span class="search-tag-badge">${icon('tag', { size: 11 })} ${escapeHtml(serialTag)}</span>
                   ${assetTag ? `<span class="search-asset-pill">${escapeHtml(assetTag)}</span>` : ''}
                 </div>
                 <div class="search-item-location">
-                  <span class="search-line-tag">📍 ${escapeHtml(res.lineName)}</span>
+                  <span class="search-line-tag">${icon('mapPin', { size: 11 })} ${escapeHtml(res.lineName)}</span>
                   <span class="search-floor-tag">${escapeHtml(res.floorName)}</span>
                 </div>
               </div>
@@ -1170,7 +1171,7 @@ export function initNavbarEvents() {
                   <span>Model: <strong>${escapeHtml(res.modelStr)}</strong></span>
                 </div>
                 <div class="search-item-auth">
-                  ${res.canOperate ? `<span class="auth-badge-green">✓ Authorized</span>` : `<span class="auth-badge-gray">🔒 View-Only</span>`}
+                  ${res.canOperate ? `<span class="auth-badge-green">${icon('check', { size: 11, color: '#10b981' })} Authorized</span>` : `<span class="auth-badge-gray">${icon('lock', { size: 11 })} View-Only</span>`}
                 </div>
               </div>
             </div>

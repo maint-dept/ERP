@@ -11,6 +11,7 @@ import { authService } from '../services/authService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeDrawerFilter = 'ALL'; // 'ALL', 'UNREAD', or module key
 
@@ -45,7 +46,7 @@ function getModuleMeta(moduleKey) {
     'transfers': { 
       label: 'Machine Transfers', 
       shortLabel: 'Transfers', 
-      icon: '🔄', 
+      icon: icon('refresh', { size: 14, color: '#a855f7' }), 
       color: '#a855f7', 
       bg: 'rgba(168, 85, 247, 0.15)',
       actionText: 'Inspect Gate Pass'
@@ -53,7 +54,7 @@ function getModuleMeta(moduleKey) {
     'machines': { 
       label: 'Machinery Inventory', 
       shortLabel: 'Inventory', 
-      icon: '📦', 
+      icon: icon('box', { size: 14, color: '#0ea5e9' }), 
       color: '#0ea5e9', 
       bg: 'rgba(14, 165, 233, 0.15)',
       actionText: 'View Machine'
@@ -61,7 +62,7 @@ function getModuleMeta(moduleKey) {
     'preventive_maintenance': { 
       label: 'Preventive Maintenance', 
       shortLabel: 'PM Servicing', 
-      icon: '🔧', 
+      icon: icon('wrench', { size: 14, color: '#f59e0b' }), 
       color: '#f59e0b', 
       bg: 'rgba(245, 158, 11, 0.15)',
       actionText: 'Open PM Sheet'
@@ -69,7 +70,7 @@ function getModuleMeta(moduleKey) {
     'breakdowns': { 
       label: 'Machine Breakdowns', 
       shortLabel: 'Breakdowns', 
-      icon: '🚨', 
+      icon: icon('bell', { size: 14, color: '#ef4444' }), 
       color: '#ef4444', 
       bg: 'rgba(239, 68, 68, 0.15)',
       actionText: 'View Breakdown'
@@ -77,7 +78,7 @@ function getModuleMeta(moduleKey) {
     'spare_parts': { 
       label: 'Spare Parts & Stores', 
       shortLabel: 'Spare Parts', 
-      icon: '⚙️', 
+      icon: icon('settings', { size: 14, color: '#06b6d4' }), 
       color: '#06b6d4', 
       bg: 'rgba(6, 182, 212, 0.15)',
       actionText: 'View Spare Part'
@@ -85,7 +86,7 @@ function getModuleMeta(moduleKey) {
     'tools_management': { 
       label: 'Tools & Accessories', 
       shortLabel: 'Tools', 
-      icon: '🧰', 
+      icon: icon('tools', { size: 14, color: '#ec4899' }), 
       color: '#ec4899', 
       bg: 'rgba(236, 72, 153, 0.15)',
       actionText: 'View Tool Kit'
@@ -93,7 +94,7 @@ function getModuleMeta(moduleKey) {
     'et_lab': { 
       label: 'Electronic Lab (ET/ENT)', 
       shortLabel: 'ET Lab', 
-      icon: '🔬', 
+      icon: icon('microscope', { size: 14, color: '#3b82f6' }), 
       color: '#3b82f6', 
       bg: 'rgba(59, 130, 246, 0.15)',
       actionText: 'View Circuit Board'
@@ -101,7 +102,7 @@ function getModuleMeta(moduleKey) {
     'relocate': { 
       label: 'Line Relocation & Audit', 
       shortLabel: 'Relocation', 
-      icon: '📍', 
+      icon: icon('mapPin', { size: 14, color: '#8b5cf6' }), 
       color: '#8b5cf6', 
       bg: 'rgba(139, 92, 246, 0.15)',
       actionText: 'Open Relocate'
@@ -109,7 +110,7 @@ function getModuleMeta(moduleKey) {
     'qr_codes': { 
       label: 'QR Code Management', 
       shortLabel: 'QR Codes', 
-      icon: '📱', 
+      icon: icon('phone', { size: 14, color: '#14b8a6' }), 
       color: '#14b8a6', 
       bg: 'rgba(20, 184, 166, 0.15)',
       actionText: 'View QR Studio'
@@ -117,7 +118,7 @@ function getModuleMeta(moduleKey) {
     'user_management': { 
       label: 'User & Access Mgmt', 
       shortLabel: 'User Access', 
-      icon: '👤', 
+      icon: icon('user', { size: 14, color: '#10b981' }), 
       color: '#10b981', 
       bg: 'rgba(16, 185, 129, 0.15)',
       actionText: 'View User Profile'
@@ -125,7 +126,7 @@ function getModuleMeta(moduleKey) {
     'reports': { 
       label: 'Reports & Analytics', 
       shortLabel: 'Reports', 
-      icon: '📊', 
+      icon: icon('chart', { size: 14, color: '#6366f1' }), 
       color: '#6366f1', 
       bg: 'rgba(99, 102, 241, 0.15)',
       actionText: 'Open Report'
@@ -133,7 +134,7 @@ function getModuleMeta(moduleKey) {
     'master_data': { 
       label: 'Plant Master Data', 
       shortLabel: 'Master Data', 
-      icon: '🏢', 
+      icon: icon('building', { size: 14, color: '#84cc16' }), 
       color: '#84cc16', 
       bg: 'rgba(132, 204, 22, 0.15)',
       actionText: 'View Master Data'
@@ -141,7 +142,7 @@ function getModuleMeta(moduleKey) {
     'audit_logs': { 
       label: 'System Audit Logs', 
       shortLabel: 'Audit Logs', 
-      icon: '📝', 
+      icon: icon('fileText', { size: 14, color: '#94a3b8' }), 
       color: '#94a3b8', 
       bg: 'rgba(148, 163, 184, 0.15)',
       actionText: 'View Audit Trail'
@@ -149,7 +150,7 @@ function getModuleMeta(moduleKey) {
     'settings': { 
       label: 'System Settings', 
       shortLabel: 'Settings', 
-      icon: '⚙️', 
+      icon: icon('settings', { size: 14, color: '#64748b' }), 
       color: '#64748b', 
       bg: 'rgba(100, 116, 139, 0.15)',
       actionText: 'Open Settings'
@@ -158,7 +159,7 @@ function getModuleMeta(moduleKey) {
   return map[moduleKey] || { 
     label: 'General ERP Notice', 
     shortLabel: 'General', 
-    icon: '🔔', 
+    icon: icon('bell', { size: 14, color: '#38bdf8' }), 
     color: '#38bdf8', 
     bg: 'rgba(56, 189, 248, 0.15)',
     actionText: 'Open Details'
@@ -296,7 +297,7 @@ export function renderNotificationsDrawer() {
   const isPushMandatory = webPushService.isMandatory();
   const isSuperAdmin = authService.isSuperAdmin(user);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="drawer-backdrop" id="drawer-notifs-backdrop"></div>
     <div class="drawer-panel" style="width: 520px; max-width: 95vw; background: #0b1120; border-left: 1px solid rgba(56, 189, 248, 0.2); box-shadow: -15px 0 45px rgba(0,0,0,0.7); display: flex; flex-direction: column;">
       
@@ -610,7 +611,7 @@ export function renderNotificationsDrawer() {
       </div>
 
     </div>
-  `;
+  `);
 }
 
 export function initNotificationsDrawerEvents() {
@@ -655,7 +656,7 @@ export function initNotificationsDrawerEvents() {
     btnWebPushEnable.addEventListener('click', async (e) => {
       e.stopPropagation();
       btnWebPushEnable.disabled = true;
-      btnWebPushEnable.textContent = '⏳ Requesting...';
+      btnWebPushEnable.innerHTML = `${icon('clock', { size: 12, color: '#fff' })} Requesting...`;
       const res = await webPushService.requestPermission();
       if (res?.success) {
         notificationService.success('Web Push Notifications successfully activated!');
@@ -704,7 +705,7 @@ export function initNotificationsDrawerEvents() {
     btnWebPushTest.addEventListener('click', async (e) => {
       e.stopPropagation();
       btnWebPushTest.disabled = true;
-      btnWebPushTest.textContent = '⏳ Sending...';
+      btnWebPushTest.innerHTML = `${icon('clock', { size: 12, color: '#fff' })} Sending...`;
       const res = await webPushService.sendTestNotification();
       if (res?.success) {
         notificationService.success('Role-filtered test push sent to your screen!');
@@ -712,7 +713,7 @@ export function initNotificationsDrawerEvents() {
         notificationService.error(res?.error || 'Failed to trigger test push.');
       }
       btnWebPushTest.disabled = false;
-      btnWebPushTest.textContent = '🔔 Test Alert';
+      btnWebPushTest.innerHTML = `${icon('bell', { size: 12, color: '#fff' })} Test Alert`;
     });
   }
 

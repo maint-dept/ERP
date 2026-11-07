@@ -33,6 +33,7 @@
   <link rel="modulepreload" href="js/services/authService.js?v=4.47.0">
   <link rel="modulepreload" href="js/services/router.js?v=4.47.0">
   <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.47.0">
+  <link rel="modulepreload" href="js/components/icons.js?v=4.47.0">
   <link rel="modulepreload" href="js/components/loginView.js?v=4.47.0">
   <link rel="modulepreload" href="js/components/sidebar.js?v=4.47.0">
   <link rel="modulepreload" href="js/components/navbar.js?v=4.47.0">
@@ -282,13 +283,13 @@
       root.innerHTML =
         '<div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #090d16; color: #fff; font-family: sans-serif; padding: 20px;">' +
         '<div style="max-width: 540px; width: 100%; background: #111827; border: 1px solid #ef4444; border-radius: 12px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6); text-align: center;">' +
-        '<div style="font-size: 42px; margin-bottom: 12px;">⚠️</div>' +
+        '<div style="margin-bottom: 16px;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>' +
         '<h2 style="font-size: 18px; font-weight: 800; color: #f87171; margin-bottom: 8px;">Startup Diagnostic Alert</h2>' +
         '<p style="font-size: 13px; color: #cbd5e1; margin-bottom: 16px;">' + (errorMsg || 'The application encountered an issue while initializing components.') + '</p>' +
         (detail ? '<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: #fca5a5; text-align: left; margin-bottom: 20px; word-break: break-word; max-height: 180px; overflow-y: auto; white-space: pre-wrap;">' + detail + '</div>' : '') +
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">' +
-        '<button onclick="window.__forceFreshReload ? window.__forceFreshReload() : window.location.reload()" style="background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">🔄 Fresh Reload &amp; Clear Cache</button>' +
-        '<button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + window.location.pathname + \'?reset=\' + Date.now();" style="background: #374151; color: #e2e8f0; border: 1px solid #4b5563; padding: 10px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;">🧹 Reset Storage &amp; Restart</button>' +
+        '<button onclick="window.__forceFreshReload ? window.__forceFreshReload() : window.location.reload()" style="background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Fresh Reload &amp; Clear Cache</button>' +
+        '<button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + window.location.pathname + \'?reset=\' + Date.now();" style="background: #374151; color: #e2e8f0; border: 1px solid #4b5563; padding: 10px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Reset Storage &amp; Restart</button>' +
         '</div>' +
         '<p style="font-size: 11px; color: #94a3b8; margin-top: 14px; margin-bottom: 0;">Tip: Press <b>Ctrl + Shift + R</b> (or <b>Ctrl + F5</b>) to bypass browser cache.</p>' +
         '</div>' +

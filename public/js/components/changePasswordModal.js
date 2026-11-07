@@ -5,6 +5,7 @@
 
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeProfileTab = 'PROFILE'; // 'PROFILE' | 'PASSWORD'
 
@@ -14,7 +15,7 @@ export function renderChangePasswordModal() {
 
   const isAdminOrSuperAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || (authService.isAdmin && authService.isAdmin()) || (authService.isSuperAdmin && authService.isSuperAdmin());
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-change-password-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">
       <div class="modal-dialog" style="width: 480px; max-width: 95vw; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7); overflow: hidden;">
         
@@ -270,7 +271,7 @@ export function renderChangePasswordModal() {
 
       </div>
     </div>
-  `;
+  `);
 }
 
 export function initChangePasswordModalEvents() {
@@ -279,17 +280,19 @@ export function initChangePasswordModalEvents() {
 
   const showAlert = (msg, isSuccess = false) => {
     if (!alertBox) return;
-    alertBox.style.display = 'block';
+    alertBox.style.display = 'flex';
+    alertBox.style.alignItems = 'center';
+    alertBox.style.gap = '8px';
     if (isSuccess) {
       alertBox.style.background = 'rgba(16, 185, 129, 0.15)';
       alertBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
       alertBox.style.color = '#34d399';
-      alertBox.textContent = '✅ ' + msg;
+      alertBox.innerHTML = `${icon('checkCircle', { size: 15, color: '#34d399' })} <span>${msg}</span>`;
     } else {
       alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
       alertBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
       alertBox.style.color = '#f87171';
-      alertBox.textContent = '⚠️ ' + msg;
+      alertBox.innerHTML = `${icon('alertTriangle', { size: 15, color: '#f87171' })} <span>${msg}</span>`;
     }
   };
 
@@ -359,7 +362,7 @@ export function initChangePasswordModalEvents() {
       }
 
       const submitBtn = formProfile.querySelector('button[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Saving...'; }
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = `${icon('clock', { size: 14, color: '#fff' })} Saving...`; }
 
       try {
         const updated = await authService.updateProfile(profilePayload);
@@ -374,7 +377,7 @@ export function initChangePasswordModalEvents() {
           state.emit('inventory:updated');
         }, 1200);
       } catch (err) {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '💾 Save Profile Settings'; }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `${icon('save', { size: 14, color: '#fff' })} Save Profile Settings`; }
         showAlert(err.message || 'Failed to update profile.');
       }
     });
@@ -471,18 +474,18 @@ export function initChangePasswordModalEvents() {
       }
 
       const submitBtn = formPassword.querySelector('[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Saving...'; }
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = `${icon('clock', { size: 14, color: '#fff' })} Saving...`; }
 
       try {
         await authService.changePassword(cur, newP);
-        showAlert('✓ Password updated successfully. For your security, other active device sessions have been automatically logged out.', true);
+        showAlert('Password updated successfully. For your security, other active device sessions have been automatically logged out.', true);
         setTimeout(() => {
           closeModal();
         }, 1600);
       } catch (err) {
         showAlert(err.message || 'Failed to update password.');
       } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '🔒 Update Password'; }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `${icon('lock', { size: 14, color: '#fff' })} Update Password`; }
       }
     });
   }

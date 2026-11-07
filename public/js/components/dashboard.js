@@ -21,6 +21,7 @@ import { transferService } from '../services/transferService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
 import { needleService } from '../services/needleService.js';
 import { state } from '../state.js';
+import { icon } from './icons.js?v=4.47.0';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -509,7 +510,7 @@ export function renderDashboard() {
         <div class="dash-dist-card card-cyan">
           <div class="dash-dist-header">
             <div class="dash-dist-title-box">
-              <span class="dash-dist-icon">🏭</span>
+              <span class="dash-dist-icon" style="display: inline-flex; align-items: center;">${icon('factory', { size: 20, color: '#0284c7' })}</span>
               <h2 class="dash-dist-title">1. Machine Overview</h2>
             </div>
             <span class="dash-dist-pill pill-cyan">Total: ${totalMachines.toLocaleString()} &bull; ${currentFilterLabel}</span>
@@ -584,7 +585,7 @@ export function renderDashboard() {
         <div class="dash-dist-card card-emerald">
           <div class="dash-dist-header">
             <div class="dash-dist-title-box">
-              <span class="dash-dist-icon">🔁</span>
+              <span class="dash-dist-icon" style="display: inline-flex; align-items: center;">${icon('transfers', { size: 20, color: '#10b981' })}</span>
               <h2 class="dash-dist-title">2. Machine Transfers</h2>
             </div>
             <span class="dash-dist-pill pill-emerald">Total: ${totalTransfers.toLocaleString()} &bull; ${currentFilterLabel}</span>
@@ -592,7 +593,7 @@ export function renderDashboard() {
 
           <div class="dash-dist-mini-status">
             <span class="mini-status-label"><span class="status-dot dot-emerald"></span> Relocation Clearance: <strong>${transferCompletionRate}%</strong></span>
-            <span class="mini-status-value ${totalTransfers === 0 ? 'text-slate' : 'text-emerald'}">${totalTransfers === 0 ? 'No Transfers Logged' : '✓ Live Operations'}</span>
+            <span class="mini-status-value ${totalTransfers === 0 ? 'text-slate' : 'text-emerald'}">${totalTransfers === 0 ? 'No Transfers Logged' : `${icon('check', { size: 12, color: '#10b981' })} Live Operations`}</span>
           </div>
 
           <div class="dash-dist-list custom-scroll">
@@ -659,7 +660,7 @@ export function renderDashboard() {
         <div class="dash-dist-card card-purple">
           <div class="dash-dist-header">
             <div class="dash-dist-title-box">
-              <span class="dash-dist-icon">🔧</span>
+              <span class="dash-dist-icon" style="display: inline-flex; align-items: center;">${icon('wrench', { size: 20, color: '#a855f7' })}</span>
               <h2 class="dash-dist-title">3. Machine Servicing</h2>
             </div>
             <span class="dash-dist-pill pill-purple">Scope: ${pmTotalMachines.toLocaleString()} &bull; ${currentFilterLabel}</span>
@@ -667,7 +668,7 @@ export function renderDashboard() {
 
           <div class="dash-dist-mini-status">
             <span class="mini-status-label"><span class="status-dot dot-purple"></span> PM Compliance: <strong>${servicingComplianceRate}%</strong></span>
-            <span class="mini-status-value ${pmOverdue > 0 ? 'text-rose' : 'text-emerald'}">${pmOverdue > 0 ? `🚨 ${pmOverdue} Overdue Units` : '✓ Schedules on Track'}</span>
+            <span class="mini-status-value ${pmOverdue > 0 ? 'text-rose' : 'text-emerald'}">${pmOverdue > 0 ? `${icon('bell', { size: 12, color: '#ef4444' })} ${pmOverdue} Overdue Units` : `${icon('check', { size: 12, color: '#10b981' })} Schedules on Track`}</span>
           </div>
 
           <div class="dash-dist-list custom-scroll">
@@ -734,7 +735,7 @@ export function renderDashboard() {
         <div class="dash-dist-card card-amber">
           <div class="dash-dist-header">
             <div class="dash-dist-title-box">
-              <span class="dash-dist-icon">🪡</span>
+              <span class="dash-dist-icon" style="display: inline-flex; align-items: center;">${icon('needle', { size: 20, color: '#f59e0b' })}</span>
               <h2 class="dash-dist-title">4. Needle Data</h2>
             </div>
             <span class="dash-dist-pill pill-amber">Total Stock: ${sumNeedleStock.toLocaleString()} &bull; 4 Types</span>
@@ -742,7 +743,7 @@ export function renderDashboard() {
 
           <div class="dash-dist-mini-status">
             <span class="mini-status-label"><span class="status-dot dot-emerald"></span> Stock Coverage: <strong>${sumNeedlePending === 0 ? 'Fully Covered' : `${sumNeedlePending} Deficit`}</strong></span>
-            <span class="mini-status-value ${sumNeedlePending === 0 ? 'text-emerald' : 'text-amber'}">${sumNeedlePending === 0 ? '✓ Stock Sufficient' : '⚠️ Reorder Needed'}</span>
+            <span class="mini-status-value ${sumNeedlePending === 0 ? 'text-emerald' : 'text-amber'}">${sumNeedlePending === 0 ? `${icon('check', { size: 12, color: '#10b981' })} Stock Sufficient` : `${icon('alertTriangle', { size: 12, color: '#f59e0b' })} Reorder Needed`}</span>
           </div>
 
           <div class="dash-dist-list custom-scroll">
@@ -759,7 +760,7 @@ export function renderDashboard() {
                     </span>
                     <span class="dash-dist-stat ${isDeficit ? 'stat-rose' : 'stat-emerald'}">
                       Req: ${row.requiredQty.toLocaleString()} | Stock: ${row.availableStock.toLocaleString()}
-                      <span class="dash-needle-badge ${isDeficit ? 'badge-rose' : 'badge-emerald'}">${isDeficit ? `-${row.pendingQuantity}` : '✓ OK'}</span>
+                      <span class="dash-needle-badge ${isDeficit ? 'badge-rose' : 'badge-emerald'}">${isDeficit ? `-${row.pendingQuantity}` : `${icon('check', { size: 11, color: '#10b981' })} OK`}</span>
                     </span>
                   </div>
                   <div class="dash-dist-desc">${row.machineCount.toLocaleString()} Assigned Machines &bull; Required: ${row.requiredQty.toLocaleString()} pcs</div>

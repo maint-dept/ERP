@@ -4,11 +4,12 @@
  * Premium Cyber-Executive Security Gateway Interface (v4.26.56)
  */
 
-import { authService } from '../services/authService.js?v=4.46.1';
-import { emailService } from '../services/emailService.js?v=4.46.1';
-import { state } from '../state.js?v=4.46.1';
-import { router } from '../services/router.js?v=4.46.1';
-import { homepageService } from '../services/homepageService.js?v=4.46.1';
+import { authService } from '../services/authService.js?v=4.47.0';
+import { emailService } from '../services/emailService.js?v=4.47.0';
+import { state } from '../state.js?v=4.47.0';
+import { router } from '../services/router.js?v=4.47.0';
+import { homepageService } from '../services/homepageService.js?v=4.47.0';
+import { icon } from './icons.js?v=4.47.0';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
 let resetTargetUsername = '';
@@ -172,8 +173,8 @@ export function renderLoginView(isAdminGateway = false) {
         <!-- Top Executive Navigation Ribbon -->
         <header style="padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;" id="login-nav-home">
-            <div style="width: 36px; height: 36px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
-              ${isAdminGateway ? '🛡️' : '🔧'}
+            <div style="width: 36px; height: 36px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
+              ${isAdminGateway ? icon('shield', { size: 20, color: '#fff' }) : icon('wrench', { size: 20, color: '#fff' })}
             </div>
             <div style="display: flex; flex-direction: column;">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -205,8 +206,8 @@ export function renderLoginView(isAdminGateway = false) {
           
           <!-- Card Header -->
           <div style="text-align: center; margin-bottom: 18px;">
-            <div class="gateway-icon-box" style="width: 52px; height: 52px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 10px;">
-              ${loginMode === 'LOGIN' ? (isAdminGateway ? '🛡️' : '👤') : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
+            <div class="gateway-icon-box" style="width: 52px; height: 52px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+              ${loginMode === 'LOGIN' ? (isAdminGateway ? icon('shield', { size: 26, color: '#10b981' }) : icon('user', { size: 26, color: '#38bdf8' })) : (loginMode === 'FIRST_LOGIN_CHANGE' ? icon('key', { size: 26, color: '#f59e0b' }) : icon('mail', { size: 26, color: '#38bdf8' }))}
             </div>
 
             <h2 style="font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin: 0 0 ${(loginMode === 'LOGIN' && !isAdminGateway) ? '0' : '4px'} 0;">
@@ -226,19 +227,19 @@ export function renderLoginView(isAdminGateway = false) {
           ${isMaintActive ? `
             <div style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid rgba(245, 158, 11, 0.5); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 12px; color: #fbbf24; line-height: 1.45;">
               <div style="font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #fef08a;">
-                <span>🛠️</span> System Maintenance Mode Active
+                <span>${icon('tools', { size: 14, color: '#fef08a' })}</span> System Maintenance Mode Active
               </div>
               <div style="color: #fef9c3;">
                 ${maintConfig.message || 'Routine maintenance is in progress.'}
               </div>
               ${maintConfig.estimatedEnd ? `
                 <div style="margin-top: 5px; font-size: 11.5px; color: #fde68a;">
-                  ⏳ Expected completion: <strong>${maintConfig.estimatedEnd}</strong>
+                  Expected completion: <strong>${maintConfig.estimatedEnd}</strong>
                 </div>
               ` : ''}
               ${isAdminGateway ? `
-                <div style="margin-top: 6px; font-size: 11px; color: #86efac; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px;">
-                  ✓ Admin bypass authenticated. You can log in to manage system updates.
+                <div style="margin-top: 6px; font-size: 11px; color: #86efac; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px; display: flex; align-items: center; gap: 4px;">
+                  <span>${icon('check', { size: 12, color: '#86efac' })}</span> Admin bypass authenticated. You can log in to manage system updates.
                 </div>
               ` : `
                 <div style="margin-top: 6px; font-size: 11px; color: #cbd5e1; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px;">
@@ -260,9 +261,9 @@ export function renderLoginView(isAdminGateway = false) {
                 <label class="form-label" style="font-size: 12px; color: #e2e8f0; font-weight: 700; display: block; margin-bottom: 5px;">
                   ${isAdminGateway ? 'Username or Email' : 'Employee ID, Username, or Email'}
                 </label>
-                <div class="gateway-input-box">
-                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.85; pointer-events: none; z-index: 5;">
-                    ${isAdminGateway ? '🛡️' : '👤'}
+                <div class="gateway-input-box" style="position: relative; display: flex; align-items: center;">
+                  <span style="position: absolute; left: 14px; display: inline-flex; align-items: center; pointer-events: none; z-index: 5;">
+                    ${isAdminGateway ? icon('shield', { size: 16, color: '#10b981' }) : icon('user', { size: 16, color: '#38bdf8' })}
                   </span>
                   <input 
                     type="text" 
@@ -283,13 +284,13 @@ export function renderLoginView(isAdminGateway = false) {
                   <label class="form-label" style="font-size: 12px; color: #e2e8f0; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span>Password</span>
                     <span id="caps-lock-warning" style="display: none; font-size: 10.5px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 1px 6px; border-radius: 4px; font-weight: 700;">
-                      ⚠️ Caps Lock is ON
+                      Caps Lock is ON
                     </span>
                   </label>
                   <a href="${forgotHref}" id="link-forgot-password" style="font-size: 12px; color: ${accentLight}; text-decoration: none; font-weight: 700;">Forgot Password?</a>
                 </div>
-                <div class="gateway-input-box">
-                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.85; pointer-events: none; z-index: 5;">🔒</span>
+                <div class="gateway-input-box" style="position: relative; display: flex; align-items: center;">
+                  <span style="position: absolute; left: 14px; display: inline-flex; align-items: center; pointer-events: none; z-index: 5;">${icon('lock', { size: 16, color: '#94a3b8' })}</span>
                   <input 
                     type="password" 
                     id="inp-full-password" 
@@ -300,8 +301,8 @@ export function renderLoginView(isAdminGateway = false) {
                     autocomplete="current-password"
                     style="padding-left: 42px !important; padding-right: 46px !important; background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 9px; color: #fff; font-size: 13px; height: 42px;"
                   />
-                  <button type="button" id="btn-toggle-pwd-visibility" style="position: absolute; right: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 3px 7px; cursor: pointer; color: #94a3b8; font-size: 13px; transition: all 0.2s;" title="Toggle Password Visibility">
-                    👁️
+                  <button type="button" id="btn-toggle-pwd-visibility" style="position: absolute; right: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 6px; cursor: pointer; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Toggle Password Visibility">
+                    ${icon('eye', { size: 14, color: '#94a3b8' })}
                   </button>
                 </div>
               </div>
@@ -317,7 +318,7 @@ export function renderLoginView(isAdminGateway = false) {
               <!-- Submit Button -->
               <button type="submit" id="btn-submit-full-login" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 800; font-size: 14px; padding: 11px; border-radius: 9px; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer;">
                 <span>${isAdminGateway ? 'Login as Admin' : 'Sign In'}</span>
-                <span>➔</span>
+                <span>${icon('arrowRight', { size: 14 })}</span>
               </button>
 
             </form>
@@ -335,8 +336,9 @@ export function renderLoginView(isAdminGateway = false) {
           <!-- FORM MODE 2: FIRST-TIME LOGIN PASSWORD SETUP -->
           ${loginMode === 'FIRST_LOGIN_CHANGE' ? `
             <form id="form-first-login-change">
-              <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 12px; color: #fbbf24; line-height: 1.4;">
-                ⚠️ <strong>Security Notice:</strong> The administrator requires you to set your own password on first login.
+              <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 12px; color: #fbbf24; line-height: 1.4; display: flex; align-items: center; gap: 8px;">
+                <span>${icon('alertTriangle', { size: 14, color: '#fbbf24' })}</span>
+                <span><strong>Security Notice:</strong> The administrator requires you to set your own password on first login.</span>
               </div>
 
               <div class="form-group" style="margin-bottom: 14px;">
@@ -365,8 +367,8 @@ export function renderLoginView(isAdminGateway = false) {
                 />
               </div>
 
-              <button type="submit" id="btn-submit-first-login-change" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 800; padding: 11px; border-radius: 8px; font-size: 13.5px; width: 100%;">
-                💾 Save Password &amp; Enter System
+              <button type="submit" id="btn-submit-first-login-change" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 800; padding: 11px; border-radius: 8px; font-size: 13.5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>${icon('save', { size: 15 })}</span> Save Password &amp; Enter System
               </button>
             </form>
           ` : ''}
@@ -386,8 +388,8 @@ export function renderLoginView(isAdminGateway = false) {
                 />
               </div>
 
-              <button type="submit" id="btn-submit-forgot-request" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13.5px; width: 100%;">
-                📩 Send Password Reset Code
+              <button type="submit" id="btn-submit-forgot-request" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13.5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>${icon('mail', { size: 15 })}</span> Send Password Reset Code
               </button>
 
               <div style="text-align: center; margin-top: 16px;">
@@ -450,8 +452,8 @@ export function renderLoginView(isAdminGateway = false) {
                 />
               </div>
 
-              <button type="submit" id="btn-submit-forgot-verify" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13.5px; width: 100%;">
-                💾 Set Password &amp; Sign In
+              <button type="submit" id="btn-submit-forgot-verify" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13.5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>${icon('save', { size: 15 })}</span> Set Password &amp; Sign In
               </button>
 
               <div style="text-align: center; margin-top: 16px;">
@@ -520,7 +522,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
     const invalidReason = sessionStorage.getItem('al_muslim_session_invalidated_reason');
     if (invalidReason === 'PASSWORD_CHANGED') {
       sessionStorage.removeItem('al_muslim_session_invalidated_reason');
-      showAlert('🔒 Security Alert: Your password was changed on another device. Other active sessions have been automatically logged out for your account security. Please sign in with your new password.', 'warning');
+      showAlert('Security Alert: Your password was changed on another device. Other active sessions have been automatically logged out for your account security. Please sign in with your new password.', 'warning');
     }
   } catch (_) {}
 
@@ -531,10 +533,10 @@ export function initLoginViewEvents(isAdminGateway = false) {
     toggleBtn.addEventListener('click', () => {
       if (pwdInput.type === 'password') {
         pwdInput.type = 'text';
-        toggleBtn.textContent = '🙈';
+        toggleBtn.innerHTML = icon('eyeOff', { size: 14, color: '#38bdf8' });
       } else {
         pwdInput.type = 'password';
-        toggleBtn.textContent = '👁️';
+        toggleBtn.innerHTML = icon('eye', { size: 14, color: '#94a3b8' });
       }
     });
   }
@@ -607,7 +609,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
       const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 0.8s linear infinite;">⚡</span> Authenticating...';
+        submitBtn.innerHTML = '<span style="display:inline-flex; align-items:center; animation:spin 0.8s linear infinite;">' + icon('refresh', { size: 14, color: '#fff' }) + '</span> Authenticating...';
       }
 
       try {
@@ -632,7 +634,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
 
         if (submitBtn) {
           submitBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
-          submitBtn.innerHTML = '<span style="font-size: 15px;">✓</span> Verified! Entering System...';
+          submitBtn.innerHTML = '<span style="display:inline-flex; align-items:center; gap:6px;">' + icon('checkCircle', { size: 16, color: '#fff' }) + ' Verified! Entering System...</span>';
         }
 
         const redirectParam = router.parseCurrentRoute().params.redirect || 
@@ -723,7 +725,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
       } catch (err) {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = '💾 Save Password';
+          submitBtn.innerHTML = icon('save', { size: 14 }) + ' Save Password';
         }
         showAlert(err.message || 'Failed to update password.');
       }
@@ -829,7 +831,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
 
       try {
         authService.completePasswordReset(resetTargetUsername, otp, newPwd);
-        alert('✅ Password reset successful! You can now sign in with your new password.');
+        alert('Password reset successful! You can now sign in with your new password.');
         loginMode = 'LOGIN';
         state.set('loginActiveTab', null);
         if (_currentIsAdminGateway) {

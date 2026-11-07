@@ -18,6 +18,7 @@ import { notificationService } from '../services/notificationService.js';
 import { db } from '../db/dbClient.js';
 import { PostgresAdapter } from '../db/adapters/postgresAdapter.js';
 import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
+import { icon } from './icons.js?v=4.47.0';
 
 // Provider specifications with fields, default values, and documentation
 export const PROVIDER_SPECS = {
@@ -25,7 +26,7 @@ export const PROVIDER_SPECS = {
     key: 'MYSQL',
     name: 'MySQL Database (cPanel / Paid Hosting)',
     badge: 'SQL · Primary Master RDBMS',
-    icon: '🐬',
+    icon: icon('database', { size: 18, color: '#00758f' }),
     color: '#00758f',
     description: 'High-performance SQL database engine with InnoDB transaction guarantees. Authoritative Master database for ERP on cPanel / Paid Hosting.',
     fields: [
@@ -42,7 +43,7 @@ export const PROVIDER_SPECS = {
     key: 'POSTGRESQL',
     name: 'PostgreSQL Database',
     badge: 'SQL · Secondary Replica',
-    icon: '🐘',
+    icon: icon('server', { size: 18, color: '#336791' }),
     color: '#336791',
     description: 'Enterprise Relational Database with ACID compliance and full transactional integrity. Secondary sync backup target.',
     fields: [
@@ -60,17 +61,17 @@ export const PROVIDER_SPECS = {
 
 // Unified Core Database Schemas
 export const CORE_SCHEMAS = [
-  { name: 'machines', icon: '🏭', desc: 'Sewing, cutting, finishing, knitting and boiler assets' },
-  { name: 'machine_categories', icon: '🏷️', desc: 'Classification: SNLS, DNLS, Overlock, Interlock, etc.' },
-  { name: 'brands', icon: '🏢', desc: 'Juki, Brother, Pegasus, Kansai, Siruba, Jack' },
-  { name: 'locations', icon: '📍', desc: 'Building, Floor, Line, Room and Zone hierarchical positions' },
-  { name: 'machine_movements', icon: '🔄', desc: 'Historical line-to-line, floor, or factory transfer records' },
-  { name: 'maintenance', icon: '🔧', desc: 'Preventive schedules, breakdown logs, job cards & repairs' },
-  { name: 'spare_parts', icon: '⚙️', desc: 'Needles, loopers, rotary hooks, belts, knives catalog' },
-  { name: 'stock_transactions', icon: '📦', desc: 'Stock In/Out ledger, requisitions & adjustments' },
-  { name: 'suppliers', icon: '🤝', desc: 'Parts vendors, machinery dealers, service contractors' },
-  { name: 'users', icon: '👤', desc: 'Authentication, RBAC roles (Admin, Manager, Mechanic)' },
-  { name: 'audit_logs', icon: '📜', desc: 'Tamper-evident logs of all ERP data updates and actions' }
+  { name: 'machines', icon: icon('factory', { size: 15, color: '#38bdf8' }), desc: 'Sewing, cutting, finishing, knitting and boiler assets' },
+  { name: 'machine_categories', icon: icon('tag', { size: 15, color: '#a855f7' }), desc: 'Classification: SNLS, DNLS, Overlock, Interlock, etc.' },
+  { name: 'brands', icon: icon('building', { size: 15, color: '#0284c7' }), desc: 'Juki, Brother, Pegasus, Kansai, Siruba, Jack' },
+  { name: 'locations', icon: icon('mapPin', { size: 15, color: '#10b981' }), desc: 'Building, Floor, Line, Room and Zone hierarchical positions' },
+  { name: 'machine_movements', icon: icon('transfers', { size: 15, color: '#f59e0b' }), desc: 'Historical line-to-line, floor, or factory transfer records' },
+  { name: 'maintenance', icon: icon('wrench', { size: 15, color: '#f43f5e' }), desc: 'Preventive schedules, breakdown logs, job cards & repairs' },
+  { name: 'spare_parts', icon: icon('gear', { size: 15, color: '#64748b' }), desc: 'Needles, loopers, rotary hooks, belts, knives catalog' },
+  { name: 'stock_transactions', icon: icon('box', { size: 15, color: '#06b6d4' }), desc: 'Stock In/Out ledger, requisitions & adjustments' },
+  { name: 'suppliers', icon: icon('briefcase', { size: 15, color: '#8b5cf6' }), desc: 'Parts vendors, machinery dealers, service contractors' },
+  { name: 'users', icon: icon('users', { size: 15, color: '#3b82f6' }), desc: 'Authentication, RBAC roles (Admin, Manager, Mechanic)' },
+  { name: 'audit_logs', icon: icon('fileText', { size: 15, color: '#94a3b8' }), desc: 'Tamper-evident logs of all ERP data updates and actions' }
 ];
 
 // Storage keys
@@ -311,8 +312,9 @@ function getDashboardSyncState() {
 
   // Map provider type → display icon
   const TYPE_ICONS = {
-    POSTGRESQL: '🐘', POSTGRES: '🐘',
-    MYSQL: '🐬'
+    POSTGRESQL: icon('server', { size: 16, color: '#38bdf8' }),
+    POSTGRES: icon('server', { size: 16, color: '#38bdf8' }),
+    MYSQL: icon('database', { size: 16, color: '#38bdf8' })
   };
 
   // Only secondary databases are shown in fan-out / secondary list
@@ -322,7 +324,7 @@ function getDashboardSyncState() {
     const type  = (conf.type || '').toUpperCase();
     const m     = metrics[conf.id] || {};
     const name  = conf.name || conf.type || 'Unknown';
-    const icon  = TYPE_ICONS[type] || '🗄️';
+    const iconStr  = TYPE_ICONS[type] || icon('database', { size: 16, color: '#38bdf8' });
 
     // Auto-clean stale historical blips when dual-write is actively working & healthy
     if (conf.enabled && conf.autoSync !== false && !(syncManager && syncManager.isFailoverActive)) {
@@ -471,12 +473,14 @@ export function renderDatabaseConfigView() {
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
         <div>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <h1 style="font-size: 26px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.5px;">🗄️ Data Engine</h1>
+            <h1 style="font-size: 26px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px;">
+              <span>${icon('database', { size: 26, color: '#38bdf8' })}</span> <span>Data Engine</span>
+            </h1>
             <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">
               v4.24.6 Active
             </span>
-            <span id="badge-auto-sync" style="background: ${state.autoSync ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${state.autoSync ? '#10b981' : '#ef4444'}; color: ${state.autoSync ? '#34d399' : '#f87171'}; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">
-              ${state.autoSync ? '🟢 Auto Sync ON' : '🔴 Auto Sync OFF'}
+            <span id="badge-auto-sync" style="background: ${state.autoSync ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${state.autoSync ? '#10b981' : '#ef4444'}; color: ${state.autoSync ? '#34d399' : '#f87171'}; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;">
+              ${state.autoSync ? `${icon('dotGreen', { size: 8 })} Auto Sync ON` : `${icon('dotRed', { size: 8 })} Auto Sync OFF`}
             </span>
           </div>
           <p style="font-size: 13.5px; color: var(--text-secondary); margin: 6px 0 0;">
@@ -486,18 +490,18 @@ export function renderDatabaseConfigView() {
 
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <button id="btn-toggle-auto-sync" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: ${state.autoSync ? '#10b981' : '#64748b'}; color: ${state.autoSync ? '#34d399' : '#cbd5e1'}; display: flex; align-items: center; gap: 6px;">
-            <span>${state.autoSync ? '🟢 Auto-Sync is ON (Instant)' : '▶️ Turn Auto-Sync ON'}</span>
+            <span>${state.autoSync ? `${icon('dotGreen', { size: 8 })} Auto-Sync is ON (Instant)` : `${icon('zap', { size: 12, color: '#38bdf8' })} Turn Auto-Sync ON`}</span>
           </button>
           <button id="btn-sync-all-providers" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-            <span>🔄 Verify &amp; Audit All DBs</span>
+            <span>${icon('refresh', { size: 13, color: '#38bdf8' })} Verify &amp; Audit All DBs</span>
           </button>
           ${totalMissing > 0 ? `
             <button id="btn-fix-all-missing" class="btn btn-warning btn-sm" style="font-weight: 700; background: #f59e0b; color: #000; border: none; display: flex; align-items: center; gap: 6px;">
-              <span>⚡ Fix &amp; Re-sync Missing (${totalMissing})</span>
+              <span>${icon('zap', { size: 13, color: '#000' })} Fix &amp; Re-sync Missing (${totalMissing})</span>
             </button>
           ` : `
             <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
-              ⚡ Dual-DB Auto-Replication: Active
+              ${icon('zap', { size: 12, color: '#34d399' })} Dual-DB Auto-Replication: Active
             </span>
           `}
         </div>
@@ -506,14 +510,14 @@ export function renderDatabaseConfigView() {
       <!-- Direct cPanel Connection Quick Banner -->
       <div class="cpanel-quick-banner" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
         <div style="display: flex; align-items: center; gap: 14px; min-width: 280px;">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
-            🐬
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            ${icon('database', { size: 22, color: '#38bdf8' })}
           </div>
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="cpanel-title-text" style="font-size: 15px; font-weight: 800; color: #fff;">Direct cPanel MySQL Connection</span>
-              <span id="cpanel-status-pill" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
-                🟢 Connected · Master Source
+              <span id="cpanel-status-pill" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px;">
+                ${icon('dotGreen', { size: 8 })} Connected · Master Source
               </span>
             </div>
             <div class="cpanel-desc-text" style="font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; font-family: monospace;">
@@ -523,13 +527,13 @@ export function renderDatabaseConfigView() {
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <a href="api/mysql_api.php" download="mysql_api.php" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; display: flex; align-items: center; gap: 6px; text-decoration: none;">
-            <span>📥</span> <span>Download mysql_api.php</span>
+            <span>${icon('download', { size: 13, color: '#38bdf8' })}</span> <span>Download mysql_api.php</span>
           </a>
           <button id="btn-quick-test-cpanel" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: #10b981; color: #34d399; display: flex; align-items: center; gap: 6px;">
-            <span>🔌</span> <span>Test cPanel Connection</span>
+            <span>${icon('zap', { size: 13, color: '#34d399' })}</span> <span>Test cPanel Connection</span>
           </button>
           <button id="btn-quick-config-cpanel" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);">
-            <span>⚙️</span> <span>Configure cPanel Directly</span>
+            <span>${icon('settings', { size: 13, color: '#fff' })}</span> <span>Configure cPanel Directly</span>
           </button>
         </div>
       </div>
@@ -541,7 +545,7 @@ export function renderDatabaseConfigView() {
         <div class="db-status-card" style="background: #090e1a; border: 1.5px solid #10b981; border-left: 4px solid #10b981; border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-              <span style="font-size: 18px;">📊</span>
+              <span style="display: inline-flex; align-items: center;">${icon('chart', { size: 18, color: '#fbbf24' })}</span>
               <h2 style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 0; letter-spacing: 0.2px;">Database Status</h2>
             </div>
 

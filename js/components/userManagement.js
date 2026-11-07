@@ -650,25 +650,25 @@ export function renderUserManagement() {
             
             <!-- Group -->
             <select id="uam-filter-group" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 120px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Enterprise Group">
-              <option value="ALL" ${filterGroup === 'ALL' ? 'selected' : ''}>🏢 All Groups</option>
+              <option value="ALL" ${filterGroup === 'ALL' ? 'selected' : ''}>All Groups</option>
               ${allGroups.map(g => `<option value="${g.id}" ${filterGroup === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
             </select>
 
             <!-- Unit -->
             <select id="uam-filter-unit" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 135px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Manufacturing Unit">
-              <option value="ALL" ${filterUnit === 'ALL' ? 'selected' : ''}>🏭 All Units</option>
+              <option value="ALL" ${filterUnit === 'ALL' ? 'selected' : ''}>All Units</option>
               ${allUnits.map(u => `<option value="${u.id}" ${filterUnit === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
             </select>
 
             <!-- Floor -->
             <select id="uam-filter-floor" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 110px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Factory Floor">
-              <option value="ALL" ${filterFloor === 'ALL' ? 'selected' : ''}>🏢 All Floors</option>
+              <option value="ALL" ${filterFloor === 'ALL' ? 'selected' : ''}>All Floors</option>
               ${allFloors.map(f => `<option value="${f.id}" ${filterFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
             </select>
 
             <!-- Line -->
             <select id="uam-filter-line" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 105px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Production Line">
-              <option value="ALL" ${filterLine === 'ALL' ? 'selected' : ''}>🧵 All Lines</option>
+              <option value="ALL" ${filterLine === 'ALL' ? 'selected' : ''}>All Lines</option>
               ${allLines.map(l => `<option value="${l.id}" ${filterLine === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
             </select>
 
@@ -677,30 +677,30 @@ export function renderUserManagement() {
 
             <!-- Designation -->
             <select id="uam-filter-desig" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 130px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Designation">
-              <option value="ALL" ${filterDesignation === 'ALL' ? 'selected' : ''}>💼 All Designations</option>
+              <option value="ALL" ${filterDesignation === 'ALL' ? 'selected' : ''}>All Designations</option>
               ${allDesignations.map(d => `<option value="${d}" ${filterDesignation === d ? 'selected' : ''}>${d}</option>`).join('')}
             </select>
 
             <!-- Status -->
             <select id="uam-filter-status" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 95px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Status">
-              <option value="ALL" ${filterStatus === 'ALL' ? 'selected' : ''}>⚡ All Status</option>
-              <option value="ACTIVE" ${filterStatus === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
-              <option value="INACTIVE" ${filterStatus === 'INACTIVE' ? 'selected' : ''}>🔴 Inactive</option>
+              <option value="ALL" ${filterStatus === 'ALL' ? 'selected' : ''}>All Status</option>
+              <option value="ACTIVE" ${filterStatus === 'ACTIVE' ? 'selected' : ''}>Active</option>
+              <option value="INACTIVE" ${filterStatus === 'INACTIVE' ? 'selected' : ''}>Inactive</option>
             </select>
 
             <!-- Account Link Status -->
             <select id="uam-filter-account-link" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 115px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Account Link Status">
-              <option value="ALL" ${filterAccountLink === 'ALL' ? 'selected' : ''}>👤 All Accounts</option>
-              <option value="LINKED" ${filterAccountLink === 'LINKED' ? 'selected' : ''}>✓ Created</option>
-              <option value="NOT_CREATED" ${filterAccountLink === 'NOT_CREATED' ? 'selected' : ''}>⏳ Missing</option>
+              <option value="ALL" ${filterAccountLink === 'ALL' ? 'selected' : ''}>All Accounts</option>
+              <option value="LINKED" ${filterAccountLink === 'LINKED' ? 'selected' : ''}>Created</option>
+              <option value="NOT_CREATED" ${filterAccountLink === 'NOT_CREATED' ? 'selected' : ''}>Missing</option>
             </select>
 
             <!-- Password Status -->
             <select id="uam-filter-pass-status" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 115px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Password Status">
-              <option value="ALL" ${filterPasswordStatus === 'ALL' ? 'selected' : ''}>🔑 All Passwords</option>
-              <option value="SETUP" ${filterPasswordStatus === 'SETUP' ? 'selected' : ''}>✅ Active</option>
-              <option value="TEMPORARY" ${filterPasswordStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary</option>
-              <option value="PENDING" ${filterPasswordStatus === 'PENDING' ? 'selected' : ''}>⚪ Pending</option>
+              <option value="ALL" ${filterPasswordStatus === 'ALL' ? 'selected' : ''}>All Passwords</option>
+              <option value="SETUP" ${filterPasswordStatus === 'SETUP' ? 'selected' : ''}>Active</option>
+              <option value="TEMPORARY" ${filterPasswordStatus === 'TEMPORARY' ? 'selected' : ''}>Temporary</option>
+              <option value="PENDING" ${filterPasswordStatus === 'PENDING' ? 'selected' : ''}>Pending</option>
             </select>
           </div>
         </div>

@@ -3467,5 +3467,57 @@ body.theme-light .nav-switcher-item:hover {
   100% { transform: scale(0.95); opacity: 0.8; }
 }
 
+/* ==========================================================================
+   Ultra-Modern Enterprise Vector SVG Icon System
+   ========================================================================== */
+.erp-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
+.erp-icon svg {
+  display: block;
+  stroke: currentColor;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.erp-icon-xs { width: 12px; height: 12px; }
+.erp-icon-sm { width: 14px; height: 14px; }
+.erp-icon-md { width: 16px; height: 16px; }
+.erp-icon-lg { width: 20px; height: 20px; }
+.erp-icon-xl { width: 24px; height: 24px; }
+
+/* In buttons and badges, add appropriate spacing */
+.btn .erp-icon:first-child:not(:last-child),
+button .erp-icon:first-child:not(:last-child),
+.badge .erp-icon:first-child:not(:last-child),
+.tab-btn .erp-icon:first-child:not(:last-child),
+.filter-btn .erp-icon:first-child:not(:last-child),
+.nav-link .erp-icon:first-child:not(:last-child) {
+  margin-right: 0.35rem;
+}
+
+.btn .erp-icon:last-child:not(:first-child),
+button .erp-icon:last-child:not(:first-child),
+.badge .erp-icon:last-child:not(:first-child) {
+  margin-left: 0.35rem;
+}
+
+/* Ensure no emoji remnants skew layout */
+.erp-icon svg circle,
+.erp-icon svg path,
+.erp-icon svg line,
+.erp-icon svg rect,
+.erp-icon svg polyline,
+.erp-icon svg polygon {
+  transition: stroke 0.15s ease, fill 0.15s ease;
+}
+
+
 
 
