@@ -37,6 +37,7 @@ $API_KEY = 'AMG_MNT_SECURE_API_v4_89f2a7'; // Authoritative Security Token
 $allowedOrigins = [
     'https://moviezonex.com',
     'https://www.moviezonex.com',
+    'https://erp.moviezonex.com',
     'https://maint-dept.github.io',
     'http://localhost',
     'https://localhost',
@@ -54,12 +55,13 @@ if (!empty($httpOrigin)) {
     $originHost = ($parsed['scheme'] ?? 'http') . '://' . ($parsed['host'] ?? '');
     if (isset($parsed['port'])) $originHost .= ':' . $parsed['port'];
     $isGhPages = isset($parsed['host']) && (substr($parsed['host'], -10) === '.github.io');
+    $isMoviezoneDomain = isset($parsed['host']) && (preg_match('/(^|\.)moviezonex\.com$/i', $parsed['host']) === 1);
 
-    if (in_array($httpOrigin, $allowedOrigins, true) || in_array($originHost, $allowedOrigins, true) || $isGhPages) {
+    if (in_array($httpOrigin, $allowedOrigins, true) || in_array($originHost, $allowedOrigins, true) || $isGhPages || $isMoviezoneDomain) {
         header("Access-Control-Allow-Origin: {$httpOrigin}");
         header('Access-Control-Allow-Credentials: true');
     } else {
-        header("Access-Control-Allow-Origin: https://moviezonex.com");
+        header("Access-Control-Allow-Origin: https://erp.moviezonex.com");
     }
 } else {
     header('Access-Control-Allow-Origin: *');

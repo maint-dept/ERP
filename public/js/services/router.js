@@ -176,8 +176,9 @@ class SPAModuleRouter {
    */
   getBasePath() {
     if (typeof window === 'undefined' || !window.location) return '';
+    const isGhPages = window.location.hostname.includes('github.io');
     const pathname = window.location.pathname || '';
-    if (pathname.toLowerCase().startsWith('/erp')) {
+    if (isGhPages || pathname.toLowerCase() === '/erp' || pathname.toLowerCase().startsWith('/erp/')) {
       return '/ERP';
     }
     return '';

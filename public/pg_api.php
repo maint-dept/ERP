@@ -27,10 +27,42 @@ $DB_NAME = 'motaherh_Maintenance';  // PostgreSQL Database Name
 $DB_USER = 'motaherh_AMG-maint';    // PostgreSQL Username
 $DB_PASS = 'ol(5_MK8mF{~7cdG';      // PostgreSQL Password
 $DB_SSL  = false;                   // Set to true for remote cloud PostgreSQL (require SSL)
-$API_KEY = '';                      // Optional: Set a secret key if desired
+$API_KEY = 'AMG_MNT_SECURE_API_v4_89f2a7'; // Authoritative Security Token
 
-// --- 2. CORS & ANTI-CACHE HEADERS (Allows GitHub Pages & frontend to connect securely) ---
-header('Access-Control-Allow-Origin: *');
+// --- 2. CORS & SECURITY HEADERS (Restricts origins to trusted factory portal domains) ---
+$allowedOrigins = [
+    'https://moviezonex.com',
+    'https://www.moviezonex.com',
+    'https://erp.moviezonex.com',
+    'https://maint-dept.github.io',
+    'http://localhost',
+    'https://localhost',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3030',
+    'http://127.0.0.1:3030',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+];
+
+$httpOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (!empty($httpOrigin)) {
+    $parsed = parse_url($httpOrigin);
+    $originHost = ($parsed['scheme'] ?? 'http') . '://' . ($parsed['host'] ?? '');
+    if (isset($parsed['port'])) $originHost .= ':' . $parsed['port'];
+    $isGhPages = isset($parsed['host']) && (substr($parsed['host'], -10) === '.github.io');
+    $isMoviezoneDomain = isset($parsed['host']) && (preg_match('/(^|\.)moviezonex\.com$/i', $parsed['host']) === 1);
+
+    if (in_array($httpOrigin, $allowedOrigins, true) || in_array($originHost, $allowedOrigins, true) || $isGhPages || $isMoviezoneDomain) {
+        header("Access-Control-Allow-Origin: {$httpOrigin}");
+        header('Access-Control-Allow-Credentials: true');
+    } else {
+        header("Access-Control-Allow-Origin: https://erp.moviezonex.com");
+    }
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL, X-User-Role, X-User-Id, Cache-Control, Pragma, Expires, *');
 header('Content-Type: application/json; charset=utf-8');
@@ -39,15 +71,35 @@ header('Pragma: no-cache');
 header('Expires: 0');
 header('X-LiteSpeed-Cache-Control: no-cache');
 header('X-Accel-Buffering: no');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('X-XSS-Protection: 1; mode=block');
+header('Referrer-Policy: strict-origin-when-cross-origin');
 
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
-// --- 3. SECURITY GATE: REJECT CALLS FROM NO_ACCESS ZERO PERMISSIONS ACCOUNTS ---
-$headers = function_exists('getallheaders') ? getallheaders() : [];
-$userRole = $headers['X-User-Role'] ?? $headers['x-user-role'] ?? '';
+// --- 3. UNIVERSAL HEADERS NORMALIZATION (Works on Apache, Nginx PHP-FPM, LiteSpeed, cPanel) ---
+$rawHeaders = function_exists('getallheaders') ? getallheaders() : [];
+$headers = [];
+foreach ($rawHeaders as $k => $v) {
+    $headers[strtolower($k)] = $v;
+}
+foreach ($_SERVER as $k => $v) {
+    if (strpos($k, 'HTTP_') === 0) {
+        $cleanKey = strtolower(str_replace('_', '-', substr($k, 5)));
+        if (!isset($headers[$cleanKey])) {
+            $headers[$cleanKey] = $v;
+        }
+    }
+}
+if (!isset($headers['authorization']) && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+    $headers['authorization'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+}
+
+$userRole = $headers['x-user-role'] ?? '';
 if ($userRole === 'NO_ACCESS') {
     http_response_code(403);
     echo json_encode([
@@ -62,62 +114,82 @@ if ($userRole === 'NO_ACCESS') {
 $rawInput = file_get_contents('php://input');
 $body = json_decode($rawInput, true) ?: [];
 
-// --- 4. DYNAMIC CREDENTIAL OVERRIDE (From request payload or headers) ---
-$headerKey = $headers['X-API-Key'] ?? $headers['x-api-key'] ?? '';
-$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+// Determine action early for security policy enforcement
+$action = $_GET['action'] ?? $body['action'] ?? '';
+$pathInfo = $_SERVER['PATH_INFO'] ?? '';
+if (empty($action) && !empty($pathInfo)) {
+    $parts = explode('/', trim($pathInfo, '/'));
+    $action = end($parts);
+}
+if (empty($action)) {
+    $action = 'ping';
+}
+
+// --- 4. EXTRACT HEADERS & VERIFY API KEY ---
+$headerKey = $headers['x-api-key'] ?? '';
+$authHeader = $headers['authorization'] ?? '';
 if (strpos($authHeader, 'Bearer ') === 0) {
     $headerKey = substr($authHeader, 7);
 }
 
-$inputHost = $body['dbHost'] ?? $body['host'] ?? null;
-if (!empty($inputHost)) {
-    $DB_HOST = $inputHost;
-} elseif (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
-    $DB_HOST = $headers['X-DB-Host'] ?? $headers['x-db-host'];
+$clientKey = $headerKey ?: ($body['apiKey'] ?? $_GET['apiKey'] ?? '');
+$isKeyValid = (!empty($API_KEY) && hash_equals($API_KEY, (string)$clientKey));
+
+// Security Gate: Restrict dynamic DB credentials override only to verified API Key holders
+if ($isKeyValid) {
+    $inputHost = $body['dbHost'] ?? $body['host'] ?? null;
+    if (!empty($inputHost)) {
+        $DB_HOST = $inputHost;
+    } elseif (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
+        $DB_HOST = $headers['X-DB-Host'] ?? $headers['x-db-host'];
+    }
+
+    $inputPort = $body['dbPort'] ?? $body['port'] ?? null;
+    if (!empty($inputPort)) {
+        $DB_PORT = intval($inputPort);
+    } elseif (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
+        $DB_PORT = intval($headers['X-DB-Port'] ?? $headers['x-db-port']);
+    }
+
+    $inputName = $body['dbName'] ?? $body['database'] ?? null;
+    if (!empty($inputName)) {
+        $DB_NAME = $inputName;
+    } elseif (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
+        $DB_NAME = $headers['X-DB-Name'] ?? $headers['x-db-name'];
+    }
+
+    $inputUser = $body['dbUser'] ?? $body['username'] ?? null;
+    if (!empty($inputUser)) {
+        $DB_USER = $inputUser;
+    } elseif (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
+        $DB_USER = $headers['X-DB-User'] ?? $headers['x-db-user'];
+    }
+
+    $inputPass = $body['dbPass'] ?? $body['password'] ?? null;
+    if ($inputPass !== null) {
+        $DB_PASS = $inputPass;
+    } elseif (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
+        $DB_PASS = $headers['X-DB-Pass'] ?? $headers['x-db-pass'];
+    }
+
+    $inputSsl = $body['dbSsl'] ?? $body['ssl'] ?? null;
+    if ($inputSsl !== null) {
+        $DB_SSL = ($inputSsl === true || $inputSsl === '1' || $inputSsl === 1);
+    } elseif (isset($headers['X-DB-SSL']) || isset($headers['x-db-ssl'])) {
+        $sslVal = $headers['X-DB-SSL'] ?? $headers['x-db-ssl'];
+        $DB_SSL = ($sslVal === '1' || $sslVal === 'true' || $sslVal === true);
+    }
 }
 
-$inputPort = $body['dbPort'] ?? $body['port'] ?? null;
-if (!empty($inputPort)) {
-    $DB_PORT = intval($inputPort);
-} elseif (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
-    $DB_PORT = intval($headers['X-DB-Port'] ?? $headers['x-db-port']);
-}
-
-$inputName = $body['dbName'] ?? $body['database'] ?? null;
-if (!empty($inputName)) {
-    $DB_NAME = $inputName;
-} elseif (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
-    $DB_NAME = $headers['X-DB-Name'] ?? $headers['x-db-name'];
-}
-
-$inputUser = $body['dbUser'] ?? $body['username'] ?? null;
-if (!empty($inputUser)) {
-    $DB_USER = $inputUser;
-} elseif (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
-    $DB_USER = $headers['X-DB-User'] ?? $headers['x-db-user'];
-}
-
-$inputPass = $body['dbPass'] ?? $body['password'] ?? null;
-if ($inputPass !== null) {
-    $DB_PASS = $inputPass;
-} elseif (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
-    $DB_PASS = $headers['X-DB-Pass'] ?? $headers['x-db-pass'];
-}
-
-$inputSsl = $body['dbSsl'] ?? $body['ssl'] ?? null;
-if ($inputSsl !== null) {
-    $DB_SSL = ($inputSsl === true || $inputSsl === '1' || $inputSsl === 1);
-} elseif (isset($headers['X-DB-SSL']) || isset($headers['x-db-ssl'])) {
-    $sslVal = $headers['X-DB-SSL'] ?? $headers['x-db-ssl'];
-    $DB_SSL = ($sslVal === '1' || $sslVal === 'true' || $sslVal === true);
-}
-
-// Check API Key if configured
-if (!empty($API_KEY)) {
-    $clientKey = $headerKey ?: ($body['apiKey'] ?? $_GET['apiKey'] ?? '');
-    if ($clientKey !== $API_KEY) {
+// Security Gate: Action-level Authorization
+$publicActions = ['ping', 'check_version', 'stats'];
+if (!in_array($action, $publicActions, true)) {
+    if (!$isKeyValid) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized: Invalid API Key']);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Unauthorized: Valid API Key required for database operations.'
+        ]);
         exit;
     }
 }
@@ -181,16 +253,8 @@ function ensureTableExists($pdo) {
     $pdo->exec($sql);
 }
 
-// Determine action
-$action = $_GET['action'] ?? $body['action'] ?? '';
-$pathInfo = $_SERVER['PATH_INFO'] ?? '';
-if (empty($action) && !empty($pathInfo)) {
-    $parts = explode('/', trim($pathInfo, '/'));
-    $action = end($parts);
-}
-if (empty($action)) {
-    $action = 'ping';
-}
+// Active action
+$action = $action ?: 'ping';
 
 function validateAndProtectMachinesDataset($pdo, &$machines) {
     if (!is_array($machines)) {
@@ -352,6 +416,36 @@ try {
                 if (is_array($uList)) {
                     validateAndProtectUsersDataset($pdo, $uList);
                     $data = $uList;
+                }
+            } elseif ($collection === 'settings') {
+                $sData = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($sData)) {
+                    $currStmt = $pdo->prepare("SELECT raw_json FROM erp_tables WHERE table_name = 'settings'");
+                    $currStmt->execute();
+                    $currJson = $currStmt->fetchColumn();
+                    if ($currJson) {
+                        $currSettings = json_decode($currJson, true);
+                        if (is_array($currSettings)) {
+                            if (!empty($currSettings['homepageVisibilityMode']) && (empty($sData['homepageVisibilityMode']) || $sData['homepageVisibilityMode'] === 'public')) {
+                                $currTs = !empty($currSettings['homepageVisibilityUpdatedAt']) ? strtotime($currSettings['homepageVisibilityUpdatedAt']) : 0;
+                                $inTs = !empty($sData['homepageVisibilityUpdatedAt']) ? strtotime($sData['homepageVisibilityUpdatedAt']) : 0;
+                                if ($currTs >= $inTs) {
+                                    $sData['homepageVisibilityMode'] = $currSettings['homepageVisibilityMode'];
+                                    $sData['homepageVisibilityUpdatedAt'] = $currSettings['homepageVisibilityUpdatedAt'] ?? date('c');
+                                    $sData['homepageVisibilityUpdatedBy'] = $currSettings['homepageVisibilityUpdatedBy'] ?? 'System';
+                                }
+                            }
+                            if (!empty($currSettings['adminLoginSlug']) && (empty($sData['adminLoginSlug']) || $sData['adminLoginSlug'] === 'secure-admin-gateway')) {
+                                $currSlugTs = !empty($currSettings['adminLoginSlugUpdatedAt']) ? strtotime($currSettings['adminLoginSlugUpdatedAt']) : 0;
+                                $inSlugTs = !empty($sData['adminLoginSlugUpdatedAt']) ? strtotime($sData['adminLoginSlugUpdatedAt']) : 0;
+                                if ($currSlugTs >= $inSlugTs) {
+                                    $sData['adminLoginSlug'] = $currSettings['adminLoginSlug'];
+                                    $sData['adminLoginSlugUpdatedAt'] = $currSettings['adminLoginSlugUpdatedAt'] ?? date('c');
+                                }
+                            }
+                        }
+                    }
+                    $data = $sData;
                 }
             }
 

@@ -90,7 +90,8 @@
 
       // 3. Set dynamic <base href> so relative stylesheets and modules resolve seamlessly
       var pathname = window.location.pathname.toLowerCase();
-      var baseHref = pathname.startsWith('/erp') ? '/ERP/' : '/';
+      var isGhPages = window.location.hostname.includes('github.io');
+      var baseHref = (isGhPages || pathname === '/erp' || pathname.startsWith('/erp/')) ? '/ERP/' : '/';
       var baseEl = document.querySelector('base');
       if (!baseEl) {
         baseEl = document.createElement('base');

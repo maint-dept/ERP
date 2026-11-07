@@ -8,3 +8,14 @@ deployment:
     - /bin/cp -f public/404.html $DEPLOYPATH/404.html 2>/dev/null || true
     - /bin/mkdir -p $DEPLOYPATH/tmp
     - /bin/touch $DEPLOYPATH/tmp/restart.txt
+    - |
+      for sub in /home/motaherh/erp.moviezonex.com /home/motaherh/public_html/erp.moviezonex.com /home/motaherh/public_html/erp; do
+        if [ -d "$sub" ] && [ "$sub" != "$DEPLOYPATH" ]; then
+          /bin/cp -R * "$sub/"
+          /bin/cp -R public/* "$sub/"
+          /bin/cp -f public/.htaccess "$sub/.htaccess" 2>/dev/null || true
+          /bin/cp -f public/404.html "$sub/404.html" 2>/dev/null || true
+          /bin/mkdir -p "$sub/tmp"
+          /bin/touch "$sub/tmp/restart.txt"
+        fi
+      done
