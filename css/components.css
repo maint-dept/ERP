@@ -6608,11 +6608,20 @@ body.theme-light .modal-header * {
   .excel-grid-table tbody td.col-freeze-check {
     position: -webkit-sticky !important;
     position: sticky !important;
-    left: 50px !important;
+    left: 50px;
     z-index: 24 !important;
     background-color: #0b1329 !important;
     background-clip: border-box !important;
     border-right: 1px solid #1e293b !important;
+  }
+  @media (max-width: 768px) {
+    .excel-grid-table thead th.col-freeze-check,
+    .excel-grid-table tbody td.col-freeze-check {
+      left: 38px !important;
+      width: 38px !important;
+      min-width: 38px !important;
+      max-width: 38px !important;
+    }
   }
   .excel-grid-table thead th.col-freeze-check { z-index: 34 !important; }
 

@@ -1731,18 +1731,22 @@ export function initInventoryTableEvents() {
     });
   }
 
-  // Real-time synchronization event listener for Machine Inventory table
+  // Real-time synchronization event listener for Machine Inventory table (debounced to eliminate sync flicker)
+  let _inventoryRefreshTimer = null;
   const handleInventoryDataRefreshed = () => {
     if (state.get('currentView') === 'inventory') {
-      const container = document.getElementById('main-view-container');
-      if (container) {
-        // Fast, in-place non-destructive row reconciliation: preserves scroll position, inputs and focus
-        if (typeof updateInventoryTableRowsOnly === 'function' && updateInventoryTableRowsOnly()) {
-          return;
+      if (_inventoryRefreshTimer) clearTimeout(_inventoryRefreshTimer);
+      _inventoryRefreshTimer = setTimeout(() => {
+        const container = document.getElementById('main-view-container');
+        if (container) {
+          // Fast, in-place non-destructive row reconciliation: preserves scroll position, inputs and focus
+          if (typeof updateInventoryTableRowsOnly === 'function' && updateInventoryTableRowsOnly()) {
+            return;
+          }
+          container.innerHTML = renderInventoryTable();
+          initInventoryTableEvents();
         }
-        container.innerHTML = renderInventoryTable();
-        initInventoryTableEvents();
-      }
+      }, 120);
     }
   };
 
@@ -2502,17 +2506,16 @@ export function initInventoryTableEvents() {
       }, { passive: true });
 
       window.addEventListener('scroll', () => {
-        if (window.__isActionMenuOpen) repositionOpenMenu();
+        if (window.__isActionMenuOpen) closeAllActionMenus();
       }, { passive: true });
     }
   }
 
-  // Table horizontal and vertical scroll: dynamically repositions floating menu instead of abruptly closing it
+  // Table horizontal and vertical scroll: cleanly close action menu on scroll to prevent bouncing/jittering
   const scrollViewport = document.getElementById('inventory-table-scroll-viewport');
   if (scrollViewport) {
     scrollViewport.addEventListener('scroll', () => {
-      if (!window.__isActionMenuOpen) return;
-      repositionOpenMenu();
+      if (window.__isActionMenuOpen) closeAllActionMenus();
     }, { passive: true });
   }
 
@@ -3509,6 +3512,46 @@ export function updateInventoryTableRowsOnly() {
       });
     });
   });
+
+  // In-place real-time KPI pills sync (updates counts & active states without page blowup)
+  try {
+    const kpiMachines = machineService.getMachines({ ...filters, status: 'ALL', limit: 'ALL' }).items || [];
+    let kRunning = 0, kUsable = 0, kRepair = 0, kAmbulance = 0;
+    for (let i = 0; i < kpiMachines.length; i++) {
+      const km = kpiMachines[i];
+      if (km.isAmbulance || km.is_ambulance || km.ambulance || (km.remarks && String(km.remarks).toLowerCase().includes('ambulance'))) {
+        kAmbulance++;
+      } else if (km.running > 0) {
+        kRunning += km.running;
+      } else if (km.usable_idle > 0) {
+        kUsable += km.usable_idle;
+      } else if (km.repairable_idle > 0) {
+        kRepair += km.repairable_idle;
+      }
+    }
+    const totalCount = kpiMachines.length;
+    
+    const pillTotal = document.querySelector('.inventory-inline-kpis .kpi-total .kpi-val');
+    if (pillTotal) pillTotal.textContent = String(totalCount);
+    const pillRunning = document.querySelector('.inventory-inline-kpis .kpi-running .kpi-val');
+    if (pillRunning) pillRunning.textContent = String(kRunning);
+    const pillUsable = document.querySelector('.inventory-inline-kpis .kpi-usable .kpi-val');
+    if (pillUsable) pillUsable.textContent = String(kUsable);
+    const pillRepair = document.querySelector('.inventory-inline-kpis .kpi-repair .kpi-val');
+    if (pillRepair) pillRepair.textContent = String(kRepair);
+    const pillAmbulance = document.querySelector('.inventory-inline-kpis .kpi-ambulance .kpi-val');
+    if (pillAmbulance) pillAmbulance.textContent = String(kAmbulance);
+
+    const curStatus = filters.status || 'ALL';
+    document.querySelectorAll('.inventory-inline-kpis .kpi-pill[data-kpi-status]').forEach(pill => {
+      const s = pill.getAttribute('data-kpi-status');
+      if (s === curStatus || (s === 'RUNNING' && (curStatus === 'RUNNING' || curStatus === 'ACTIVE')) || (s === 'USABLE' && (curStatus === 'USABLE' || curStatus === 'USABLE_IDLE')) || (s === 'REPAIRABLE' && (curStatus === 'REPAIRABLE' || curStatus === 'REPAIRABLE_IDLE'))) {
+        pill.classList.add('active-kpi');
+      } else {
+        pill.classList.remove('active-kpi');
+      }
+    });
+  } catch (_) {}
 
   // Synchronize selection state in DOM
   syncInventorySelectionDOM();

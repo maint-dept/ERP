@@ -17,7 +17,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AMG ERP">
-  <link rel="manifest" href="manifest.json?v=4.36.0">
+  <link rel="manifest" href="manifest.json?v=4.45.0">
 
   <!-- Crisp PWA Icons & Native App Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -26,20 +26,20 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.40.0">
-  <link rel="modulepreload" href="js/state.js?v=4.40.0">
-  <link rel="modulepreload" href="js/db/storage.js?v=4.40.0">
-  <link rel="modulepreload" href="js/db/schema.js?v=4.40.0">
-  <link rel="modulepreload" href="js/services/authService.js?v=4.40.0">
-  <link rel="modulepreload" href="js/services/router.js?v=4.40.0">
-  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/loginView.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/sidebar.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/navbar.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.40.0">
-  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.40.0">
+  <link rel="modulepreload" href="js/app.js?v=4.45.0">
+  <link rel="modulepreload" href="js/state.js?v=4.45.0">
+  <link rel="modulepreload" href="js/db/storage.js?v=4.45.0">
+  <link rel="modulepreload" href="js/db/schema.js?v=4.45.0">
+  <link rel="modulepreload" href="js/services/authService.js?v=4.45.0">
+  <link rel="modulepreload" href="js/services/router.js?v=4.45.0">
+  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/loginView.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/sidebar.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/navbar.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.45.0">
+  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.45.0">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
     (function () {
@@ -257,8 +257,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.40.0 — High-Performance & Smooth UI Engine
-    var CURRENT_BUILD = '4.40.0';
+    // Build version v4.45.0 — High-Performance & Smooth UI Engine
+    var CURRENT_BUILD = '4.45.0';
 
     // Cache Lifecycle: Only invalidate browser caches when a new build is detected
     (function () {
@@ -275,14 +275,35 @@
       } catch (e) { /* non-critical */ }
     })();
 
-    // Enterprise Service Worker Registration (0ms Instant Load from Cache)
+    // Enterprise Service Worker Registration (0ms Instant Load from Cache with Auto-Update)
     (function () {
       if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        var refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+
         window.addEventListener('load', function () {
           var isGh = window.location.pathname.toLowerCase().startsWith('/erp');
           var swUrl = (isGh ? '/ERP/' : '/') + 'sw.js?v=' + CURRENT_BUILD;
           navigator.serviceWorker.register(swUrl).then(function (reg) {
             reg.update();
+            reg.addEventListener('updatefound', function () {
+              var newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', function () {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                });
+              }
+            });
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
           }).catch(function () {});
         });
       }
@@ -299,8 +320,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.40.0) -->
-  <script type="module" src="js/app.js?v=4.40.0"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.45.0) -->
+  <script type="module" src="js/app.js?v=4.45.0"></script>
 
   <style>
     @keyframes execBarPulse {

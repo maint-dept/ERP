@@ -1,17 +1,17 @@
 /**
  * Al-Muslim Group ERP — High-Performance Production Service Worker
- * Build: v4.40.0
+ * Build: v4.45.0
  *
  * Architecture:
  * 1. Offline Machine Image Caching: Cache-First + Stale-While-Revalidate (Instant offline access for factory floor technicians)
  * 2. 60-Day Auto-Pruning & Storage Quota Guard: Automatically cleans up inspection photos older than 60 days
- * 3. Static Assets (CSS, JS, Fonts): Stale-While-Revalidate (0ms instantaneous boot from cache)
+ * 3. Static Assets (CSS, JS, Fonts): Version-Exact Cache with Network Update Fallback (Guaranteed latest code on deploy)
  * 4. HTML Documents: Network-First with Cache Fallback (guarantees fresh builds online, opens offline)
  * 5. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const BUILD_VER = '4.40.0';
-const CACHE_NAME = 'amg-erp-v4.40.0';
+const BUILD_VER = '4.45.0';
+const CACHE_NAME = 'amg-erp-v4.45.0';
 const IMAGE_CACHE_NAME = 'amg-erp-images-v1';
 
 const PRECACHE_ASSETS = [
@@ -204,7 +204,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Static Assets: Stale-While-Revalidate (Instant 0ms delivery from cache, background refresh)
+  // 4. Static Assets: Version-Exact Cache with Network Update (Instant 0ms boot, fresh code guaranteed)
   const isStaticAsset = (
     url.pathname.endsWith('.js') ||
     url.pathname.endsWith('.css') ||
@@ -216,20 +216,28 @@ self.addEventListener('fetch', (event) => {
   if (isStaticAsset) {
     event.respondWith(
       caches.match(req).then((cachedRes) => {
+        // If exact version is in cache, return it immediately
         if (cachedRes) return cachedRes;
-        return caches.match(req, { ignoreSearch: true });
-      }).then((cachedRes) => {
-        const fetchPromise = fetch(req).then((networkRes) => {
+
+        // Fetch fresh from network when version changes
+        return fetch(req).then((networkRes) => {
           if (networkRes && networkRes.status === 200) {
             const resClone = networkRes.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone)).catch(() => {});
           }
           return networkRes;
-        }).catch(() => cachedRes);
-
-        return cachedRes || fetchPromise;
+        }).catch(() => {
+          // Fallback to cached version only when totally offline
+          return caches.match(req, { ignoreSearch: true });
+        });
       })
     );
+  }
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
 
