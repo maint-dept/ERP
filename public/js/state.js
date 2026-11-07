@@ -3,9 +3,9 @@
  * Central Reactive State Store & Pub/Sub Event Bus
  */
 
-import { authService } from './services/authService.js?v=4.36.0';
-import { storage } from './db/storage.js?v=4.36.0';
-import { TABLE_NAMES } from './db/schema.js?v=4.36.0';
+import { authService } from './services/authService.js?v=4.45.0';
+import { storage } from './db/storage.js?v=4.45.0';
+import { TABLE_NAMES } from './db/schema.js?v=4.45.0';
 
 export const SYSTEM_DEFAULT_COLUMNS = [
   'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',

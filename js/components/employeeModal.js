@@ -13,7 +13,7 @@ import { employeeCustomFieldService } from '../services/employeeCustomFieldServi
 import { masterDataService } from '../services/masterDataService.js';
 import { barcodeService } from '../services/barcodeService.js';
 import { excelService } from '../services/excelService.js';
-import { authService } from '../services/authService.js?v=4.36.0';
+import { authService } from '../services/authService.js?v=4.45.0';
 import { notificationService } from '../services/notificationService.js';
 import { tempImportService } from '../services/tempImportService.js';
 import { state } from '../state.js';

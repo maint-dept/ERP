@@ -20,7 +20,7 @@ import { historyService } from '../services/historyService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.36.0';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.45.0';
 import { state } from '../state.js';
 
 let attachedDocuments = [];

@@ -10,7 +10,7 @@
  * - 100% Professional English Interface
  */
 
-import { smartStorageService } from '../services/smartStorageService.js?v=4.36.0';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.45.0';
 import { storageSchemaService } from '../services/storageSchemaService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';

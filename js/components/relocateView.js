@@ -10,9 +10,9 @@ import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { relocateService } from '../services/relocateService.js';
 import { notificationService } from '../services/notificationService.js';
-import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.36.0';
-import { state } from '../state.js?v=4.36.0';
-import { needleService } from '../services/needleService.js?v=4.36.0';
+import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.45.0';
+import { state } from '../state.js?v=4.45.0';
+import { needleService } from '../services/needleService.js?v=4.45.0';
 
 let activeTab = 'scan'; // 'scan' | 'idle' | 'approvals' | 'history' | 'needle'
 let needleFilterUnitId = '';
