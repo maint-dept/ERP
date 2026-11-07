@@ -3303,6 +3303,12 @@ class AuthService {
   canManageSystemSettings() {
     return this.hasAccess('admin_config', 'SYSTEM_SETTINGS') || this.isSuperAdmin();
   }
+
+  canBroadcastNotification(user = null) {
+    const u = user || this.getCurrentUser();
+    if (!u || u.status !== 'ACTIVE') return false;
+    return this.isSuperAdmin(u) || this.isAdmin(u);
+  }
 }
 
 export const authService = (typeof window !== 'undefined' && window.__erpAuthService)

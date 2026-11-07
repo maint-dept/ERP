@@ -321077,7 +321077,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T05:27:49.213Z"
+        "updatedAt": "2026-11-07T05:58:37.770Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321095,11 +321095,9 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T05:27:49.213Z"
+        "updatedAt": "2026-11-07T05:58:37.770Z"
       }
     ],
-    "pushNotificationPolicy": "MANDATORY",
-    "pushNotificationPolicyUpdatedAt": "2026-11-05T09:14:28.533Z",
     "emailConfig": {
       "fromName": "Al-Muslim ERP System",
       "fromEmail": "maint.dept2023@gmail.com",
@@ -321113,7 +321111,9 @@
       "lastTestStatus": null,
       "lastTestRecipient": null,
       "updatedAt": "2026-09-20T05:35:14.069Z"
-    }
+    },
+    "pushNotificationPolicy": "MANDATORY",
+    "pushNotificationPolicyUpdatedAt": "2026-11-05T09:14:28.533Z"
   },
   "users": [
     {

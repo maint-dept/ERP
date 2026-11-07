@@ -435,13 +435,15 @@ export function renderNavbar() {
 
             <!-- Quick Account Actions -->
             <div class="nav-user-dropdown-items">
-              <button type="button" id="btn-navbar-send-alert" class="nav-user-dropdown-item" title="Broadcast Custom Notification or Instant Factory Alert">
-                <span class="dropdown-item-icon">📢</span>
-                <div class="dropdown-item-content">
-                  <span class="dropdown-item-title" style="color: #38bdf8;">Send Factory Alert</span>
-                  <span class="dropdown-item-desc">Broadcast emergency sirens &amp; floor notices</span>
-                </div>
-              </button>
+              ${(isSuperAdmin || isAdmin) ? `
+                <button type="button" id="btn-navbar-send-alert" class="nav-user-dropdown-item" title="Broadcast Custom Notification or Instant Factory Alert">
+                  <span class="dropdown-item-icon">📢</span>
+                  <div class="dropdown-item-content">
+                    <span class="dropdown-item-title" style="color: #38bdf8;">Send Factory Alert</span>
+                    <span class="dropdown-item-desc">Broadcast emergency sirens &amp; floor notices</span>
+                  </div>
+                </button>
+              ` : ''}
 
               <button type="button" id="btn-navbar-change-pwd" class="nav-user-dropdown-item" title="Change your account password & profile">
                 <span class="dropdown-item-icon">🔑</span>

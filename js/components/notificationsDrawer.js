@@ -327,10 +327,12 @@ export function renderNotificationsDrawer() {
           </div>
 
           <div style="display: flex; align-items: center; gap: 6px;">
-            <button id="btn-open-custom-notif-composer" class="btn btn-primary btn-xs" style="font-size: 11.5px; font-weight: 700; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; padding: 5px 10px; border-radius: 6px; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);" title="Broadcast Floor Alert or Instant Emergency Siren">
-              <span>📢</span>
-              <span>Send Alert</span>
-            </button>
+            ${authService.canBroadcastNotification(user) ? `
+              <button id="btn-open-custom-notif-composer" class="btn btn-primary btn-xs" style="font-size: 11.5px; font-weight: 700; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; padding: 5px 10px; border-radius: 6px; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);" title="Broadcast Floor Alert or Instant Emergency Siren">
+                <span>📢</span>
+                <span>Send Alert</span>
+              </button>
+            ` : ''}
             ${unreadCount > 0 ? `
               <button id="btn-mark-all-read" class="btn btn-secondary btn-xs" style="font-size: 11.5px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); background: rgba(14, 165, 233, 0.12); padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="Mark all visible notifications as read">
                 ✓ Mark all read

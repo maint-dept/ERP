@@ -1153,6 +1153,11 @@ class NotificationService {
     channels = { inApp: true, push: true, hud: true }
   }) {
     const activeUser = typeof authService !== 'undefined' ? authService.getCurrentUser() : null;
+    if (activeUser && typeof authService !== 'undefined' && typeof authService.canBroadcastNotification === 'function') {
+      if (!authService.canBroadcastNotification(activeUser)) {
+        throw new Error('⛔ Access Denied: Only Super Admin and Admin can broadcast custom factory alerts.');
+      }
+    }
     const cleanTitle = this.sanitizeEnterpriseText(title || 'Factory Alert');
     const cleanMessage = this.sanitizeEnterpriseText(message || '');
     const isEmergency = severity.toUpperCase() === 'EMERGENCY';

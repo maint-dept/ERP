@@ -101,6 +101,19 @@ const ALERT_PRESETS = [
  */
 export function renderCustomNotificationModal() {
   const currentUser = authService.getCurrentUser();
+  if (!authService.canBroadcastNotification(currentUser)) {
+    return `
+      <div id="modal-custom-notification-overlay" class="modal-backdrop custom-notif-modal-backdrop" style="position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100050; display: flex; align-items: center; justify-content: center; padding: 16px;">
+        <div style="background: #0f172a; border: 1.5px solid #ef4444; border-radius: 16px; padding: 28px; max-width: 440px; text-align: center; color: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+          <div style="font-size: 40px; margin-bottom: 12px;">⛔</div>
+          <h3 style="font-size: 17px; font-weight: 800; color: #f87171; margin: 0 0 8px;">Access Restricted</h3>
+          <p style="font-size: 13px; color: #94a3b8; margin: 0 0 18px; line-height: 1.5;">Custom factory notifications and emergency siren broadcasts are strictly restricted to <strong>Super Admin</strong> and <strong>Admin</strong> accounts.</p>
+          <button id="btn-close-custom-notif-modal" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 6px 18px;">Understood</button>
+        </div>
+      </div>
+    `;
+  }
+
   const units = storage.getTable(TABLE_NAMES.UNITS) || [];
   const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
   const lines = storage.getTable(TABLE_NAMES.LINES) || [];
@@ -653,6 +666,14 @@ export function initCustomNotificationModalEvents() {
  * Open Custom Notification Composer Modal
  */
 export function openCustomNotificationModal(options = {}) {
+  const currentUser = authService.getCurrentUser();
+  if (!authService.canBroadcastNotification(currentUser)) {
+    if (typeof notificationService !== 'undefined' && typeof notificationService.error === 'function') {
+      notificationService.error('⛔ Access Denied: Only Super Admin and Admin accounts can broadcast factory alerts.');
+    }
+    return;
+  }
+
   closeCustomNotificationModal();
   const wrapper = document.createElement('div');
   wrapper.id = 'custom-notif-modal-root';
