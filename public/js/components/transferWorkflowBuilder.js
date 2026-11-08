@@ -315,7 +315,7 @@ export function renderTransferWorkflowBuilder() {
             <div style="display: flex; flex-direction: column; gap: 14px;">
               <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Workflow Rule Name <span class="req">*</span></label>
-                <input type="text" id="wf-field-name" class="form-control" value="${currentWf.name || ''}" placeholder="e.g. Standard Factory Transfer (Source → Dest → Admin)" required />
+                <input type="text" id="wf-field-name" class="form-control" value="${currentWf.name || ''}" placeholder="e.g. Standard Factory Transfer (Source -> Dest -> Admin)" required />
               </div>
 
               <div class="form-group" style="margin-bottom: 0;">

@@ -228,7 +228,7 @@ function renderHeroEditorTab(config) {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
             <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Badge Text</label>
-            <input type="text" id="inp-hero-badge-text" class="form-control" value="${hero.badgeText || ''}" placeholder="e.g. 🏭 Enterprise Maintenance Department ERP" />
+            <input type="text" id="inp-hero-badge-text" class="form-control" value="${hero.badgeText || ''}" placeholder="e.g. Enterprise Maintenance Department ERP" />
           </div>
           <div class="form-group">
             <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Badge Tag</label>

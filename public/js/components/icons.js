@@ -376,12 +376,12 @@ export const EMOJI_MAP = {
 /**
  * HTML Tokenizer Regex:
  * 1. HTML Comments: <!-- ... -->
- * 2. Raw Text Blocks: <script>...</script>, <style>...</style>, <textarea>...</textarea>, <pre>...</pre>, <code>...</code>
+ * 2. Raw Text / Vector Blocks: <script>...</script>, <style>...</style>, <textarea>...</textarea>, <pre>...</pre>, <code>...</code>, <svg>...</svg>
  * 3. Select Option Elements: <option ...>...</option>
  * 4. Any HTML Tag: <tag attr="val"...> or </tag>
  * 5. Text content outside tags: [^<]+
  */
-const HTML_TOKEN_REGEX = /(<!--[\s\S]*?-->)|(<(?:script|style|textarea|pre|code)\b[^>]*>[\s\S]*?<\/(?:script|style|textarea|pre|code)>)|(<option\b[^>]*>[\s\S]*?<\/option>)|(<(?:"[^"]*"|'[^']*'|[^'">])*[\s\S]*?>)|([^<]+)/gi;
+const HTML_TOKEN_REGEX = /(<!--[\s\S]*?-->)|(<(?:script|style|textarea|pre|code|svg)\b[^>]*>[\s\S]*?<\/(?:script|style|textarea|pre|code|svg)>)|(<option\b[^>]*>[\s\S]*?<\/option>)|(<(?:"[^"]*"|'[^']*'|[^'">])*[\s\S]*?>)|([^<]+)/gi;
 
 /**
  * Replaces cartoon emojis in an HTML string with professional inline vector SVGs.
@@ -395,7 +395,7 @@ export function replaceEmojiInHtml(html) {
     // 1. Comments: keep untouched
     if (comment) return comment;
 
-    // 2. Special blocks (script, style, textarea, pre, code): keep untouched
+    // 2. Special blocks (script, style, textarea, pre, code, svg): keep untouched
     if (specialBlock) return specialBlock;
 
     // 3. Option elements: strip emojis to clean plain text (native <option> cannot render SVG)
@@ -411,22 +411,20 @@ export function replaceEmojiInHtml(html) {
       });
     }
 
-    // 4. Any HTML tag: clean emojis from attributes (placeholder, title, aria-label, etc.)
+    // 4. Any HTML tag: clean emojis ONLY from visual text attributes (placeholder, title, aria-label)
     // STRICT RULE: NEVER inject <span class=...> into an HTML tag or attribute!
+    // STRICT RULE: NEVER strip value, data-*, or system attributes!
     if (htmlTag) {
-      let cleanTag = htmlTag;
-      let hasEmoji = false;
-      for (const em of Object.keys(EMOJI_MAP)) {
-        if (cleanTag.includes(em)) {
-          cleanTag = cleanTag.split(em).join('');
-          hasEmoji = true;
+      return htmlTag.replace(/\b(placeholder|title|aria-label)=(["'])([\s\S]*?)\2/gi, (attrMatch, attrName, quote, attrVal) => {
+        let cleanVal = attrVal;
+        for (const em of Object.keys(EMOJI_MAP)) {
+          if (cleanVal.includes(em)) {
+            cleanVal = cleanVal.split(em).join('');
+          }
         }
-      }
-      if (hasEmoji) {
-        // Clean leading spaces after quote, e.g. placeholder=" Search..." -> placeholder="Search..."
-        cleanTag = cleanTag.replace(/(=\s*["'])\s+/g, '$1');
-      }
-      return cleanTag;
+        cleanVal = cleanVal.trim().replace(/\s{2,}/g, ' ');
+        return `${attrName}=${quote}${cleanVal}${quote}`;
+      });
     }
 
     // 5. Plain text content between tags: here and ONLY here, convert emojis to vector SVGs
