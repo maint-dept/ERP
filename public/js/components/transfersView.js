@@ -136,7 +136,7 @@ export function renderTransfersView() {
           type="text"
           id="transfers-search-input"
           class="form-control"
-          placeholder="🔍 Search Request ID, Serial No, Line, Floor, Requester..."
+          placeholder="Search Request ID, Serial No, Line, Floor, Requester..."
           value="${transferSearchQuery}"
           style="flex: 1 1 220px; height: 26px; font-size: 11.5px; padding: 2px 8px; color: #f8fafc; font-weight: 600; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; min-width: 0;"
         />

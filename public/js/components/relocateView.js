@@ -1262,7 +1262,7 @@ function renderLiveScanView(session) {
               type="text" 
               id="inp-scanned-filter-query" 
               class="form-control" 
-              placeholder="🔍 Search serial, name, or line..." 
+              placeholder="Search serial, name, or line..." 
               value="${scannedListSearch}"
               style="padding: 4px 28px 4px 10px; font-size: 11.5px; height: 28px; min-height: 28px; border-radius: 6px; background: #090d16; border-color: rgba(56,189,248,0.3); color: #fff;"
             />

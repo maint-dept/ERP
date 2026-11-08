@@ -674,7 +674,7 @@ function renderReviewTab() {
             type="text" 
             id="inp-draft-filter-query" 
             class="form-control" 
-            placeholder="🔍 Search draft items by part, ERP#, serial, technician, comments..." 
+            placeholder="Search draft items by part, ERP#, serial, technician, comments..." 
             value="${reviewSearch}"
             style="padding: 4px 28px 4px 10px; font-size: 11.5px; height: 28px; min-height: 28px; border-radius: 6px; background: #090d16; border-color: rgba(56,189,248,0.3); color: #fff;"
           />
@@ -870,7 +870,7 @@ function renderPartsMasterTab() {
             type="text" 
             id="inp-master-parts-search" 
             class="form-control" 
-            placeholder="🔍 Search 5,000+ parts by code, name, alias, brand, model..." 
+            placeholder="Search 5,000+ parts by code, name, alias, brand, model..." 
             value="${masterSearch}"
             style="max-width: 280px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
           />
@@ -1061,7 +1061,7 @@ function renderHistoryTab() {
                 type="text" 
                 id="inp-history-search" 
                 class="form-control" 
-                placeholder="🔍 Search ERP#, part, serial, technician, floor..." 
+                placeholder="Search ERP#, part, serial, technician, floor..." 
                 value="${historySearch}"
                 style="height: 30px; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; background: #060a14; border: 1.5px solid rgba(56,189,248,0.3); color: #ffffff; width: 100%;"
               />
@@ -1303,7 +1303,7 @@ function renderReportsTab() {
                 type="text" 
                 id="inp-history-search" 
                 class="form-control" 
-                placeholder="🔍 Search ERP#, part, serial, technician..." 
+                placeholder="Search ERP#, part, serial, technician..." 
                 value="${historySearch}"
                 style="height: 30px; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; background: #060a14; border: 1.5px solid rgba(56,189,248,0.3); color: #ffffff; width: 100%;"
               />

@@ -264,7 +264,7 @@ export function renderNeedleOperationsView() {
                 type="text" 
                 id="inp-needle-ops-search" 
                 class="form-control" 
-                placeholder="🔍 Search Serial, Model, Tx ID..." 
+                placeholder="Search Serial, Model, Tx ID..." 
                 value="${searchQuery}" 
                 style="font-size: 12px; padding: 6px 10px;"
               />
@@ -530,7 +530,7 @@ function renderTransactionModal() {
                   type="text" 
                   id="modal-inp-tx-machine-search" 
                   class="form-control" 
-                  placeholder="🔍 Type Serial #, Barcode, Model, Brand, Line, Floor..." 
+                  placeholder="Type Serial #, Barcode, Model, Brand, Line, Floor..." 
                   value="${selectedMachine ? `${selectedMachine.serialNumber} — ${spec.machineNameStr} (${spec.brandStr} ${spec.modelStr})` : (smartMachineSearchQuery || '')}" 
                   autocomplete="off"
                   style="font-size: 13.5px; font-weight: 700; border: 1.5px solid ${selectedMachine ? '#10b981' : '#38bdf8'}; padding-right: 32px; height: 42px; border-radius: 6px;"

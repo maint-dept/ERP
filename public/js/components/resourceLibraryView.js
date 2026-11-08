@@ -143,7 +143,7 @@ export function renderResourceLibraryView() {
         <!-- Filter Controls -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <div style="position: relative; min-width: 200px;">
-            <input type="text" id="lib-search-input" class="form-control form-control-sm" placeholder="🔍 Search in this folder..." value="${searchQuery}" style="padding-left: 12px; font-size: 12.5px;" />
+            <input type="text" id="lib-search-input" class="form-control form-control-sm" placeholder="Search in this folder..." value="${searchQuery}" style="padding-left: 12px; font-size: 12.5px;" />
           </div>
 
           <select id="lib-type-filter" class="form-control form-control-sm" style="width: 130px; font-size: 12px; font-weight: 600;">

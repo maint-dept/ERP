@@ -1665,7 +1665,7 @@ function renderIndividualPermissionsTab() {
               type="text" 
               id="inp-perm-module-filter" 
               class="form-control" 
-              placeholder="🔍 Filter modules (e.g. System, Transfer)..." 
+              placeholder="Filter modules (e.g. System, Transfer)..." 
               value="${permModuleFilterQuery}"
               style="height: 28px; font-size: 11.5px; padding-left: 24px; width: 220px; border-radius: 6px;"
             />
@@ -3361,7 +3361,7 @@ function renderActiveModalHtml() {
                     type="text" 
                     id="inp-preset-modal-module-filter" 
                     class="form-control" 
-                    placeholder="🔍 Filter modules..." 
+                    placeholder="Filter modules..." 
                     value="${presetModuleFilterQuery}"
                     style="height: 28px; font-size: 11.5px; padding-left: 24px; width: 180px; border-radius: 6px;"
                   />

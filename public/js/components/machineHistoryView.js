@@ -470,7 +470,7 @@ export function renderMachineHistoryView() {
             type="text" 
             id="tab-inner-search-input" 
             class="form-control" 
-            placeholder="🔍 Filter tab records..." 
+            placeholder="Filter tab records..." 
             value="${historyFilters.search || ''}" 
             style="width: 190px; height: 32px; font-size: 12px; background: rgba(15, 23, 42, 0.7);"
           />
@@ -2245,7 +2245,7 @@ function renderTechnicianSearchSection({ idPrefix, label = 'Assigned Technician 
           type="text" 
           id="${idPrefix}-tech-search" 
           class="form-control" 
-          placeholder="🔍 Type Card Number (e.g. 1042) or Mechanic Name..." 
+          placeholder="Type Card Number (e.g. 1042) or Mechanic Name..." 
           value="${defaultVal || ''}"
           autocomplete="off"
           style="font-size: 13px; font-weight: 600; padding-left: 12px; background: rgba(30, 41, 59, 0.95); border-color: rgba(56, 189, 248, 0.3); color: #fff;"

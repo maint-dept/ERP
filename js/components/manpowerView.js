@@ -380,7 +380,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
             type="text" 
             id="mp-filter-search" 
             class="form-control" 
-            placeholder="🔍 Search card, name, unit, floor, phone, NID, blood..." 
+            placeholder="Search card, name, unit, floor, phone, NID, blood..." 
             value="${filterState.search}" 
             style="font-size: 12px; height: 30px; padding: 4px 8px;"
           />

@@ -1811,7 +1811,7 @@ function renderSparePartsReportsTab() {
               type="text" 
               id="sp-filter-search" 
               class="form-control" 
-              placeholder="🔍 Search part, code, slip #, tech..." 
+              placeholder="Search part, code, slip #, tech..." 
               value="${spareFilterState.search || ''}"
               style="height: 28px; font-size: 11.5px; padding: 2px 8px; min-width: 180px; flex: 1;"
             />

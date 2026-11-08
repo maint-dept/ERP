@@ -125,7 +125,7 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
               type="text" 
               id="ent-live-search-input" 
               class="form-control" 
-              placeholder="🔍 Search Board ID, S/N, Model, Name, or Machine (e.g. BRD-00025, TS-01)..." 
+              placeholder="Search Board ID, S/N, Model, Name, or Machine (e.g. BRD-00025, TS-01)..." 
               value="${currentBoard ? `${currentBoard.boardSerial} — ${currentBoard.partName}` : ''}"
               style="height: 42px; font-size: 13px; font-weight: 800; padding-left: 14px; padding-right: 36px; background: rgba(30, 41, 59, 0.95); border: 1.5px solid #38bdf8; color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); border-radius: 6px; width: 100%;"
               autocomplete="off"
@@ -686,7 +686,7 @@ function openCompleteHistoryModal(board, historyList, connectedMachine) {
           <!-- Controls Bar -->
           <div style="padding: 12px 20px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div style="flex: 1; min-width: 240px;">
-              <input type="text" id="ent-hist-modal-search" class="form-control" placeholder="🔍 Search inside history (Machine, Date, Company, Result)..." value="${historySearch}" style="height: 36px; font-size: 12.5px;" />
+              <input type="text" id="ent-hist-modal-search" class="form-control" placeholder="Search inside history (Machine, Date, Company, Result)..." value="${historySearch}" style="height: 36px; font-size: 12.5px;" />
             </div>
             
             <div style="display: flex; gap: 6px;">
@@ -1193,7 +1193,7 @@ function renderEntLabConfigInlineView() {
                     type="text" 
                     id="inline-tech-name" 
                     class="form-control" 
-                    placeholder="🔍 Search Name or Card No..." 
+                    placeholder="Search Name or Card No..." 
                     style="height: 38px; font-size: 12px; font-weight: 700; padding-left: 12px; padding-right: 28px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #38bdf8; color: #fff; box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);" 
                     autocomplete="off"
                   />
@@ -2280,7 +2280,7 @@ function openActionModal(board, initialActionType = null) {
             id="${id}-search" 
             class="form-control ent-person-search-box" 
             data-target="${id}" 
-            placeholder="🔍 Type Card No (e.g. 1001), Name, or Area..." 
+            placeholder="Type Card No (e.g. 1001), Name, or Area..." 
             value="${hasInitial ? (initialPerson.cardNumber ? `[Card: ${initialPerson.cardNumber}] ${initialPerson.name} • ${initialPerson.workingArea || 'ENT Lab'}` : initialPerson.name) : ''}"
             style="font-weight: 700; height: 36px; font-size: 12px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #334155; color: #fff; padding-right: 28px;" 
             autocomplete="off" 
@@ -3637,7 +3637,7 @@ function openAdminConfigModal() {
                       type="text" 
                       id="admin-new-tech-name" 
                       class="form-control" 
-                      placeholder="🔍 Search Name or Card..." 
+                      placeholder="Search Name or Card..." 
                       style="height: 34px; font-size: 12px; font-weight: 700; padding-left: 10px; padding-right: 26px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #38bdf8; color: #fff;" 
                       autocomplete="off"
                     />

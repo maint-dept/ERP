@@ -726,7 +726,7 @@ function renderScreen2ToolsAddForm() {
               <div style="display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 8px;">
                 <span style="color: #94a3b8; font-weight: 700; text-align: right;">Select Item :</span>
                 <div style="position: relative; display: flex; align-items: center;">
-                  <input type="text" id="input-tool-smart-search" placeholder="🔍 Type tool or spare part name, code (e.g. 001, screw, SP-01)..." 
+                  <input type="text" id="input-tool-smart-search" placeholder="Type tool or spare part name, code (e.g. 001, screw, SP-01)..." 
                     value="${screen2SelectedCatalogItem ? `${screen2SelectedCatalogItem.code} - ${screen2SelectedCatalogItem.name}` : ''}"
                     autocomplete="off"
                     style="width: 100%; background: #0f172a; color: #38bdf8; border: 1.5px solid #0284c7; border-radius: 4px; padding: 6px 28px 6px 8px; font-weight: 700; font-size: 12px;" />
@@ -1660,7 +1660,7 @@ function renderScreen4FindAndSelect() {
       <!-- Streamlined Single-Row Filter Toolbar -->
       <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
         <div style="flex: 1.4; min-width: 150px;">
-          <input type="text" id="find-search-input" value="${findFilters.search || ''}" placeholder="🔍 Search Name, ID, Reg, Tool..." 
+          <input type="text" id="find-search-input" value="${findFilters.search || ''}" placeholder="Search Name, ID, Reg, Tool..." 
             style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11.5px;" />
         </div>
 
@@ -1962,7 +1962,7 @@ function renderScreen5AccessoriesPage() {
         </div>
 
         <div style="width: 220px;">
-          <input type="text" id="acc-search-input" value="${accessorySearch || ''}" placeholder="🔍 Search tools or accessories..." 
+          <input type="text" id="acc-search-input" value="${accessorySearch || ''}" placeholder="Search tools or accessories..." 
             style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11.5px;" />
         </div>
       </div>
@@ -2260,7 +2260,7 @@ function renderScreen6DatabasePage() {
 
           <!-- Table Search Input -->
           <div style="display: flex; gap: 6px; align-items: center;">
-            <input type="text" id="db-search-input" value="${databaseSearch}" placeholder="🔍 Search in table..."
+            <input type="text" id="db-search-input" value="${databaseSearch}" placeholder="Search in table..."
               style="background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11.5px; width: 180px;" />
             ${databaseSearch ? `
               <button id="btn-db-clear-search" style="background: #334155; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
@@ -6997,7 +6997,7 @@ export function openBatchToolsAllocationModal() {
 
             <!-- Live Search Bar -->
             <div style="position: relative;">
-              <input type="text" id="inp-batch-search" value="${batchSearch}" placeholder="🔍 Live filter by tool name, code (e.g. 001, Screw Driver, Pliers, Belt)..." 
+              <input type="text" id="inp-batch-search" value="${batchSearch}" placeholder="Live filter by tool name, code (e.g. 001, Screw Driver, Pliers, Belt)..." 
                 style="width: 100%; background: #0f172a; color: #fff; border: 1.5px solid #475569; border-radius: 6px; padding: 7px 12px; font-size: 12.5px;" />
             </div>
           </div>
@@ -8268,7 +8268,7 @@ Tools User - Shojib - 132694 [New]`;
 
               <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <!-- Quick Filter Input -->
-                <input type="text" id="inp-search-modal-emp" value="${mechanicFilterText}" placeholder="🔍 Filter mechanic (e.g. Najmul, 142472)..."
+                <input type="text" id="inp-search-modal-emp" value="${mechanicFilterText}" placeholder="Filter mechanic (e.g. Najmul, 142472)..."
                   style="width: 220px; background: #0f172a; color: #38bdf8; border: 1px solid #38bdf8; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 600;" />
 
                 <!-- Mechanic Dropdown -->

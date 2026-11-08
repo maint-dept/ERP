@@ -374,35 +374,75 @@ export const EMOJI_MAP = {
 };
 
 /**
+ * HTML Tokenizer Regex:
+ * 1. HTML Comments: <!-- ... -->
+ * 2. Raw Text Blocks: <script>...</script>, <style>...</style>, <textarea>...</textarea>, <pre>...</pre>, <code>...</code>
+ * 3. Select Option Elements: <option ...>...</option>
+ * 4. Any HTML Tag: <tag attr="val"...> or </tag>
+ * 5. Text content outside tags: [^<]+
+ */
+const HTML_TOKEN_REGEX = /(<!--[\s\S]*?-->)|(<(?:script|style|textarea|pre|code)\b[^>]*>[\s\S]*?<\/(?:script|style|textarea|pre|code)>)|(<option\b[^>]*>[\s\S]*?<\/option>)|(<(?:"[^"]*"|'[^']*'|[^'">])*[\s\S]*?>)|([^<]+)/gi;
+
+/**
  * Replaces cartoon emojis in an HTML string with professional inline vector SVGs.
- * Intelligently protects <option> tags so select dropdowns display clean plain text!
+ * Intelligently protects HTML tags, tag attributes (placeholder, title, aria-label, etc.),
+ * <option> dropdowns, and raw text blocks so NO tag structure can ever be corrupted!
  */
 export function replaceEmojiInHtml(html) {
   if (!html || typeof html !== 'string') return html;
 
-  // 1. Protect <option> tags by stripping emojis to clean text
-  // Native HTML <option> tags cannot render SVG; they should contain clean text.
-  const optionRegex = /<option\b[^>]*>([\s\S]*?)<\/option>/gi;
-  html = html.replace(optionRegex, (fullMatch, innerText) => {
-    let cleanText = innerText;
-    for (const em of Object.keys(EMOJI_MAP)) {
-      if (cleanText.includes(em)) {
-        cleanText = cleanText.split(em).join('').trim();
+  return html.replace(HTML_TOKEN_REGEX, (match, comment, specialBlock, optionBlock, htmlTag, textContent) => {
+    // 1. Comments: keep untouched
+    if (comment) return comment;
+
+    // 2. Special blocks (script, style, textarea, pre, code): keep untouched
+    if (specialBlock) return specialBlock;
+
+    // 3. Option elements: strip emojis to clean plain text (native <option> cannot render SVG)
+    if (optionBlock) {
+      return optionBlock.replace(/(<option\b[^>]*>)([\s\S]*?)(<\/option>)/gi, (m, open, inner, close) => {
+        let cleanInner = inner;
+        for (const em of Object.keys(EMOJI_MAP)) {
+          if (cleanInner.includes(em)) {
+            cleanInner = cleanInner.split(em).join('').trim();
+          }
+        }
+        return open + cleanInner.replace(/\s{2,}/g, ' ') + close;
+      });
+    }
+
+    // 4. Any HTML tag: clean emojis from attributes (placeholder, title, aria-label, etc.)
+    // STRICT RULE: NEVER inject <span class=...> into an HTML tag or attribute!
+    if (htmlTag) {
+      let cleanTag = htmlTag;
+      let hasEmoji = false;
+      for (const em of Object.keys(EMOJI_MAP)) {
+        if (cleanTag.includes(em)) {
+          cleanTag = cleanTag.split(em).join('');
+          hasEmoji = true;
+        }
       }
+      if (hasEmoji) {
+        // Clean leading spaces after quote, e.g. placeholder=" Search..." -> placeholder="Search..."
+        cleanTag = cleanTag.replace(/(=\s*["'])\s+/g, '$1');
+      }
+      return cleanTag;
     }
-    cleanText = cleanText.replace(/\s{2,}/g, ' ');
-    return fullMatch.replace(innerText, cleanText);
+
+    // 5. Plain text content between tags: here and ONLY here, convert emojis to vector SVGs
+    if (textContent) {
+      let replaced = textContent;
+      for (const [em, config] of Object.entries(EMOJI_MAP)) {
+        if (replaced.includes(em)) {
+          const svgHtml = icon(config.name, config);
+          replaced = replaced.split(em).join(svgHtml);
+        }
+      }
+      return replaced;
+    }
+
+    return match;
   });
-
-  // 2. Replace emojis outside options with vector SVG icons
-  for (const [em, config] of Object.entries(EMOJI_MAP)) {
-    if (html.includes(em)) {
-      const svgHtml = icon(config.name, config);
-      html = html.split(em).join(svgHtml);
-    }
-  }
-
-  return html;
 }
 
 /**
@@ -411,7 +451,7 @@ export function replaceEmojiInHtml(html) {
 export function enhanceDomIcons(root = document.body) {
   if (!root || typeof document === 'undefined') return;
 
-  // Clean emojis in any select option elements first
+  // 1. Clean emojis in any select option elements first
   try {
     const options = root.querySelectorAll ? root.querySelectorAll('option') : [];
     for (let i = 0; i < options.length; i++) {
@@ -426,6 +466,30 @@ export function enhanceDomIcons(root = document.body) {
       }
       if (changed) {
         opt.textContent = txt.replace(/\s{2,}/g, ' ');
+      }
+    }
+  } catch (_) {}
+
+  // 2. Clean emojis in inputs, textareas, and tooltips
+  try {
+    const elementsWithAttr = root.querySelectorAll ? root.querySelectorAll('[placeholder], [title], [aria-label]') : [];
+    for (let i = 0; i < elementsWithAttr.length; i++) {
+      const el = elementsWithAttr[i];
+      for (const attr of ['placeholder', 'title', 'aria-label']) {
+        const val = el.getAttribute(attr);
+        if (val) {
+          let cleanVal = val;
+          let changed = false;
+          for (const em of Object.keys(EMOJI_MAP)) {
+            if (cleanVal.includes(em)) {
+              cleanVal = cleanVal.split(em).join('').trim();
+              changed = true;
+            }
+          }
+          if (changed) {
+            el.setAttribute(attr, cleanVal.replace(/\s{2,}/g, ' '));
+          }
+        }
       }
     }
   } catch (_) {}
