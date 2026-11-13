@@ -762,11 +762,14 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
         }
       }
 
-      // Strategy C: Generic fallback to any available camera
+      // Strategy C: Generic fallback to any available camera or default constraints
       if (!startSuccessful) {
         try {
           activeScanner = new Html5Qrcode('qr-reader-container');
-          await activeScanner.start(true, config, handleDecoded, () => {});
+          const fallbackCamera = (cams && cams.length > 0 && cams[0].id)
+            ? cams[0].id
+            : { facingMode: targetFacing || 'environment' };
+          await activeScanner.start(fallbackCamera, config, handleDecoded, () => {});
           startSuccessful = true;
         } catch (errC) {
           lastError = errC;

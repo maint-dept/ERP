@@ -16,7 +16,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
 import { tempImportService } from '../services/tempImportService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.1';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.47.0';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './sparePartsManagementView.js';
 import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 

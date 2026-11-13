@@ -17,7 +17,7 @@ import { authService } from '../services/authService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { notificationService } from '../services/notificationService.js';
-import { smartStorageService } from '../services/smartStorageService.js?v=4.46.1';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.47.0';
 import { state } from '../state.js';
 import { openSparePartsImportModal } from './machineHistoryView.js';
 import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';

@@ -11,7 +11,7 @@ import { authService } from './authService.js';
 import { customFieldService } from './customFieldService.js';
 import { auditService } from './auditService.js';
 import { historyService } from './historyService.js';
-import { smartStorageService } from './smartStorageService.js?v=4.46.1';
+import { smartStorageService } from './smartStorageService.js?v=4.47.0';
 import { tempImportService } from './tempImportService.js';
 
 export function calculateLevenshtein(a, b) {

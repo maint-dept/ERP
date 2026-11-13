@@ -24,9 +24,23 @@ class CryptoService {
   }
 
   /**
+   * Helper to encode strings to standard UTF-8 binary string
+   * Ensures seamless unicode support (emojis, non-Latin scripts, symbols)
+   */
+  _toUtf8(str) {
+    if (typeof str !== 'string') str = String(str || '');
+    try {
+      return unescape(encodeURIComponent(str));
+    } catch (_) {
+      return str;
+    }
+  }
+
+  /**
    * Synchronous SHA-256 hashing implementation
    */
-  sha256Sync(ascii) {
+  sha256Sync(input) {
+    let ascii = this._toUtf8(input);
     function rightRotate(value, amount) {
       return (value >>> amount) | (value << (32 - amount));
     }

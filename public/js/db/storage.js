@@ -3278,6 +3278,7 @@ class StorageEngine {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
       this._invalidateTableIdMap(tableName);
+      try { idbCache.setTable(tableName, snapshot); } catch (_) {}
       safeLocalStorageSetTable(tableName, snapshot);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
@@ -3394,6 +3395,7 @@ class StorageEngine {
       table[index] = oldItem;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
       this._invalidateTableIdMap(tableName);
+      try { idbCache.setTable(tableName, table); } catch (_) {}
       safeLocalStorageSetTable(tableName, table);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
@@ -3479,6 +3481,7 @@ class StorageEngine {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
       this._invalidateTableIdMap(tableName);
+      try { idbCache.setTable(tableName, snapshot); } catch (_) {}
       safeLocalStorageSetTable(tableName, snapshot);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
@@ -3495,6 +3498,7 @@ class StorageEngine {
     if (!ok) {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+      try { idbCache.setTable(tableName, snapshot); } catch (_) {}
       safeLocalStorageSetTable(tableName, snapshot);
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }

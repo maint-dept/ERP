@@ -11,8 +11,8 @@
  * - Graceful 404 query fallback (?p=/inventory) and legacy hash fallback (#inventory)
  */
 
-import { authService } from './authService.js?v=4.46.1';
-import { state } from '../state.js?v=4.46.1';
+import { authService } from './authService.js?v=4.47.0';
+import { state } from '../state.js?v=4.47.0';
 
 // Canonical route-to-view mapping
 const ROUTE_VIEW_MAP = {

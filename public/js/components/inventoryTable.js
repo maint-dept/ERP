@@ -539,7 +539,7 @@ export function renderInventoryTable() {
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
-        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: ellipsis; overflow: hidden !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
+        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: ellipsis; overflow: hidden !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${escapeHtml(name)}"><span style="display: inline; line-height: 1.35;">${escapeHtml(name)}</span>${viewOnlyBadge}</td>`;
       }
     },
     {
@@ -592,7 +592,7 @@ export function renderInventoryTable() {
           mdl = rawLast || '—';
         }
 
-        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${mdl}">${mdl}</td>`;
+        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${escapeHtml(mdl)}">${escapeHtml(mdl)}</td>`;
       }
     },
     {
@@ -600,7 +600,7 @@ export function renderInventoryTable() {
       label: 'Serial Number',
       width: 130,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; cursor: pointer; ${thStyle}">Serial Number</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a>${meta.isAmb ? ` <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 4px; vertical-align: middle; margin-left: 2px;" title="Standby Ambulance Machine for Line Breakdowns">🚑 AMB</span>` : ''}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${escapeHtml(m.serialNumber || '—')}</a>${meta.isAmb ? ` <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 4px; vertical-align: middle; margin-left: 2px;" title="Standby Ambulance Machine for Line Breakdowns">🚑 AMB</span>` : ''}</td>`
     },
     {
       key: 'systemAssetId',
@@ -624,7 +624,7 @@ export function renderInventoryTable() {
           assetId = `${cfg.prefix}${assetId.padStart(cfg.digitLength, '0')}`;
           m.systemAssetId = assetId;
         }
-        return `<td class="${tdClass}" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; overflow: hidden; text-overflow: ellipsis; padding: 4px 2px; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="system-asset-id-badge">${assetId}</span></a></td>`;
+        return `<td class="${tdClass}" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; overflow: hidden; text-overflow: ellipsis; padding: 4px 2px; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${escapeHtml(assetId)} (Click to inspect machine details)"><span class="system-asset-id-badge">${escapeHtml(assetId)}</span></a></td>`;
       }
     },
     {
@@ -636,7 +636,7 @@ export function renderInventoryTable() {
         const rawMfg = m.manufacturing_serial || m.manufacturingSerial || m.customValues?.manufacturing_serial || m.customValues?.manufacturingSerial || m.manufacturingNo || m.mfgSerial || m.manufacturing;
         const hasMfg = rawMfg && String(rawMfg).trim() !== '' && String(rawMfg).trim() !== '-' && String(rawMfg).trim() !== '—';
         const mfg = hasMfg ? String(rawMfg).trim() : '—';
-        return `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}">${hasMfg ? `<span class="mfg-serial-text" style="color: #38bdf8; font-weight: 700;">${mfg}</span>` : `<span style="color: #64748b; font-weight: 500;">—</span>`}</td>`;
+        return `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${escapeHtml(mfg)}">${hasMfg ? `<span class="mfg-serial-text" style="color: #38bdf8; font-weight: 700;">${escapeHtml(mfg)}</span>` : `<span style="color: #64748b; font-weight: 500;">—</span>`}</td>`;
       }
     },
     {
@@ -646,7 +646,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; ${thStyle}">Mfg Info</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const val = m.manufacturing || m.customValues?.manufacturing || '—';
-        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${val}">${val}</td>`;
+        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(val)}">${escapeHtml(val)}</td>`;
       }
     },
     {
@@ -656,7 +656,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 85px; min-width: 85px; max-width: 85px; text-align: center; ${thStyle}">Mfg Year</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const val = m.manufacturing_year || m.manufacturingYear || m.mfgYear || m.customValues?.manufacturing_year || '—';
-        return `<td class="${tdClass}" style="width: 85px; min-width: 85px; max-width: 85px; text-align: center; ${tdStyle}">${val}</td>`;
+        return `<td class="${tdClass}" style="width: 85px; min-width: 85px; max-width: 85px; text-align: center; ${tdStyle}">${escapeHtml(val)}</td>`;
       }
     },
     {
@@ -666,7 +666,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="brand" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; cursor: pointer; ${thStyle}">Brand</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const brd = (brdMap.get(m.brandId) || m.brand || '—').trim();
-        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; font-weight: 600; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${brd}">${brd}</td>`;
+        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; font-weight: 600; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(brd)}">${escapeHtml(brd)}</td>`;
       }
     },
     {
@@ -676,7 +676,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="group" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; cursor: pointer; ${thStyle}">Group</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const grp = grpMap.get(m.groupId) || m.group || '—';
-        return `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${grp}">${grp}</td>`;
+        return `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(grp)}">${escapeHtml(grp)}</td>`;
       }
     },
     {
@@ -686,7 +686,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="unit" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}">Unit / Factory</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const unt = untMap.get(m.unitId) || m.unit || '—';
-        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${unt}">${unt}</td>`;
+        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(unt)}">${escapeHtml(unt)}</td>`;
       }
     },
     {
@@ -697,7 +697,7 @@ export function renderInventoryTable() {
       renderTd: (m, meta, tdStyle, tdClass) => {
         const flr = flrMap.get(m.floorId) || m.floor || '—';
         const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
-        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}${isViewOnly ? ` <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; white-space: nowrap;" title="Cross-Floor Idle Machine (View-Only)">👁️</span>` : ''}</td>`;
+        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(flr)}">${escapeHtml(flr)}${isViewOnly ? ` <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; white-space: nowrap;" title="Cross-Floor Idle Machine (View-Only)">👁️</span>` : ''}</td>`;
       }
     },
     {
@@ -782,21 +782,21 @@ export function renderInventoryTable() {
       label: 'Supplier',
       width: 120,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; ${thStyle}">Supplier</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${m.supplier_name || m.supplier || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${escapeHtml(m.supplier_name || m.supplier || '—')}</td>`
     },
     {
       key: 'country_of_origin',
       label: 'Origin',
       width: 90,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${thStyle}">Origin</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${tdStyle}">${m.country_of_origin || m.origin || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${tdStyle}">${escapeHtml(m.country_of_origin || m.origin || '—')}</td>`
     },
     {
       key: 'machine_capacity',
       label: 'Capacity',
       width: 95,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${thStyle}">Capacity</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">${m.machine_capacity || m.capacity || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">${escapeHtml(m.machine_capacity || m.capacity || '—')}</td>`
     },
     {
       key: 'remarks',

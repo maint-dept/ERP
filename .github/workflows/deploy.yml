@@ -29,6 +29,33 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Sanitize static deployment artifact
+        run: |
+          echo "Removing PHP scripts from static GitHub Pages build..."
+          rm -f ./public/*.php
+          echo "Sanitizing credentials and user password hashes from public static JSON database..."
+          node -e '
+            const fs = require("fs");
+            const p = "./public/data/erp_database.json";
+            if (fs.existsSync(p)) {
+              try {
+                const d = JSON.parse(fs.readFileSync(p, "utf8"));
+                if (Array.isArray(d.users)) {
+                  d.users = d.users.map(u => {
+                    const safe = { ...u };
+                    delete safe.password;
+                    delete safe.passwordHash;
+                    return safe;
+                  });
+                  fs.writeFileSync(p, JSON.stringify(d));
+                  console.log("Successfully sanitized " + d.users.length + " user records in GitHub Pages artifact.");
+                }
+              } catch (e) {
+                console.error("Failed to sanitize erp_database.json:", e);
+              }
+            }
+          '
+
       - name: Upload artifact from public directory
         uses: actions/upload-pages-artifact@v3
         with:
