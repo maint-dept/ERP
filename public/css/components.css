@@ -517,8 +517,6 @@
   from { transform: translateY(12px); opacity: 0; }
   to   { transform: none; opacity: 1; }
 }
-  to   { transform: translateZ(0) translateY(0);    opacity: 1; }
-}
 
 @keyframes slideDrawer {
   from { transform: translateX(100%); }
@@ -913,8 +911,8 @@ tr.draggable-row.drag-over-bottom {
 /* Frozen boundary right-edge shadow indicator */
 .excel-grid-table th.col-frozen-boundary,
 .excel-grid-table td.col-frozen-boundary {
-  border-right: 2.5px solid #38bdf8 !important;
-  box-shadow: 6px 0 16px rgba(0, 0, 0, 0.75) !important;
+  border-right: 2px solid rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 4px 0 10px -2px rgba(0, 0, 0, 0.45) !important;
 }
 
 /* Row hover - keep frozen cells highlighted (dark theme) */
@@ -946,42 +944,63 @@ tr.draggable-row.drag-over-bottom {
   border-spacing: 0;
 }
 
-/* Light theme overrides for frozen cells & boundary (prolicense.top warm paper standard) */
+/* Light theme overrides for frozen cells & boundary (Executive Standard) */
 body.theme-light .excel-grid-table th.col-frozen-boundary,
-body.theme-light .excel-grid-table td.col-frozen-boundary {
-  border-right: 2px solid #d3cab7 !important;
-  box-shadow: 3px 0 8px -2px rgba(31, 28, 23, 0.08) !important;
+body.theme-light .excel-grid-table td.col-frozen-boundary,
+html.theme-light .excel-grid-table th.col-frozen-boundary,
+html.theme-light .excel-grid-table td.col-frozen-boundary {
+  border-right: 2px solid #cbd5e1 !important;
+  box-shadow: 4px 0 8px -2px rgba(15, 23, 42, 0.08) !important;
 }
 body.theme-light .excel-grid-table thead th,
 body.theme-light .excel-grid-table thead th.col-freeze-sl,
 body.theme-light .excel-grid-table thead th.col-freeze-check,
-body.theme-light .excel-grid-table thead th.col-frozen-cell {
-  background-color: #efe9dd !important;
-  color: #1f1c17 !important;
-  border-right: 1px solid #d3cab7 !important;
-  border-bottom: 2px solid #d3cab7 !important;
+body.theme-light .excel-grid-table thead th.col-freeze-name,
+body.theme-light .excel-grid-table thead th.col-frozen-cell,
+body.theme-light .excel-grid-table thead th.col-frozen-boundary,
+html.theme-light .excel-grid-table thead th,
+html.theme-light .excel-grid-table thead th.col-freeze-sl,
+html.theme-light .excel-grid-table thead th.col-freeze-check,
+html.theme-light .excel-grid-table thead th.col-freeze-name,
+html.theme-light .excel-grid-table thead th.col-frozen-cell,
+html.theme-light .excel-grid-table thead th.col-frozen-boundary {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-bottom: 2.5px solid #0284c7 !important;
 }
 body.theme-light .excel-grid-table tbody td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody td.col-freeze-check,
-body.theme-light .excel-grid-table tbody td.col-frozen-cell {
-  color: #1f1c17 !important;
-  border-right: 1px solid #e5dfd3 !important;
-  border-bottom: 1px solid #e5dfd3 !important;
+body.theme-light .excel-grid-table tbody td.col-freeze-name,
+body.theme-light .excel-grid-table tbody td.col-frozen-cell,
+html.theme-light .excel-grid-table tbody td.col-freeze-sl,
+html.theme-light .excel-grid-table tbody td.col-freeze-check,
+html.theme-light .excel-grid-table tbody td.col-freeze-name,
+html.theme-light .excel-grid-table tbody td.col-frozen-cell {
+  color: #0f172a !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-check,
-body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell {
-  background-color: #efe9dd !important;
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-name,
+body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell,
+html.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell {
+  background-color: #e0f2fe !important;
 }
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-check,
-body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell {
-  background-color: #fffdf8 !important;
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-name,
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell,
+html.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell {
+  background-color: #ffffff !important;
 }
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-check,
-body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell {
-  background-color: #f8f5ee !important;
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-name,
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell,
+html.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell {
+  background-color: #f1f5f9 !important;
 }
 .manpower-page-wrapper,
 .reports-page-wrapper,
@@ -3724,9 +3743,6 @@ body.theme-light .kpi-pill.kpi-ambulance.active-kpi {
   border-color: #cf3339 !important;
   box-shadow: 0 0 0 1px #cf3339 !important;
 }
-  border-color: #e11d48 !important;
-  box-shadow: 0 0 0 1px #e11d48 !important;
-}
 
 /* Light Theme: Serial Numbers & Codes (Deep vivid royal blue text #1d4ed8, bold 700, soft blue pill #eff6ff, border #93c5fd) */
 body.theme-light .machine-serial-link,
@@ -4283,6 +4299,17 @@ table tbody tr.selected:hover td,
 body.theme-light table thead th,
 body.theme-light .data-table thead th,
 body.theme-light .excel-grid-table thead th,
+body.theme-light .excel-grid-table thead th.col-freeze-sl,
+body.theme-light .excel-grid-table thead th.col-freeze-check,
+body.theme-light .excel-grid-table thead th.col-freeze-name,
+body.theme-light .excel-grid-table thead th.col-frozen-cell,
+body.theme-light .excel-grid-table thead th.col-frozen-boundary,
+html.theme-light .excel-grid-table thead th,
+html.theme-light .excel-grid-table thead th.col-freeze-sl,
+html.theme-light .excel-grid-table thead th.col-freeze-check,
+html.theme-light .excel-grid-table thead th.col-freeze-name,
+html.theme-light .excel-grid-table thead th.col-frozen-cell,
+html.theme-light .excel-grid-table thead th.col-frozen-boundary,
 body.theme-light .table thead th,
 body.theme-light .transfers-table thead th,
 body.theme-light .pm-table thead th,
@@ -4319,6 +4346,11 @@ body.theme-light .pm-table thead th:hover {
 body.theme-light table tbody tr:nth-child(odd) td,
 body.theme-light .data-table tbody tr:nth-child(odd) td,
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td,
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-sl,
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-check,
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-name,
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell,
+html.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell,
 body.theme-light .table tbody tr:nth-child(odd) td,
 body.theme-light .transfers-table tbody tr:nth-child(odd) td,
 body.theme-light .pm-table tbody tr:nth-child(odd) td,
@@ -4336,6 +4368,11 @@ body.theme-light .permissions-matrix-table tbody tr:nth-child(odd) td {
 body.theme-light table tbody tr:nth-child(even) td,
 body.theme-light .data-table tbody tr:nth-child(even) td,
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td,
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-sl,
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-check,
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-name,
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell,
+html.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell,
 body.theme-light .table tbody tr:nth-child(even) td,
 body.theme-light .transfers-table tbody tr:nth-child(even) td,
 body.theme-light .pm-table tbody tr:nth-child(even) td,
@@ -6185,35 +6222,42 @@ html.theme-light *::-webkit-scrollbar-thumb:hover {
     padding: 4px 6px !important;
   }
 
-  /* Light theme mobile frozen cell override (prolicense.top warm paper standard) */
+  /* Light theme mobile frozen cell override (Executive Standard) */
   body.theme-light .excel-grid-table thead th.col-freeze-sl,
   body.theme-light .excel-grid-table thead th.col-freeze-check,
-  body.theme-light .excel-grid-table thead th.col-frozen-cell {
-    background-color: #efe9dd !important;
+  body.theme-light .excel-grid-table thead th.col-freeze-name,
+  body.theme-light .excel-grid-table thead th.col-frozen-cell,
+  body.theme-light .excel-grid-table thead th.col-frozen-boundary {
+    background-color: #f8fafc !important;
     background-clip: border-box !important;
-    border-right: 1px solid #d3cab7 !important;
-    color: #1f1c17 !important;
+    border-right: 1px solid #cbd5e1 !important;
+    border-bottom: 2.5px solid #0284c7 !important;
+    color: #0f172a !important;
   }
   body.theme-light .excel-grid-table tbody td.col-freeze-sl,
   body.theme-light .excel-grid-table tbody td.col-freeze-check,
+  body.theme-light .excel-grid-table tbody td.col-freeze-name,
   body.theme-light .excel-grid-table tbody td.col-frozen-cell {
-    border-right: 1px solid #d3cab7 !important;
-    color: #1f1c17 !important;
+    border-right: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
   }
   body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-sl,
   body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-check,
+  body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-name,
   body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell {
-    background-color: #fffdf8 !important;
+    background-color: #ffffff !important;
   }
   body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-sl,
   body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-check,
+  body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-name,
   body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell {
-    background-color: #f8f5ee !important;
+    background-color: #f1f5f9 !important;
   }
   body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-sl,
   body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-check,
+  body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-name,
   body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell {
-    background-color: #efe9dd !important;
+    background-color: #e0f2fe !important;
   }
 }
 

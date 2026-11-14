@@ -2057,8 +2057,6 @@ body.theme-light .badge-archived {
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-  to { transform: translateX(0); opacity: 1; }
-}
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {

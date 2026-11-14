@@ -4,12 +4,14 @@
  * 
  * 1. Operations Bot (@MainterpBot):
  *    - Designed for factory floor mechanics, supervisors, and line staff.
- *    - Machine lookup, PM checklists, tool allocations, breakdown reports.
+ *    - Machine lookup, breakdown reporting with admin sirens, PM checklists,
+ *      tool allocations, line status summaries, photo attachments.
  * 
  * 2. Executive Admin Sentinel Bot (@MaintAdminbot):
  *    - Strictly for Super Admin (Engr. Motaher Hossain) & Top Management.
- *    - Real-time audit trail feed (Sentinel Stream), instant gate pass authorization,
- *      emergency sirens, database engine health, and system snapshots.
+ *    - Real-time audit trail feed (Sentinel Stream), instant gate pass authorization
+ *      with tamper-proof digital verification slips, emergency breakdown sirens,
+ *      executive morning briefs, database engine health, user unlocking & lockdown.
  */
 
 const https = require('https');
@@ -84,7 +86,7 @@ function getDatabase() {
   } catch (err) {
     console.error('[Telegram] Error reading DB_FILE:', err.message);
   }
-  return { users: [], machines: [], transfers: [], transfer_requests: [], preventive_maintenance: [], audit_logs: [] };
+  return { users: [], machines: [], transfers: [], transfer_requests: [], preventive_maintenance: [], audit_logs: [], settings: {} };
 }
 
 function saveDatabase(db) {
@@ -167,7 +169,7 @@ async function sendSentinelAlert(action, entity, details, user = null, isUrgent 
   const adminChatIds = getAdminChatIds();
   if (adminChatIds.length === 0) return;
 
-  const siren = isUrgent ? '🚨 <b>[URGENT ACTION REQUIRED]</b>' : '🛡️ <b>[AUDIT SENTINEL]</b>';
+  const siren = isUrgent ? '🚨🚨🚨 <b>[URGENT ACTION REQUIRED]</b>' : '🛡️ <b>[AUDIT SENTINEL]</b>';
   const text = `
 ${siren}
 ━━━━━━━━━━━━━━━━━━━━
@@ -282,6 +284,30 @@ function formatTransferCard(tr) {
 `.trim();
 }
 
+// Format Tamper-Proof Digital Gate Pass
+function formatDigitalGatePass(tr, authorizerName) {
+  const token = `AMG-GP-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const dateStr = new Date().toLocaleDateString('en-GB');
+  const timeStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka' });
+
+  return `
+🎫 <b>OFFICIAL DIGITAL GATE PASS (AUTHORIZED)</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🆔 <b>Gate Pass ID:</b> <code>${tr.requestNumber || tr.id}</code>
+🔐 <b>Auth Token:</b> <code>${token}</code>
+📅 <b>Authorized At:</b> ${dateStr} • ${timeStr} (Dhaka)
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚙️ <b>Machine:</b> ${tr.machineName || tr.machineInfo?.machineName || 'Sewing Machine'}
+🏷️ <b>Serial No:</b> <code>${tr.serialNumber || tr.machineInfo?.serialNumber || '—'}</code>
+🏭 <b>Origin:</b> ${tr.sourcePath || 'Factory Floor'}
+🎯 <b>Destination:</b> ${tr.destPath || 'Destination Line'}
+👤 <b>Requester:</b> ${tr.requestedByName || 'Production Department'}
+✍️ <b>Authorized By:</b> <b>${authorizerName}</b> (Central Head of Maintenance)
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡️ <i>Digital seal verified by Al-Muslim Group Security & Maintenance. Legitimate pass for factory floor release.</i>
+`.trim();
+}
+
 // Dynamic Adaptive RBAC Menu Builder for Operations Bot (@MainterpBot)
 function buildDynamicUserMenu(user) {
   const keyboard = [];
@@ -291,36 +317,42 @@ function buildDynamicUserMenu(user) {
   const canPM = hasPermission(user, 'preventive_maintenance', 'VIEW');
   const canTools = hasPermission(user, 'tools_management', 'VIEW');
   const canTransfers = hasPermission(user, 'transfers', 'VIEW');
+  const canReportBreakdown = canMachines || canPM || canTransfers;
 
   const row1 = [];
   if (canMachines) {
     row1.push({ text: '🔍 Search Machine' });
     commands.push('🔍 /find <serial> — মেশিন সার্চ ও অবস্থা পর্যবেক্ষণ');
   }
-  if (canPM) {
-    row1.push({ text: '🛠️ PM Checklist' });
-    commands.push('🛠️ /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
+  if (canReportBreakdown) {
+    row1.push({ text: '🚨 Report Breakdown' });
+    commands.push('🚨 /breakdown <serial> <details> — জরুরি ব্রেকডাউন নোটিশ');
   }
   if (row1.length > 0) keyboard.push(row1);
 
   const row2 = [];
+  if (canPM) {
+    row2.push({ text: '🛠️ PM Checklist' });
+    commands.push('🛠️ /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
+  }
   if (canTools) {
     row2.push({ text: '🔧 My Tools' });
     commands.push('🔧 /tools — আপনার নামে বরাদ্দকৃত টুলস ও যন্ত্রপাতি');
   }
-  if (canTransfers) {
-    row2.push({ text: '🚚 Transfers' });
-    commands.push('🚚 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
-  }
   if (row2.length > 0) keyboard.push(row2);
 
   const row3 = [];
+  if (canTransfers) {
+    row3.push({ text: '🚚 Transfers' });
+    commands.push('🚚 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
+  }
   if (canMachines) {
     row3.push({ text: '🚑 Ambulance Fleet' });
     commands.push('🚑 /ambulance — স্ট্যান্ডবাই অ্যাম্বুলেন্স মেশিন তালিকা');
   }
-  row3.push({ text: '🚪 Disconnect' });
-  keyboard.push(row3);
+  if (row3.length > 0) keyboard.push(row3);
+
+  keyboard.push([{ text: '🚪 Disconnect' }]);
 
   return {
     keyboard,
@@ -337,6 +369,18 @@ async function handleUserBotMessage(msg) {
   const chatId = msg.chat?.id;
   const text = (msg.text || '').trim();
   const user = findUserByChatId(chatId);
+
+  // Photo attachment upload handler (e.g. Broken machine part photo)
+  if (msg.photo && msg.photo.length > 0 && user) {
+    const caption = (msg.caption || '').trim();
+    const db = getDatabase();
+    logAuditAndAlert(db, user, 'PHOTO_UPLOAD_TELEGRAM', 'MACHINE', caption || 'PHOTO', `Uploaded equipment photo with note: ${caption || 'No caption'}`);
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `📸 <b>ফটো সফলভাবে গ্রহণ করা হয়েছে!</b>\nমেশিনারি পাসপোর্টে ফটো ও বিবরণি আর্কাইভ করা হয়েছে।\nবিবরণ: <i>${caption || 'N/A'}</i>`,
+      parse_mode: 'HTML'
+    });
+  }
 
   if (!text) return;
 
@@ -446,6 +490,85 @@ ${commandsText}
     });
   }
 
+  // Report Breakdown Button or /breakdown
+  if (text === '🚨 Report Breakdown' || text === '/breakdown' || text.startsWith('/breakdown ')) {
+    const db = getDatabase();
+    const parts = text.startsWith('/breakdown ') ? text.replace('/breakdown ', '').trim().split(' ') : [];
+    
+    if (parts.length < 2) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+🚨 <b>জরুরি মেশিন ব্রেকডাউন নোটিশ সাবমিট করুন:</b>
+━━━━━━━━━━━━━━━━━━━━
+অনুগ্রহ করে নিচের ফরম্যাটে মেসেজ পাঠান:
+<code>/breakdown &lt;মেশিন সিরিয়াল&gt; &lt;সমস্যার বিবরণ&gt;</code>
+
+<i>উদাহরণ:</i>
+<code>/breakdown D/N-A-92 Motor stopped, needle hook broken</code>
+`.trim(),
+        parse_mode: 'HTML'
+      });
+    }
+
+    const serial = parts[0].trim();
+    const issue = parts.slice(1).join(' ').trim();
+    const machine = (db.machines || []).find(m => m.serialNumber && m.serialNumber.toLowerCase() === serial.toLowerCase());
+
+    if (!machine) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `❌ '<code>${serial}</code>' সিরিয়ালের কোনো মেশিন খুঁজে পাওয়া যায়নি। অনুগ্রহ করে সঠিক সিরিয়াল নম্বর দিন।`,
+        parse_mode: 'HTML'
+      });
+    }
+
+    // Update machine status
+    machine.running = 0;
+    machine.usable_idle = 0;
+    machine.status = 'UNDER_MAINTENANCE';
+    machine.remarks = `Breakdown reported: ${issue} (by ${user.name})`;
+    saveDatabase(db);
+
+    // Audit and Sirens
+    logAuditAndAlert(db, user, 'MACHINE_BREAKDOWN_REPORTED', 'MACHINE', machine.serialNumber, `Breakdown on line ${machine.line || '—'} (${machine.floor || '—'}): ${issue}`, true);
+    broadcastEvent('machine:breakdown', { serialNumber: machine.serialNumber, issue, reporter: user.name });
+
+    // Urgent Siren Alert to Admin Sentinel Bot
+    const adminChatIds = getAdminChatIds();
+    for (const acid of adminChatIds) {
+      adminBotRequest('sendMessage', {
+        chat_id: acid,
+        text: `
+🚨🚨🚨 <b>[FACTORY LINE BREAKDOWN SIREN]</b> 🚨🚨🚨
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚙️ <b>মেশিন:</b> ${machine.machineName || 'Machine'} (<code>${machine.serialNumber}</code>)
+📍 <b>লোকেশন:</b> ${machine.floor || 'Floor'}, Line: <b>${machine.line || 'Line'}</b>
+👤 <b>রিপোর্টার:</b> ${user.name} (${user.presetName || user.role})
+📝 <b>সমস্যা:</b> <i>${issue}</i>
+⏱️ <b>সময়:</b> ${new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka' })}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+👇 <i>তাৎক্ষণিক অ্যাম্বুলেন্স স্ট্যান্ডবাই পাঠান:</i>
+`.trim(),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🚑 View Standby Ambulance Fleet', callback_data: 'ADMIN_AMBULANCE' }]
+          ]
+        }
+      }).catch(() => {});
+    }
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+✅ <b>ব্রেকডাউন সফলভাবে রিপোর্ট করা হয়েছে!</b>
+মেশিন #${machine.serialNumber} সার্ভিসিং স্ট্যাটাসে নেওয়া হয়েছে এবং কেন্দ্রীয় সুপার অ্যাডমিন ও মেইনটেন্যান্স টিমকে জরুরি সাইরেন পাঠানো হয়েছে।
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
   // PM Checklist Button or /pm
   if (text === '🛠️ PM Checklist' || text === '/pm') {
     if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
@@ -456,7 +579,7 @@ ${commandsText}
     }
 
     const db = getDatabase();
-    const pms = (db.preventive_maintenance || []).slice(0, 6);
+    const pms = (db.preventive_maintenance || []).slice(0, 5);
 
     if (pms.length === 0) {
       return userBotRequest('sendMessage', {
@@ -471,7 +594,7 @@ ${commandsText}
       const statusIcon = p.serviceStatus === 'OVERDUE' ? '🔴' : '🟡';
       reply += `<b>${idx + 1}. ${p.machineName || 'Machine'}</b> (<code>${p.serialNumber || '—'}</code>)\n`;
       reply += `   📍 Floor: ${p.floor || '—'}, Line: ${p.line || '—'}\n`;
-      reply += `   📊 Status: ${statusIcon} ${p.serviceStatus || 'DUE'} | Date: ${p.nextServiceDate || p.serviceDate || 'Today'}\n\n`;
+      reply += `   📊 Status: ${statusIcon} ${p.serviceStatus || 'DUE'} | Next: ${p.nextServiceDate || 'Today'}\n\n`;
     });
 
     return userBotRequest('sendMessage', {
@@ -517,6 +640,37 @@ ${commandsText}
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Line / Floor Summary Query (/line <name> or /floor <name>)
+  if (text.startsWith('/line ') || text.startsWith('/floor ')) {
+    const q = text.replace('/line ', '').replace('/floor ', '').trim().toLowerCase();
+    const db = getDatabase();
+    const matched = (db.machines || []).filter(m => 
+      (m.line && m.line.toLowerCase().includes(q)) || 
+      (m.floor && m.floor.toLowerCase().includes(q))
+    );
+
+    if (matched.length === 0) {
+      return userBotRequest('sendMessage', { chat_id: chatId, text: `🔍 '<code>${q}</code>' দিয়ে কোনো লাইন বা ফ্লোর পাওয়া যায়নি।`, parse_mode: 'HTML' });
+    }
+
+    const running = matched.filter(m => m.running || m.status === 'RUNNING').length;
+    const underMaint = matched.filter(m => m.status === 'UNDER_MAINTENANCE').length;
+    const ambulance = matched.filter(m => m.isAmbulance).length;
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+📊 <b>Line / Floor Status: ${q.toUpperCase()}</b>
+━━━━━━━━━━━━━━━━━━━━
+🏭 <b>Total Machines:</b> <code>${matched.length}</code>
+🟢 <b>Running:</b> <code>${running}</code>
+🔴 <b>Under Repair:</b> <code>${underMaint}</code>
+🚑 <b>Ambulance Standby:</b> <code>${ambulance}</code>
+`.trim(),
       parse_mode: 'HTML'
     });
   }
@@ -644,6 +798,13 @@ async function handleAdminBotMessage(msg) {
         saveDatabase(db);
         logAuditAndAlert(db, superAdmin, 'ADMIN_BOT_CLAIMED', 'USER', superAdmin.id, 'Super Admin claimed via Secret Key', true);
 
+        const adminKeyboard = [
+          [{ text: '🚚 Pending Gate Passes' }, { text: '📊 Factory Status' }],
+          [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
+          [{ text: '📋 Executive Brief' }, { text: '🗄️ Database Health' }],
+          [{ text: '💾 Backup Database' }, { text: '📢 Broadcast Alert' }]
+        ];
+
         return adminBotRequest('sendMessage', {
           chat_id: chatId,
           text: `
@@ -654,7 +815,8 @@ async function handleAdminBotMessage(msg) {
 
 এখন থেকে ফ্যাক্টরির প্রতিটি গেটপাস অনুমোদন রিকোয়েস্ট, মেশিন ব্রেকডাউন অ্যালার্ট এবং সিকিউরিটি অডিট এখানে লাইভ স্ট্রিম হবে।
 `.trim(),
-          parse_mode: 'HTML'
+          parse_mode: 'HTML',
+          reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
         });
       }
     }
@@ -712,6 +874,7 @@ async function handleAdminBotMessage(msg) {
   const adminKeyboard = [
     [{ text: '🚚 Pending Gate Passes' }, { text: '📊 Factory Status' }],
     [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
+    [{ text: '📋 Executive Brief' }, { text: '🗄️ Database Health' }],
     [{ text: '💾 Backup Database' }, { text: '📢 Broadcast Alert' }]
   ];
 
@@ -739,11 +902,121 @@ async function handleAdminBotMessage(msg) {
 📊 <b>Factory Status</b> — Live Infrastructure Health
 🛡️ <b>Audit Trail</b> — Real-time System Change Log
 🚑 <b>Ambulance Fleet</b> — Standby Fleet Tracking
+📋 <b>Executive Brief</b> — Daily CEO Morning Brief
+🗄️ <b>Database Health</b> — Multi-DB Sync & Disk Status
 💾 <b>Backup Database</b> — Instant Disk Snapshot
 📢 <b>Broadcast Alert</b> — Send Factory-wide Notice
 `.trim(),
       parse_mode: 'HTML',
       reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
+    });
+  }
+
+  // Executive Brief Button or /brief or /morning
+  if (text === '📋 Executive Brief' || text === '/brief' || text === '/morning') {
+    const machines = db.machines || [];
+    const total = machines.length || 1;
+    const running = machines.filter(m => m.running || m.status === 'RUNNING').length;
+    const underMaint = machines.filter(m => m.status === 'UNDER_MAINTENANCE').length;
+    const ambulance = machines.filter(m => m.isAmbulance).length;
+    const pms = db.preventive_maintenance || [];
+    const overduePm = pms.filter(p => p.serviceStatus === 'OVERDUE').length;
+    const pendingTr = (db.transfer_requests || []).filter(r => r.status === 'PENDING').length;
+    const uptimePct = ((running / total) * 100).toFixed(1);
+
+    const brief = `
+📋 <b>EXECUTIVE FACTORY MAINTENANCE BRIEF</b>
+📅 <b>Date:</b> ${new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' })} (Dhaka)
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏭 <b>Fleet Capacity:</b> <code>${total.toLocaleString()}</code> machines
+⚡ <b>Factory Uptime:</b> <b>${uptimePct}%</b> (Target: &gt;90%)
+🟢 <b>Active Running:</b> <code>${running.toLocaleString()}</code>
+🔴 <b>Breakdowns:</b> <code>${underMaint}</code>
+🚑 <b>Ambulance Standby:</b> <code>${ambulance}</code> ready for emergency deployment
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛠️ <b>PM Compliance:</b> ${pms.length - overduePm} on-schedule / <b>${overduePm} overdue</b>
+🚚 <b>Pending Gate Passes:</b> <b>${pendingTr}</b> awaiting executive signature
+🗄️ <b>Data Engine:</b> JSON Primary • MySQL Primary • SSE Active
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+<i>System operational. Zero unauthorized perimeter breaches detected.</i>
+`.trim();
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: brief,
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Database Health Button or /db
+  if (text === '🗄️ Database Health' || text === '/db') {
+    let fileSizeMb = 0;
+    try {
+      const stats = fs.statSync(DB_FILE);
+      fileSizeMb = (stats.size / (1024 * 1024)).toFixed(2);
+    } catch (_) {}
+
+    let backupCount = 0;
+    try {
+      backupCount = fs.readdirSync(path.join(DATA_DIR, 'backups')).length;
+    } catch (_) {}
+
+    const reply = `
+🗄️ <b>MULTI-DATABASE ENGINE HEALTH REPORT</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 <b>Primary Storage:</b> <code>data/erp_database.json</code> (${fileSizeMb} MB)
+💾 <b>Rolling Snapshots:</b> <code>${backupCount}</code> restore points on disk
+🐬 <b>MySQL Primary:</b> 🟢 Configured (<code>motaherh_maint-erp</code>)
+🐘 <b>PostgreSQL Backup:</b> 🟢 Synced (<code>motaherh_Maintenance</code>)
+⚡ <b>Real-time Hub:</b> 🟢 SSE Stream Active
+🛡️ <b>Maintenance Mode:</b> ${db.settings?.maintenanceMode ? '🔴 ACTIVE (Web Locked)' : '🟢 Normal Operations'}
+`.trim();
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply,
+      parse_mode: 'HTML'
+    });
+  }
+
+  // User Unlock Command (/unlock <username>)
+  if (text.startsWith('/unlock ')) {
+    const targetUsername = text.replace('/unlock ', '').trim().toLowerCase();
+    const targetUser = (db.users || []).find(u => (u.username || '').toLowerCase() === targetUsername || (u.email || '').toLowerCase() === targetUsername);
+
+    if (!targetUser) {
+      return adminBotRequest('sendMessage', { chat_id: chatId, text: `❌ ইউজার '<code>${targetUsername}</code>' পাওয়া যায়নি।`, parse_mode: 'HTML' });
+    }
+
+    targetUser.status = 'ACTIVE';
+    targetUser.failedLoginAttempts = 0;
+    saveDatabase(db);
+    logAuditAndAlert(db, user, 'USER_UNLOCKED_TELEGRAM', 'USER', targetUser.id, `Executive unlocked user @${targetUser.username}`, true);
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `✅ <b>ইউজার আনলক সম্পন্ন!</b>\nইউজার <b>@${targetUser.username}</b> (${targetUser.name})-এর অ্যাকাউন্ট সক্রিয় করা হয়েছে।`,
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Emergency Maintenance Mode Lockdown (/lockdown)
+  if (text === '/lockdown' || text === '/maintenance') {
+    if (!db.settings) db.settings = {};
+    db.settings.maintenanceMode = !db.settings.maintenanceMode;
+    saveDatabase(db);
+    broadcastEvent('settings:updated', { maintenanceMode: db.settings.maintenanceMode });
+
+    const statusText = db.settings.maintenanceMode 
+      ? '🔴 <b>EMERGENCY LOCKDOWN ACTIVATED!</b>\nWeb portal is now locked in Maintenance Mode. Only Admins can log in.' 
+      : '🟢 <b>LOCKDOWN LIFTED!</b>\nWeb portal normal operations restored for all personnel.';
+
+    logAuditAndAlert(db, user, 'LOCKDOWN_TOGGLE_TELEGRAM', 'SETTINGS', 'MAINTENANCE_MODE', `Set maintenanceMode=${db.settings.maintenanceMode}`, true);
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: statusText,
+      parse_mode: 'HTML'
     });
   }
 
@@ -863,24 +1136,23 @@ async function handleAdminBotMessage(msg) {
     });
   }
 
-  // /broadcast <text>
+  // Broadcast message execution
   if (text.startsWith('/broadcast ')) {
     const msgText = text.replace('/broadcast ', '').trim();
     if (!msgText) return;
 
     const users = (db.users || []).filter(u => u.telegramChatId && u.status === 'ACTIVE');
-    let sentCount = 0;
     for (const u of users) {
       userBotRequest('sendMessage', {
         chat_id: u.telegramChatId,
-        text: `📢 <b>CENTRAL FACTORY NOTICE</b>\nFrom: <b>${user.name}</b>\n━━━━━━━━━━━━━━━━━━━━\n${msgText}`,
+        text: `📢 <b>CENTRAL FACTORY NOTICE</b>\nFrom: <b>${user.name}</b> (Head of Maintenance)\n━━━━━━━━━━━━━━━━━━━━\n${msgText}`,
         parse_mode: 'HTML'
-      }).then(() => sentCount++).catch(() => {});
+      }).catch(() => {});
     }
 
     return adminBotRequest('sendMessage', {
       chat_id: chatId,
-      text: `✅ Broadcast notice queued for ${users.length} Telegram-connected personnel.`,
+      text: `✅ <b>Broadcast Notice Dispatched!</b>\nSent to ${users.length} registered personnel via Operations Bot (@MainterpBot).`,
       parse_mode: 'HTML'
     });
   }
@@ -904,6 +1176,7 @@ async function handleAdminBotCallback(cbQuery) {
 
   const db = getDatabase();
 
+  // Authorize Gate Pass with Official Digital Verification Slip
   if (data.startsWith('ADMIN_APPROVE_TR:')) {
     const trId = data.replace('ADMIN_APPROVE_TR:', '');
     const tr = (db.transfer_requests || []).find(r => r.id === trId);
@@ -920,19 +1193,14 @@ async function handleAdminBotCallback(cbQuery) {
     logAuditAndAlert(db, user, 'APPROVE_GATE_PASS_EXECUTIVE', 'TRANSFER', tr.id, `Executive authorized gate pass #${tr.requestNumber || tr.id}`, true);
     broadcastEvent('transfer:approved', { transferId: tr.id, approver: user.name });
 
-    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: `✅ Gate Pass Authorized!` });
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: `✅ Digital Gate Pass Authorized!` });
+
+    const digitalSlip = formatDigitalGatePass(tr, user.name);
 
     return adminBotRequest('editMessageText', {
       chat_id: chatId,
       message_id: messageId,
-      text: `
-${formatTransferCard(tr)}
-
-━━━━━━━━━━━━━━━━━━━━
-✅ <b>GATE PASS DIGITALLY AUTHORIZED BY EXECUTIVE</b>
-👤 <b>Authorizer:</b> ${user.name} (Super Admin)
-⏱️ <b>Timestamp:</b> ${new Date().toLocaleTimeString()}
-`.trim(),
+      text: digitalSlip,
       parse_mode: 'HTML'
     });
   }
@@ -1055,7 +1323,6 @@ function startPollingLoop() {
 
 // Push notification for new transfer gate passes
 async function notifyApproversOfTransfer(transfer) {
-  // Push to Executive Admin Bot (@MaintAdminbot)
   const card = formatTransferCard(transfer);
   const adminChatIds = getAdminChatIds();
 

@@ -23,8 +23,8 @@ import { icon } from './icons.js?v=4.47.0';
 let showAdvancedFilters = false;
 
 // Universal Virtual Scroll Configuration Constants
-export const VSCROLL_ROW_HEIGHT = 44;
-export const VSCROLL_SPACER_BG = 'background: repeating-linear-gradient(to bottom, rgba(15, 23, 42, 0.98) 0px, rgba(15, 23, 42, 0.98) 43px, rgba(30, 41, 59, 0.5) 43px, rgba(30, 41, 59, 0.5) 44px);';
+export const VSCROLL_ROW_HEIGHT = 48;
+export const VSCROLL_SPACER_BG = 'background: repeating-linear-gradient(to bottom, rgba(15, 23, 42, 0.98) 0px, rgba(15, 23, 42, 0.98) 47px, rgba(30, 41, 59, 0.5) 47px, rgba(30, 41, 59, 0.5) 48px);';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -531,15 +531,15 @@ export function renderInventoryTable() {
     {
       key: 'machineName',
       label: 'Machine Name',
-      width: 200,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 200px; min-width: 200px; max-width: 200px; cursor: pointer; ${thStyle}">Machine Name</th>`,
+      width: 230,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 230px; min-width: 230px; max-width: 230px; cursor: pointer; ${thStyle}">Machine Name</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const name = (storage.resolveMachineName ? storage.resolveMachineName(m) : (mnMap.get(m.machineNameId) || m.machineName || m.name || '—')).trim();
         const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
-        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: ellipsis; overflow: hidden !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${escapeHtml(name)}"><span style="display: inline; line-height: 1.35;">${escapeHtml(name)}</span>${viewOnlyBadge}</td>`;
+        return `<td class="${tdClass} col-wrap-text" style="width: 230px; min-width: 230px; max-width: 230px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: ellipsis; overflow: hidden !important; line-height: 1.25; padding: 4px 8px; ${tdStyle}" title="${escapeHtml(name)}"><span style="display: inline; line-height: 1.25;">${escapeHtml(name)}</span>${viewOnlyBadge}</td>`;
       }
     },
     {
@@ -1013,7 +1013,7 @@ export function renderInventoryTable() {
   } else {
     const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
     const totalCols = columnLayout.length + 2;
-    const VSCROLL_ROW_HEIGHT = 44;
+    const VSCROLL_ROW_HEIGHT = 48;
     // Native high-speed 60FPS / 120FPS GPU composited rendering for up to 250 rows (25, 50, 100, 200).
     // Virtual windowing is only activated for massive datasets (>250 rows), eliminating lag, scroll jitter & clipping!
     const isVirtualScrollActive = machines.length > 250;
@@ -3384,7 +3384,7 @@ export function updateInventoryTableRowsOnly() {
 
   const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
   const totalCols = rowCtx.columnLayout.length + 2;
-  const VSCROLL_ROW_HEIGHT = 44;
+  const VSCROLL_ROW_HEIGHT = 48;
   // Native high-speed 60FPS / 120FPS GPU composited rendering for up to 250 rows (25, 50, 100, 200).
   // Virtual windowing is only activated for massive datasets (>250 rows), eliminating lag, scroll jitter & clipping!
   const isVirtualScrollActive = machines.length > 250;
