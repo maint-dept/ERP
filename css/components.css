@@ -5648,78 +5648,391 @@ body.theme-light .btn-quick-select-board span[style*="color: #cbd5e1"] {
   color: #334155 !important;
 }
 
-/* 5. Tools & Equipment Management Suite (Screenshot 4) */
+/* ==========================================================================
+   5. PROLICENSE-GRADE ROYAL SUITE: TOOLS & EQUIPMENT, USER ID, PRINT & DATABASE
+   ========================================================================== */
+
+/* Main Containers & Subviews */
+body.theme-light .tools-management-view,
+body.theme-light .screen-tools-add,
+body.theme-light .screen-user-id,
+body.theme-light .screen-print-page,
+body.theme-light .screen-find-select,
+body.theme-light .screen-accessories-page,
+body.theme-light .screen-database-page {
+  background: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Neutralize all hardcoded dark background containers in Tools views */
+body.theme-light .tools-management-view [style*="background: #090d16"],
+body.theme-light .tools-management-view [style*="background: #0f172a"],
+body.theme-light .tools-management-view [style*="background: #1e293b"],
+body.theme-light .tools-management-view [style*="background: #0b1329"],
+body.theme-light .tools-management-view [style*="background: rgba(15, 23, 42"],
+body.theme-light .tools-management-view [style*="background: rgba(30, 41, 59"],
+body.theme-light .tools-management-view [style*="background: linear-gradient(135deg, #0f172a"],
+body.theme-light #emp-form-inputs-container,
+body.theme-light #screen1-emp-form-card {
+  background: #fffdf8 !important;
+  background-color: #fffdf8 !important;
+  border-color: #e2dbcc !important;
+  color: #1f1c17 !important;
+  box-shadow: 0 1px 0 rgba(31, 28, 23, 0.04), 0 8px 24px -14px rgba(31, 28, 23, 0.22) !important;
+  border-radius: 14px !important;
+}
+
+/* Neutralize inner sub-boxes, middle selector panels and typeahead dropdowns */
+body.theme-light .tools-management-view [style*="background: rgba(15, 23, 42, 0.5)"],
+body.theme-light .tools-management-view [style*="background: rgba(15, 23, 42, 0.6)"],
+body.theme-light .tools-management-view [style*="background: rgba(15, 23, 42, 0.8)"],
+body.theme-light .tools-management-view [style*="background: rgba(30, 41, 59, 0.5)"],
+body.theme-light .tools-management-view [style*="background: rgba(30, 41, 59, 0.4)"],
+body.theme-light .tools-management-view [style*="background: rgba(30, 41, 59, 0.3)"],
+body.theme-light #tool-details-preview-card,
+body.theme-light #tool-autocomplete-results,
+body.theme-light #staff-typeahead-dropdown,
+body.theme-light #staff-typeahead-dropdown-screen2,
+body.theme-light #print-search-suggestions {
+  background: #efe9dd !important;
+  background-color: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+  color: #1f1c17 !important;
+  box-shadow: 0 4px 14px rgba(31, 28, 23, 0.08) !important;
+  border-radius: 10px !important;
+}
+
+/* Neutralize loud green banners in Screen 1 & Screen 3 into calm ivory cards */
+body.theme-light .screen-user-id [style*="background: linear-gradient(90deg, #65a30d"],
+body.theme-light .screen-print-page [style*="background: linear-gradient(90deg, #65a30d"] {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+  color: #1f1c17 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(31, 28, 23, 0.05) !important;
+}
+
+body.theme-light .screen-user-id [style*="background: linear-gradient(90deg, #65a30d"] *,
+body.theme-light .screen-print-page [style*="background: linear-gradient(90deg, #65a30d"] * {
+  color: #1f1c17 !important;
+}
+
+/* Top Allocation Header Banner */
 body.theme-light .tools-allocation-top-bar {
-  background: #ffffff !important;
-  border: 1.5px solid #cbd5e1 !important;
-  color: #0f172a !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  background: #fffdf8 !important;
+  border: 1px solid #e2dbcc !important;
+  color: #1f1c17 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 3px rgba(31, 28, 23, 0.06) !important;
+  padding: 12px 18px !important;
 }
 
 body.theme-light .tools-allocation-top-bar span {
-  color: #0f172a !important;
+  color: #1f1c17 !important;
 }
 
-body.theme-light .screen-tools-add [style*="background: #1e293b"] {
+body.theme-light .tools-allocation-top-bar [style*="background: rgba(56, 189, 248"] {
+  background: #efe9dd !important;
+  color: #1f1c17 !important;
+  border: 1.5px solid #d3cab7 !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+}
+
+/* Top Action Buttons (ProLicense Clean Ghost/Line Buttons) */
+body.theme-light #btn-open-ocr-import-modal,
+body.theme-light #btn-open-batch-tools-modal,
+body.theme-light #btn-open-excel-import-form,
+body.theme-light #btn-open-excel-import-modal,
+body.theme-light #btn-download-sample-template,
+body.theme-light #btn-load-standard-kit,
+body.theme-light #btn-sync-manpower-top,
+body.theme-light #btn-sync-manpower-print,
+body.theme-light #btn-batch-add-shortcut {
+  background: #fffdf8 !important;
+  color: #3a352c !important;
+  border: 1.5px solid #d3cab7 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(31, 28, 23, 0.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+body.theme-light #btn-open-ocr-import-modal:hover,
+body.theme-light #btn-open-batch-tools-modal:hover,
+body.theme-light #btn-open-excel-import-form:hover,
+body.theme-light #btn-open-excel-import-modal:hover,
+body.theme-light #btn-download-sample-template:hover,
+body.theme-light #btn-load-standard-kit:hover,
+body.theme-light #btn-sync-manpower-top:hover,
+body.theme-light #btn-sync-manpower-print:hover,
+body.theme-light #btn-batch-add-shortcut:hover {
+  background: #efe9dd !important;
+  border-color: #1f1c17 !important;
+  color: #1f1c17 !important;
+}
+
+body.theme-light #btn-clear-queue {
+  background: transparent !important;
+  color: #cf3339 !important;
+  border: 1.5px solid #f8b4b4 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light #btn-clear-queue:hover {
+  background: #fde8e8 !important;
+  border-color: #cf3339 !important;
+}
+
+/* Form Input Fields & Selects (100% Crisp White & Warm Hairlines - Zero Dark Inputs) */
+body.theme-light .tools-management-view input[type="text"],
+body.theme-light .tools-management-view input[type="number"],
+body.theme-light .tools-management-view input[type="date"],
+body.theme-light .tools-management-view select,
+body.theme-light .tools-management-view textarea,
+body.theme-light #input-tab-reg-no,
+body.theme-light #input-add-user-id,
+body.theme-light #input-add-user-name,
+body.theme-light #input-add-job-title,
+body.theme-light #input-add-working-area,
+body.theme-light #input-add-issue-date,
+body.theme-light #input-add-reg-no,
+body.theme-light #input-add-requisition-no,
+body.theme-light #input-tool-smart-search,
+body.theme-light #input-item-remarks,
+body.theme-light #input-item-qty,
+body.theme-light #input-emp-id,
+body.theme-light #input-emp-name,
+body.theme-light #input-emp-title,
+body.theme-light #input-emp-area,
+body.theme-light #input-emp-date,
+body.theme-light #input-emp-reg-no,
+body.theme-light #input-print-reg-no {
   background: #ffffff !important;
-  border: 1.5px solid #cbd5e1 !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  background-color: #ffffff !important;
+  color: #1f1c17 !important;
+  border: 1.5px solid #d3cab7 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-body.theme-light #input-tab-reg-no {
-  background: #f8fafc !important;
-  color: #0284c7 !important;
-  border: 1.5px solid #0284c7 !important;
-  font-weight: 800 !important;
+body.theme-light .tools-management-view input:focus,
+body.theme-light .tools-management-view select:focus {
+  border-color: #d9480f !important;
+  box-shadow: 0 0 0 3px rgba(217, 72, 15, 0.16) !important;
+  background-color: #ffffff !important;
+  color: #1f1c17 !important;
 }
 
+/* Labels & Spans Typography */
+body.theme-light .tools-management-view label,
+body.theme-light .tools-management-view span[style*="text-align: right"],
+body.theme-light .tools-management-view [style*="color: #94a3b8"],
+body.theme-light .tools-management-view [style*="color: #cbd5e1"] {
+  color: #3a352c !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .tools-management-view strong,
+body.theme-light .tools-management-view [style*="color: #f1f5f9"],
+body.theme-light .tools-management-view [style*="color: #f8fafc"],
+body.theme-light .tools-management-view [style*="color: #fff"],
+body.theme-light .tools-management-view [style*="color: #ffffff"] {
+  color: #1f1c17 !important;
+}
+
+/* Category Pills (ProLicense Capsule Style) */
 body.theme-light .btn-tool-cat-pill {
-  background: #f1f5f9 !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #475569 !important;
+  background: transparent !important;
+  border: 1.5px solid #d3cab7 !important;
+  color: #3a352c !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+}
+
+body.theme-light .btn-tool-cat-pill:hover {
+  background: #efe9dd !important;
+  border-color: #1f1c17 !important;
+  color: #1f1c17 !important;
 }
 
 body.theme-light .btn-tool-cat-pill.active {
-  background: #0284c7 !important;
-  border-color: #0284c7 !important;
+  background: #1f1c17 !important;
+  border-color: #1f1c17 !important;
+  color: #fffdf8 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 2px 4px rgba(31, 28, 23, 0.15) !important;
+}
+
+/* Stepper and Quantity Buttons */
+body.theme-light #btn-qty-minus,
+body.theme-light #btn-qty-plus,
+body.theme-light .btn-quick-qty {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+  color: #1f1c17 !important;
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-qty-minus:hover,
+body.theme-light #btn-qty-plus:hover,
+body.theme-light .btn-quick-qty:hover {
+  background: #fffdf8 !important;
+  border-color: #1f1c17 !important;
+}
+
+/* Action Buttons inside Middle Form (Add Tool To List, Clear, Multi-Select) */
+body.theme-light #btn-add-to-list {
+  background: #1f1c17 !important;
+  color: #fffdf8 !important;
+  border: 1.5px solid #1f1c17 !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 4px rgba(31, 28, 23, 0.15) !important;
+}
+
+body.theme-light #btn-delete-selected-item {
+  background: #efe9dd !important;
+  color: #3a352c !important;
+  border: 1px solid #d3cab7 !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-open-batch-middle,
+body.theme-light #btn-middle-batch-add {
+  background: #fffdf8 !important;
+  color: #1c6486 !important;
+  border: 1.5px solid #a8d5e8 !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+/* Corporate Primary SAVE Action Card (ProLicense Tactile 3D Button) */
+body.theme-light .btn-tools-save-action,
+body.theme-light #btn-save-allocation-batch {
+  background: #2f7d4f !important;
+  background-color: #2f7d4f !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2), 0 10px 24px -6px rgba(47, 125, 79, 0.4) !important;
+  transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.12s ease !important;
+}
+
+body.theme-light .btn-tools-save-action *,
+body.theme-light #btn-save-allocation-batch * {
   color: #ffffff !important;
 }
 
-body.theme-light #tool-details-preview-card {
-  background: #f8fafc !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
+body.theme-light .btn-tools-save-action:hover,
+body.theme-light #btn-save-allocation-batch:hover {
+  filter: brightness(1.06) !important;
 }
 
+body.theme-light .btn-tools-save-action:active,
+body.theme-light #btn-save-allocation-batch:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Live Allocated Tools Table (Royal Warm Zebra Striping) */
 body.theme-light .tools-live-table-card {
-  background: #ffffff !important;
-  border: 1.5px solid #cbd5e1 !important;
+  background: #fffdf8 !important;
+  border: 1px solid #e2dbcc !important;
+  border-radius: 14px !important;
+  box-shadow: 0 1px 0 rgba(31, 28, 23, 0.04), 0 8px 24px -14px rgba(31, 28, 23, 0.22) !important;
+  overflow: hidden !important;
 }
 
 body.theme-light .tools-live-table-header {
-  background: #f8fafc !important;
-  color: #0f172a !important;
-  border-bottom: 1.5px solid #cbd5e1 !important;
+  background: #efe9dd !important;
+  color: #1f1c17 !important;
+  border-bottom: 1.5px solid #d3cab7 !important;
+}
+
+body.theme-light .tools-live-table-header * {
+  color: inherit !important;
 }
 
 body.theme-light .tools-queue-thead-tr th {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
-  border-bottom: 1.5px solid #cbd5e1 !important;
+  background: #efe9dd !important;
+  color: #1f1c17 !important;
+  border-bottom: 2px solid #d3cab7 !important;
+  border-right: 1px solid #e2dbcc !important;
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.3px !important;
 }
 
-body.theme-light .tools-queue-table tbody tr {
-  background: #ffffff !important;
-  color: #0f172a !important;
+body.theme-light .tools-queue-table tbody tr:nth-child(odd) {
+  background: #fffdf8 !important;
 }
 
 body.theme-light .tools-queue-table tbody tr:nth-child(even) {
-  background: #f8fafc !important;
+  background: #f8f5ee !important;
+}
+
+body.theme-light .tools-queue-table tbody tr:hover {
+  background: #efe9dd !important;
 }
 
 body.theme-light .tools-queue-table tbody td {
-  color: #0f172a !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  color: #1f1c17 !important;
+  border-bottom: 1px solid #e2dbcc !important;
+  border-right: 1px solid #e2dbcc !important;
+}
+
+body.theme-light .tools-queue-table tbody td input,
+body.theme-light .tools-queue-table tbody td select {
+  background: #ffffff !important;
+  border: 1px solid #d3cab7 !important;
+  color: #1f1c17 !important;
+  border-radius: 6px !important;
+}
+
+/* Print Page Format Selector & Buttons */
+body.theme-light #btn-search-print-reg {
+  background: #1f1c17 !important;
+  color: #fffdf8 !important;
+  border: 1.5px solid #1f1c17 !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .btn-print-fmt {
+  color: #6e6758 !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .btn-print-fmt.active {
+  background: #1f1c17 !important;
+  color: #fffdf8 !important;
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-open-template-customizer {
+  background: #fffdf8 !important;
+  color: #b37400 !important;
+  border: 1.5px solid #faeed3 !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-trigger-print {
+  background: #2f7d4f !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.18) !important;
 }
 
 /* 6. Data Tables & Footers Suite (Screenshot 5) */
