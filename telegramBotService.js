@@ -138,6 +138,104 @@ function hasPermission(user, moduleKey, actionKey) {
   return Array.isArray(modPerms) && (modPerms.includes(actionKey) || modPerms.includes('ALL'));
 }
 
+// Scope checker (Unit / Floor / Line)
+function isLocationInUserScope(user, loc = {}, db = null) {
+  if (!user || user.status !== 'ACTIVE' || user.role === 'NO_ACCESS') return false;
+  if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return true;
+
+  const scope = user.assignedScope;
+  if (!scope) return false;
+
+  // Global bypass
+  if (Boolean(scope.allGroups) && (Boolean(scope.allUnits) || (!scope.unitIds?.length && !scope.floorIds?.length && !scope.lineIds?.length))) {
+    return true;
+  }
+
+  let { groupId, unitId, floorId, lineId, unit, floor, line } = loc;
+
+  // Resolve IDs from names if IDs are absent
+  if (db) {
+    if (!unitId && unit && db.units) {
+      const uObj = db.units.find(u => u.name && u.name.toLowerCase() === unit.toLowerCase());
+      if (uObj) unitId = uObj.id;
+    }
+    if (!floorId && floor && db.floors) {
+      const fObj = db.floors.find(f => f.name && f.name.toLowerCase() === floor.toLowerCase());
+      if (fObj) floorId = fObj.id;
+    }
+    if (!lineId && line && db.lines) {
+      const lObj = db.lines.find(l => l.name && l.name.toLowerCase() === line.toLowerCase());
+      if (lObj) lineId = lObj.id;
+    }
+  }
+
+  // Check Unit
+  if (!scope.allUnits) {
+    if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
+      if (!unitId || !scope.unitIds.includes(unitId)) return false;
+    } else if (!scope.allGroups) {
+      return false;
+    }
+  }
+
+  // Check Floor
+  if (!scope.allFloors) {
+    if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
+      if (floorId && !scope.floorIds.includes(floorId)) return false;
+      if (!floorId && scope.floorIds.length > 0) return false;
+    } else if (!scope.allUnits && !scope.allGroups && floorId) {
+      return false;
+    }
+  }
+
+  // Check Line
+  if (!scope.allLines) {
+    if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
+      if (lineId && !scope.lineIds.includes(lineId)) return false;
+      if (!lineId && scope.lineIds.length > 0) return false;
+    } else if (!scope.allFloors && !scope.allUnits && !scope.allGroups && lineId) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isMachineInUserScope(user, machine, db = null) {
+  if (!machine) return false;
+  return isLocationInUserScope(user, {
+    groupId: machine.groupId,
+    unitId: machine.unitId,
+    unit: machine.unit,
+    floorId: machine.floorId,
+    floor: machine.floor,
+    lineId: machine.lineId,
+    line: machine.line
+  }, db);
+}
+
+function formatUserScopeDescription(user, db = null) {
+  if (!user || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return 'Factory-Wide (Unrestricted)';
+  const s = user.assignedScope;
+  if (!s) return 'No Location Assigned';
+  if (s.allGroups && s.allUnits) return 'Factory-Wide (All Units & Floors)';
+
+  const parts = [];
+  if (s.unitIds?.length && db?.units) {
+    const names = db.units.filter(u => s.unitIds.includes(u.id)).map(u => u.name || u.code);
+    if (names.length) parts.push(`Unit: ${names.join(', ')}`);
+  }
+  if (s.floorIds?.length && db?.floors) {
+    const names = db.floors.filter(f => s.floorIds.includes(f.id)).map(f => f.name || f.code);
+    if (names.length) parts.push(`Floor: ${names.join(', ')}`);
+  }
+  if (s.lineIds?.length && db?.lines) {
+    const names = db.lines.filter(l => s.lineIds.includes(l.id)).map(l => l.name || l.code);
+    if (names.length) parts.push(`Line: ${names.join(', ')}`);
+  }
+  return parts.length ? parts.join(' | ') : 'Specific Scoped Access';
+}
+
 // Audit logger & Sentinel Dispatcher
 function logAuditAndAlert(db, user, action, entity, entityId, details, isHighPriority = false) {
   if (!db.audit_logs) db.audit_logs = [];
@@ -420,6 +518,7 @@ async function handleUserBotMessage(msg) {
 ━━━━━━━━━━━━━━━━━━━━
 আপনার অ্যাকাউন্ট সফলভাবে সংযুক্ত হয়েছে।
 👤 <b>রোল:</b> <code>${targetUser.presetName || targetUser.role}</code>
+📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(targetUser, db)}</code>
 
 <b>আপনার অনুমোদিত ফিচারসমূহ:</b>
 ${commandsText}
@@ -457,6 +556,7 @@ ${commandsText}
 
   // Dynamic Operations Bot Menu (/start or /help)
   if (text === '/start' || text === '/help') {
+    const db = getDatabase();
     const { keyboard, commandsText } = buildDynamicUserMenu(user);
 
     return userBotRequest('sendMessage', {
@@ -464,6 +564,7 @@ ${commandsText}
       text: `
 👋 <b>নমস্কার, ${user.name}!</b>
 🛡️ <b>অ্যাক্সেস রোল:</b> <code>${user.presetName || user.role}</code>
+📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(user, db)}</code>
 ━━━━━━━━━━━━━━━━━━━━
 <b>আপনার অনুমোদিত লাইভ ফিচারসমূহ:</b>
 ${commandsText}
@@ -519,6 +620,15 @@ ${commandsText}
       return userBotRequest('sendMessage', {
         chat_id: chatId,
         text: `❌ '<code>${serial}</code>' সিরিয়ালের কোনো মেশিন খুঁজে পাওয়া যায়নি। অনুগ্রহ করে সঠিক সিরিয়াল নম্বর দিন।`,
+        parse_mode: 'HTML'
+      });
+    }
+
+    // Enforce Location Scope
+    if (!isMachineInUserScope(user, machine, db)) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `⛔ <b>অ্যাক্সেস সীমাবদ্ধ (Scope Restricted):</b>\nমেশিন <code>${serial}</code> আপনার নির্ধারিত ইউনিট/ফ্লোর/লাইনের আওতাভুক্ত নয়।\n\n<i>আপনার নির্ধারিত লোকেশন: ${formatUserScopeDescription(user, db)}</i>`,
         parse_mode: 'HTML'
       });
     }
@@ -579,7 +689,12 @@ ${commandsText}
     }
 
     const db = getDatabase();
-    const pms = (db.preventive_maintenance || []).slice(0, 5);
+    const rawPms = (db.preventive_maintenance || []);
+    // Filter strictly by user location scope
+    const pms = rawPms.filter(p => {
+      const mach = (db.machines || []).find(m => m.serialNumber === p.serialNumber || m.id === p.machineId);
+      return mach ? isMachineInUserScope(user, mach, db) : isLocationInUserScope(user, p, db);
+    }).slice(0, 5);
 
     if (pms.length === 0) {
       return userBotRequest('sendMessage', {
@@ -657,16 +772,26 @@ ${commandsText}
       return userBotRequest('sendMessage', { chat_id: chatId, text: `🔍 '<code>${q}</code>' দিয়ে কোনো লাইন বা ফ্লোর পাওয়া যায়নি।`, parse_mode: 'HTML' });
     }
 
-    const running = matched.filter(m => m.running || m.status === 'RUNNING').length;
-    const underMaint = matched.filter(m => m.status === 'UNDER_MAINTENANCE').length;
-    const ambulance = matched.filter(m => m.isAmbulance).length;
+    // Filter strictly by user location scope
+    const permitted = matched.filter(m => isMachineInUserScope(user, m, db));
+    if (permitted.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `⛔ <b>অ্যাক্সেস সীমাবদ্ধ (Scope Restricted):</b>\n'<code>${q}</code>' আপনার নির্ধারিত লোকেশন বা অ্যাক্সেসের আওতাভুক্ত নয়।\n\n<i>আপনার নির্ধারিত লোকেশন: ${formatUserScopeDescription(user, db)}</i>`,
+        parse_mode: 'HTML'
+      });
+    }
+
+    const running = permitted.filter(m => m.running || m.status === 'RUNNING').length;
+    const underMaint = permitted.filter(m => m.status === 'UNDER_MAINTENANCE').length;
+    const ambulance = permitted.filter(m => m.isAmbulance).length;
 
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: `
 📊 <b>Line / Floor Status: ${q.toUpperCase()}</b>
 ━━━━━━━━━━━━━━━━━━━━
-🏭 <b>Total Machines:</b> <code>${matched.length}</code>
+🏭 <b>Total Permitted Machines:</b> <code>${permitted.length}</code>
 🟢 <b>Running:</b> <code>${running}</code>
 🔴 <b>Under Repair:</b> <code>${underMaint}</code>
 🚑 <b>Ambulance Standby:</b> <code>${ambulance}</code>
@@ -685,7 +810,14 @@ ${commandsText}
     }
 
     const db = getDatabase();
-    const pendingRequests = (db.transfer_requests || []).filter(r => r.status === 'PENDING' || r.status === 'IN_PROGRESS');
+    const pendingRequests = (db.transfer_requests || []).filter(r => {
+      if (r.status !== 'PENDING' && r.status !== 'IN_PROGRESS') return false;
+      const isOwner = r.requestedBy === user.name || r.requestedBy === user.username || r.userId === user.id;
+      if (isOwner) return true;
+      const fromMatch = isLocationInUserScope(user, { floor: r.fromFloor, unit: r.fromUnit, line: r.fromLine }, db);
+      const toMatch = isLocationInUserScope(user, { floor: r.toFloor, unit: r.toUnit, line: r.toLine }, db);
+      return fromMatch || toMatch;
+    });
 
     if (pendingRequests.length === 0) {
       return userBotRequest('sendMessage', {
@@ -715,7 +847,7 @@ ${commandsText}
     }
 
     const db = getDatabase();
-    const ambulances = (db.machines || []).filter(m => m.isAmbulance === true);
+    const ambulances = (db.machines || []).filter(m => m.isAmbulance === true && isMachineInUserScope(user, m, db));
     if (ambulances.length === 0) {
       return userBotRequest('sendMessage', { chat_id: chatId, text: 'ℹ️ বর্তমানে কোনো মেশিন অ্যাম্বুলেন্স হিসেবে মার্ক করা নেই।' });
     }
@@ -765,9 +897,20 @@ ${commandsText}
       });
     }
 
+    // Filter strictly by user location scope (Unit, Floor, Line)
+    const permittedMatches = matches.filter(m => isMachineInUserScope(user, m, db));
+
+    if (permittedMatches.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `🔒 '<code>${query}</code>' মেশিনটি ডাটাবেজে রয়েছে, কিন্তু এটি আপনার নির্ধারিত লোকেশন বা অ্যাক্সেসের আওতাভুক্ত নয় (Location Restricted)।\n\n<i>আপনার নির্ধারিত লোকেশন: ${formatUserScopeDescription(user, db)}</i>`,
+        parse_mode: 'HTML'
+      });
+    }
+
     return userBotRequest('sendMessage', {
       chat_id: chatId,
-      text: formatMachineCard(matches[0]),
+      text: formatMachineCard(permittedMatches[0]),
       parse_mode: 'HTML'
     });
   }
