@@ -1868,7 +1868,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-45-88017",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.747Z",
+      "updatedAt": "2026-11-14T03:25:24.163Z",
       "line": "JA-B",
       "lineName": "JA-B",
       "floor": "Jamuna",
@@ -7880,7 +7880,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-193-34357",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.163Z",
       "line": "JA-E",
       "lineName": "JA-E",
       "floor": "Jamuna",
@@ -9187,7 +9187,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-225-5317",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.163Z",
       "line": "JA-E",
       "lineName": "JA-E",
       "floor": "Jamuna",
@@ -12459,7 +12459,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-305-60201",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.163Z",
       "line": "JA-G",
       "lineName": "JA-G",
       "floor": "Jamuna",
@@ -14173,7 +14173,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-347-75657",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.163Z",
       "line": "JA-H",
       "lineName": "JA-H",
       "floor": "Jamuna",
@@ -17321,7 +17321,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-429-75800",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.163Z",
       "line": "JA-I",
       "lineName": "JA-I",
       "floor": "Jamuna",
@@ -26490,7 +26490,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-657-55567",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.164Z",
       "line": "JA-L",
       "lineName": "JA-L",
       "floor": "Jamuna",
@@ -27469,7 +27469,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-683-8172",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.164Z",
       "line": "JA-M",
       "lineName": "JA-M",
       "floor": "Jamuna",
@@ -30373,7 +30373,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-754-90444",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.164Z",
       "line": "JA-N",
       "lineName": "JA-N",
       "floor": "Jamuna",
@@ -31151,7 +31151,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-775-57567",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.164Z",
       "line": "JA-P",
       "lineName": "JA-P",
       "floor": "Jamuna",
@@ -32173,7 +32173,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-800-80429",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-12T06:26:38.748Z",
+      "updatedAt": "2026-11-14T03:25:24.164Z",
       "line": "JA-P",
       "lineName": "JA-P",
       "floor": "Jamuna",
@@ -320813,6 +320813,13 @@
       "machineName": "Single Needle Lock Stitch Machine",
       "machineNameId": "mn-1792077157398-8mma",
       "updatedAt": "2026-11-01T17:14:46.486Z"
+    },
+    {
+      "id": "sm-mod-1793554303887",
+      "brandId": "brd-1791365588525-v0qg",
+      "name": "Standard",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-09T11:29:35.469Z"
     }
   ],
   "categories": [
@@ -321070,7 +321077,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-10T09:03:37.484Z"
+        "updatedAt": "2026-11-14T03:20:25.104Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321088,8 +321095,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-10T09:03:37.489Z",
-        "lastSync": "11/13/2026, 12:48:43 AM"
+        "updatedAt": "2026-11-14T03:20:25.104Z",
+        "lastSync": "11/14/2026, 9:25:43 AM"
       }
     ],
     "emailConfig": {
@@ -333069,12 +333076,12 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-08T04:26:38.137Z",
-      "updatedAt": "2026-11-08T04:26:38.137Z",
+      "lastLoginAt": "2026-11-14T03:20:45.602Z",
+      "updatedAt": "2026-11-14T03:20:45.602Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
-      "version": 6
+      "version": 7
     },
     {
       "id": "usr-1789211116425-361",
@@ -344658,6 +344665,26 @@
       "timestamp": "2026-11-10T09:15:37.565Z",
       "createdAt": "2026-11-10T09:15:37.565Z",
       "updatedAt": "2026-11-10T09:15:37.565Z"
+    },
+    {
+      "id": "aud-1794626445602-727",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-14T03:20:45.602Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-14T03:20:45.602Z",
+      "createdAt": "2026-11-14T03:20:45.602Z",
+      "updatedAt": "2026-11-14T03:20:45.602Z"
     }
   ],
   "notifications": [

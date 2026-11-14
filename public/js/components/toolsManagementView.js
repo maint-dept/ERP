@@ -79,6 +79,7 @@ function getAllCatalogItems(category = 'ALL') {
 
 let currentRegNo = '';
 let currentPrintRegNo = '';
+let currentPrintBatchFilter = 'ALL'; // 'ALL' or specific regNo (e.g. '1196')
 let currentPrintFormat = 'A4'; // 'A4' | 'POCKET'
 let pocketCustomSettings = {
   preset: 'standard', // 'standard' (125x170mm) | 'a6' (105x148mm) | 'badge' (100x75mm) | 'cr80' (86x54mm) | 'custom'
@@ -635,6 +636,43 @@ function renderScreen2ToolsAddForm() {
           </div>
         </div>
 
+        <!-- Smart Mechanic Existing Kit Notice Banner (Auto-Syncs Imported Excel Data with New Additions) -->
+        <div id="screen2-existing-kit-container">
+          ${(() => {
+            const currentKit = activeUserForm.userId ? toolService.getMechanicActiveKit(activeUserForm.userId) : null;
+            if (!currentKit || !currentKit.exists) return '';
+            const isLoaded = liveAllocationQueue.length > 0;
+            return `
+              <div style="margin-bottom: 14px; background: rgba(14, 165, 233, 0.12); border: 1.5px solid #0284c7; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.25);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">⚡</span>
+                  <div>
+                    <div style="font-weight: 800; font-size: 13px; color: #38bdf8;">
+                      Existing Registration Found: Reg #${currentKit.primaryRegNo} (${currentKit.totalTools} Active Tools in possession)
+                    </div>
+                    <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 2px;">
+                      Mechanic: <strong>${currentKit.userName}</strong> (${currentKit.userId}) • ${currentKit.isMultiBatch ? `<span style="color:#fde047; font-weight:800;">Has ${currentKit.registrationBatches.length} Batches (${currentKit.allRegNos.join(', ')})</span>` : 'Single Unified Kit'}
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button id="btn-screen2-load-existing-kit" style="background: #0284c7; color: #fff; border: 1px solid #38bdf8; padding: 5px 12px; border-radius: 5px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <span>📥</span> ${isLoaded ? `Reload Existing Kit (${currentKit.totalTools} Tools)` : `Load Existing Kit (${currentKit.totalTools} Tools)`}
+                  </button>
+                  <button id="btn-screen2-new-separate-batch" style="background: #1e293b; color: #f59e0b; border: 1px solid #d97706; padding: 5px 12px; border-radius: 5px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Create a separate additional registration batch for this mechanic">
+                    <span>➕</span> Start New Separate Batch
+                  </button>
+                  ${currentKit.isMultiBatch ? `
+                    <button id="btn-screen2-merge-batches" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; border: 1px solid #22c55e; padding: 5px 12px; border-radius: 5px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Merge historical batches into primary Reg #${currentKit.primaryRegNo}">
+                      <span>🔗</span> 1-Click Merge into Reg #${currentKit.primaryRegNo}
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          })()}
+        </div>
+
         <div style="display: grid; grid-template-columns: 1.1fr 1.35fr 130px; gap: 16px; align-items: start;">
           
           <!-- Left Column: Employee Info Display/Edit -->
@@ -1019,6 +1057,30 @@ function renderScreen3PrintPage() {
           </div>
         </div>
       </div>
+
+      <!-- Multi-Batch Sync & Toggle Bar (Links Historical Excel Imports with New Registrations) -->
+      ${(regDetails && regDetails.registrationBatches && regDetails.registrationBatches.length > 1) ? `
+        <div style="background: #1e293b; border: 1.5px solid #0284c7; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-weight: 800; color: #38bdf8; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+              <span>📂</span> Registration Batches (${regDetails.userName} - ${regDetails.userId}):
+            </span>
+            <button class="btn-print-batch-filter ${currentPrintBatchFilter === 'ALL' ? 'active' : ''}" data-batch="ALL"
+              style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; border: 1px solid ${currentPrintBatchFilter === 'ALL' ? '#38bdf8' : '#475569'}; background: ${currentPrintBatchFilter === 'ALL' ? '#0284c7' : '#0f172a'}; color: #fff;">
+              🌟 All Active Tools (${regDetails.isConsolidated ? regDetails.totalTools : (toolService.getRegistrationDetails(currentPrintRegNo)?.totalTools || regDetails.totalTools)} Tools - Consolidated)
+            </button>
+            ${regDetails.registrationBatches.map(b => `
+              <button class="btn-print-batch-filter ${currentPrintBatchFilter === b.regNo ? 'active' : ''}" data-batch="${b.regNo}"
+                style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid ${currentPrintBatchFilter === b.regNo ? '#38bdf8' : '#475569'}; background: ${currentPrintBatchFilter === b.regNo ? '#0284c7' : '#0f172a'}; color: #cbd5e1;">
+                📁 Reg #${b.regNo} (${b.count} Items • ${b.issueDate || 'Imported'})
+              </button>
+            `).join('')}
+          </div>
+          <button id="btn-merge-print-batches" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; border: 1px solid #22c55e; padding: 4px 12px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Merge historical batches into single unified registration">
+            <span>🔗</span> 1-Click Merge into Reg #${regDetails.primaryRegNo}
+          </button>
+        </div>
+      ` : ''}
 
       <!-- Quick Custom Height x Width & Layout Bar (Interactive for Pocket Bag Slip) -->
       ${currentPrintFormat === 'POCKET' ? `
@@ -2063,8 +2125,52 @@ function renderScreen6DatabasePage() {
   const masterAccs = toolService.getAllMasterAccessories('') || [];
   const allToolChangeHistory = toolService.getToolChangeHistory() || [];
 
+  // Group all allocations by mechanic
+  const mechanicMap = new Map();
+  allAllocations.forEach(a => {
+    const rawUid = String(a.userId || 'UNASSIGNED').trim();
+    const cleanKey = rawUid.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!mechanicMap.has(cleanKey)) {
+      mechanicMap.set(cleanKey, {
+        userId: a.userId || 'UNASSIGNED',
+        userName: a.userName || 'Unknown Mechanic',
+        jobTitle: a.jobTitle || 'Mechanic',
+        workingArea: a.workingArea || '',
+        allocations: [],
+        regNos: new Set(),
+        toolsCount: 0,
+        accsCount: 0,
+        hasExcelImport: false,
+        hasSystemCreated: false,
+        latestIssueDate: a.issueDate || ''
+      });
+    }
+    const m = mechanicMap.get(cleanKey);
+    m.allocations.push(a);
+    if (a.regNo) m.regNos.add(String(a.regNo).replace(/^[#\s]+/, '').trim());
+    if (a.itemType === 'TOOL' || !a.itemType || a.itemType === 'TOOLS') m.toolsCount++;
+    if (a.itemType === 'ACCESSORY' || a.itemType === 'ACCESSORIES') m.accsCount++;
+    if (String(a.id || '').startsWith('alloc-imp-') || a.manpowerMatched) m.hasExcelImport = true;
+    else m.hasSystemCreated = true;
+    if (a.issueDate && (!m.latestIssueDate || a.issueDate > m.latestIssueDate)) m.latestIssueDate = a.issueDate;
+  });
+
+  const allMechanicKits = Array.from(mechanicMap.values()).map(m => {
+    const regList = Array.from(m.regNos);
+    return {
+      ...m,
+      primaryRegNo: regList[0] || 'N/A',
+      allRegNos: regList,
+      isMultiBatch: regList.length > 1,
+      totalTools: m.toolsCount,
+      totalAccs: m.accsCount,
+      totalItems: m.allocations.length,
+      source: (m.hasExcelImport && m.hasSystemCreated) ? 'Synced (Excel + System)' : m.hasExcelImport ? 'Excel Imported' : 'System Registered'
+    };
+  }).sort((a, b) => b.totalTools - a.totalTools);
+
   const totalAllocations = allAllocations.length;
-  const uniqueMechanics = new Set(allAllocations.map(a => a.userId)).size;
+  const uniqueMechanics = allMechanicKits.length || new Set(allAllocations.map(a => a.userId)).size;
   const totalMasterTools = masterTools.length;
   const totalMasterAccs = masterAccs.length;
 
@@ -2072,7 +2178,18 @@ function renderScreen6DatabasePage() {
   let filteredRecords = [];
   const q = databaseSearch.toLowerCase().trim();
 
-  if (databaseActiveTable === 'TOOL_ALLOCATIONS') {
+  if (databaseActiveTable === 'MECHANIC_KITS') {
+    filteredRecords = allMechanicKits.filter(m => {
+      if (!q) return true;
+      return (
+        m.userId.toLowerCase().includes(q) ||
+        m.userName.toLowerCase().includes(q) ||
+        m.jobTitle.toLowerCase().includes(q) ||
+        m.workingArea.toLowerCase().includes(q) ||
+        m.allRegNos.some(r => r.toLowerCase().includes(q))
+      );
+    });
+  } else if (databaseActiveTable === 'TOOL_ALLOCATIONS') {
     filteredRecords = allAllocations.filter(a => {
       if (!q) return true;
       return (
@@ -2240,6 +2357,10 @@ function renderScreen6DatabasePage() {
           
           <!-- Table Switcher Buttons -->
           <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+            <button class="btn-db-table-switch ${databaseActiveTable === 'MECHANIC_KITS' ? 'active' : ''}" data-table="MECHANIC_KITS"
+              style="background: ${databaseActiveTable === 'MECHANIC_KITS' ? '#059669' : '#1e293b'}; color: #fff; border: 1px solid ${databaseActiveTable === 'MECHANIC_KITS' ? '#10b981' : '#475569'}; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              👥 Mechanic Kits (${uniqueMechanics})
+            </button>
             <button class="btn-db-table-switch ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? 'active' : ''}" data-table="TOOL_ALLOCATIONS"
               style="background: ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
               📋 Allocations (${allAllocations.length})
@@ -2290,6 +2411,72 @@ function renderScreen6DatabasePage() {
                 </button>
               </div>
             </div>
+          ` : ''}
+
+          ${databaseActiveTable === 'MECHANIC_KITS' ? `
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px;">
+              <thead style="position: sticky; top: 0; z-index: 25;">
+                <tr style="background: #0f172a; color: #cbd5e1;">
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 45px; border-bottom: 2px solid #334155;">#</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; width: 130px; border-bottom: 2px solid #334155;">ID / Card #</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155;">Mechanic Name</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155;">Designation &amp; Section</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 140px; border-bottom: 2px solid #334155;">Registration(s)</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 110px; border-bottom: 2px solid #334155;">Allocated Tools</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 140px; border-bottom: 2px solid #334155;">Source / Status</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 95px; border-bottom: 2px solid #334155;">Latest Date</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 210px; border-bottom: 2px solid #334155;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredRecords.length === 0 ? `
+                  <tr><td colspan="9" style="padding: 30px; text-align: center; color: #94a3b8;">No mechanic kits found matching your search.</td></tr>
+                ` : filteredRecords.map((m, idx) => `
+                  <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
+                    <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
+                    <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${m.userId}</td>
+                    <td style="padding: 7px 10px; font-weight: 700; color: #f1f5f9;">${m.userName}</td>
+                    <td style="padding: 7px 10px; color: #cbd5e1;">${m.jobTitle} • ${m.workingArea}</td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                      <span style="font-family: monospace; font-weight: 800; color: #f59e0b;">#${m.primaryRegNo}</span>
+                      ${m.isMultiBatch ? `
+                        <div style="font-size: 10px; background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid #ca8a04; border-radius: 4px; padding: 1px 4px; margin-top: 2px; font-weight: 800;">
+                          ⚠️ ${m.allRegNos.length} Batches (${m.allRegNos.join(', ')})
+                        </div>
+                      ` : ''}
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                      <span style="background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid #22c55e; padding: 2px 8px; border-radius: 9999px; font-weight: 800; font-size: 11px;">
+                        🔧 ${m.totalTools} Tools
+                      </span>
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                      <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; background: ${m.source.includes('Synced') ? 'rgba(56, 189, 248, 0.15)' : m.source.includes('Excel') ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.15)'}; color: ${m.source.includes('Synced') ? '#38bdf8' : m.source.includes('Excel') ? '#34d399' : '#c084fc'}; border: 1px solid ${m.source.includes('Synced') ? 'rgba(56, 189, 248, 0.35)' : m.source.includes('Excel') ? 'rgba(16, 185, 129, 0.35)' : 'rgba(168, 85, 247, 0.35)'};">
+                        ${m.source}
+                      </span>
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #cbd5e1; font-size: 11px;">
+                      ${toolService.formatDateDMY(m.latestIssueDate)}
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
+                      <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                        <button class="btn-db-kit-print" data-user="${m.userId}" style="background: #0284c7; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;" title="Print Official Toolkit SOP Slip">
+                          🖨️ Print
+                        </button>
+                        <button class="btn-db-kit-edit" data-user="${m.userId}" data-reg="${m.primaryRegNo}" style="background: #2563eb; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;" title="Edit or Add Tools to this Kit in Add Form">
+                          ✏️ Edit Kit
+                        </button>
+                        ${m.isMultiBatch ? `
+                          <button class="btn-db-kit-merge" data-user="${m.userId}" data-primary="${m.primaryRegNo}" data-all="${m.allRegNos.join(',')}" style="background: #16a34a; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer;" title="Merge historical batches into single unified kit">
+                            🔗 Merge
+                          </button>
+                        ` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `)}
+              </tbody>
+            </table>
           ` : ''}
 
           ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? `
@@ -2643,7 +2830,7 @@ export function initToolsManagementEvents() {
   }
 
   // Helper: Auto-fill all employee input boxes across Screen 1 & Screen 2
-  function autoFillEmployeeBoxes(emp) {
+  function autoFillEmployeeBoxes(emp, autoLoadKit = true) {
     if (!emp) return;
     activeUserForm.userId = emp.cardNumber || emp.id || '';
     activeUserForm.userName = emp.name || '';
@@ -2669,6 +2856,24 @@ export function initToolsManagementEvents() {
     if (addName) addName.value = activeUserForm.userName;
     if (addTitle) addTitle.value = activeUserForm.jobTitle;
     if (addArea) addArea.value = activeUserForm.workingArea;
+
+    // SMART AUTO-SYNC: Check if this mechanic already has an existing toolkit / registration
+    const existingKit = toolService.getMechanicActiveKit(activeUserForm.userId);
+    if (existingKit && existingKit.exists) {
+      if (autoLoadKit && liveAllocationQueue.length === 0) {
+        currentRegNo = existingKit.primaryRegNo;
+        activeUserForm.regNo = existingKit.primaryRegNo;
+        liveAllocationQueue = existingKit.items.map(i => ({ ...i }));
+        
+        const container = document.getElementById('tools-tab-content-container');
+        if (container && currentActiveTab === 'tools-add') {
+          container.innerHTML = renderActiveTab('tools-add');
+          initToolsManagementEvents();
+        }
+        window.app?.showToast('Existing Kit Synced', `Auto-loaded ${existingKit.totalTools} tools under Reg #${existingKit.primaryRegNo} for ${activeUserForm.userName}`, 'info');
+        return;
+      }
+    }
   }
 
   // 2. Staff Autocomplete & Instant Auto-Fill in Screen 1 (ID Number)
@@ -2970,16 +3175,18 @@ export function initToolsManagementEvents() {
       if (!reg) return;
       currentRegNo = reg;
       const details = toolService.getRegistrationDetails(reg);
-      if (details) {
+      if (details && details.items && details.items.length > 0) {
+        currentRegNo = details.primaryRegNo || details.regNo || reg;
         activeUserForm = {
           userId: details.userId,
           userName: details.userName,
           jobTitle: details.jobTitle,
           workingArea: details.workingArea,
           issueDate: details.issueDate,
-          regNo: details.regNo
+          regNo: currentRegNo
         };
         liveAllocationQueue = details.items.map(i => ({ ...i }));
+        window.app?.showToast('Registration Loaded', `Loaded ${details.totalTools} tools for ${details.userName} (Reg #${currentRegNo})`, 'success');
       } else {
         alert(`No existing records found for Reg No #${reg}. You can create a new allocation for this number.`);
       }
@@ -2988,6 +3195,72 @@ export function initToolsManagementEvents() {
         container.innerHTML = renderActiveTab('tools-add');
         initToolsManagementEvents();
       }
+    };
+  }
+
+  // 10b. Screen 2 Smart Kit Management Buttons (Load Existing, New Batch, Merge Batches)
+  const btnLoadExistingKit = document.getElementById('btn-screen2-load-existing-kit');
+  if (btnLoadExistingKit) {
+    btnLoadExistingKit.onclick = () => {
+      const uId = activeUserForm.userId;
+      if (!uId) return;
+      const kit = toolService.getMechanicActiveKit(uId);
+      if (kit && kit.exists) {
+        currentRegNo = kit.primaryRegNo;
+        activeUserForm.regNo = kit.primaryRegNo;
+        liveAllocationQueue = kit.items.map(i => ({ ...i }));
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('tools-add');
+          initToolsManagementEvents();
+        }
+        window.app?.showToast('Kit Loaded', `Loaded ${kit.totalTools} tools for Reg #${kit.primaryRegNo}`, 'success');
+      }
+    };
+  }
+
+  const btnNewSeparateBatch = document.getElementById('btn-screen2-new-separate-batch');
+  if (btnNewSeparateBatch) {
+    btnNewSeparateBatch.onclick = () => {
+      const nextReg = toolService.getNextRegistrationNumber();
+      currentRegNo = nextReg;
+      activeUserForm.regNo = nextReg;
+      liveAllocationQueue = [];
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('tools-add');
+        initToolsManagementEvents();
+      }
+      window.app?.showToast('New Batch Initialized', `Started clean batch under Reg #${nextReg}`, 'info');
+    };
+  }
+
+  const btnMergeBatchesScreen2 = document.getElementById('btn-screen2-merge-batches');
+  if (btnMergeBatchesScreen2) {
+    btnMergeBatchesScreen2.onclick = async () => {
+      const uId = activeUserForm.userId;
+      if (!uId) return;
+      const kit = toolService.getMechanicActiveKit(uId);
+      if (!kit || !kit.isMultiBatch) return;
+      ensureAdminAccess('Merge Multi-Registration Batches', async () => {
+        const otherBatches = kit.allRegNos.filter(r => r !== kit.primaryRegNo);
+        const confirmed = confirm(`Merge all items from secondary batches (${otherBatches.join(', ')}) into Primary Reg #${kit.primaryRegNo}?\n\nThis permanently unifies all previous imported tools with new registrations.`);
+        if (confirmed) {
+          await toolService.mergeRegistrationBatches(kit.primaryRegNo, otherBatches);
+          currentRegNo = kit.primaryRegNo;
+          activeUserForm.regNo = kit.primaryRegNo;
+          const freshKit = toolService.getMechanicActiveKit(uId);
+          if (freshKit) {
+            liveAllocationQueue = freshKit.items.map(i => ({ ...i }));
+          }
+          const container = document.getElementById('tools-tab-content-container');
+          if (container) {
+            container.innerHTML = renderActiveTab('tools-add');
+            initToolsManagementEvents();
+          }
+          window.app?.showToast('Batches Unified', `Successfully merged all records into Reg #${kit.primaryRegNo}!`, 'success');
+        }
+      });
     };
   }
 
@@ -3600,6 +3873,40 @@ export function initToolsManagementEvents() {
       }
     };
     document.addEventListener('click', window._toolsPrintSuggestClickHandler);
+  }
+
+  // 18b. Multi-Batch Print Filter & Merge Actions
+  root.querySelectorAll('.btn-print-batch-filter').forEach(btn => {
+    btn.onclick = () => {
+      currentPrintBatchFilter = btn.getAttribute('data-batch') || 'ALL';
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('print-page');
+        initToolsManagementEvents();
+      }
+    };
+  });
+
+  const btnMergePrint = document.getElementById('btn-merge-print-batches');
+  if (btnMergePrint) {
+    btnMergePrint.onclick = () => {
+      const details = toolService.getRegistrationDetails(currentPrintRegNo);
+      if (!details || !details.isMultiBatch) return;
+      ensureAdminAccess('Merge Multi-Registration Batches', async () => {
+        const otherBatches = details.allRegNos.filter(r => r !== details.primaryRegNo);
+        const confirmed = confirm(`Merge all records from secondary batches (${otherBatches.join(', ')}) into Primary Reg #${details.primaryRegNo}?\n\nThis permanently unifies all previous imported tools with new registrations.`);
+        if (confirmed) {
+          await toolService.mergeRegistrationBatches(details.primaryRegNo, otherBatches);
+          currentPrintBatchFilter = 'ALL';
+          const container = document.getElementById('tools-tab-content-container');
+          if (container) {
+            container.innerHTML = renderActiveTab('print-page');
+            initToolsManagementEvents();
+          }
+          window.app?.showToast('Batches Merged', `Successfully merged all records into Reg #${details.primaryRegNo}!`, 'success');
+        }
+      });
+    };
   }
 
   // 19. Print Format Buttons
@@ -4835,6 +5142,65 @@ export function initToolsManagementEvents() {
             container.innerHTML = renderActiveTab('database-page');
             initToolsManagementEvents();
           }
+        }
+      });
+    };
+  });
+
+  // Screen 6 Mechanic Kits Group Actions
+  root.querySelectorAll('.btn-db-kit-print').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.getAttribute('data-user');
+      if (!uId) return;
+      currentPrintRegNo = uId;
+      currentPrintBatchFilter = 'ALL';
+      navigateToTab('print-page');
+    };
+  });
+
+  root.querySelectorAll('.btn-db-kit-edit').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.getAttribute('data-user');
+      const reg = btn.getAttribute('data-reg');
+      if (!uId) return;
+      const kit = toolService.getMechanicActiveKit(uId);
+      if (kit && kit.exists) {
+        currentRegNo = kit.primaryRegNo || reg;
+        activeUserForm = {
+          userId: kit.userId,
+          userName: kit.userName,
+          jobTitle: kit.jobTitle,
+          workingArea: kit.workingArea,
+          issueDate: kit.latestIssueDate || new Date().toISOString().split('T')[0],
+          regNo: currentRegNo,
+          requisitionNo: ''
+        };
+        liveAllocationQueue = kit.items.map(i => ({ ...i }));
+      } else {
+        const emp = toolService.getStaffByIdOrCard(uId) || { cardNumber: uId, id: uId };
+        autoFillEmployeeBoxes(emp, true);
+      }
+      navigateToTab('tools-add');
+      window.app?.showToast('Mechanic Kit Loaded', `Loaded kit for ${activeUserForm.userName} in Add Form`, 'info');
+    };
+  });
+
+  root.querySelectorAll('.btn-db-kit-merge').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.getAttribute('data-user');
+      const primary = btn.getAttribute('data-primary');
+      const all = (btn.getAttribute('data-all') || '').split(',').map(s => s.trim()).filter(r => r && r !== primary);
+      if (!uId || !primary || all.length === 0) return;
+      ensureAdminAccess('Merge Mechanic Registration Batches', async () => {
+        const confirmed = confirm(`Merge all records from secondary batches (${all.join(', ')}) into Primary Reg #${primary} for this mechanic?\n\nThis permanently unifies all previous imported tools with new registrations.`);
+        if (confirmed) {
+          await toolService.mergeRegistrationBatches(primary, all);
+          const container = document.getElementById('tools-tab-content-container');
+          if (container) {
+            container.innerHTML = renderActiveTab('database-page');
+            initToolsManagementEvents();
+          }
+          window.app?.showToast('Batches Unified', `Successfully merged records into Reg #${primary}!`, 'success');
         }
       });
     };
