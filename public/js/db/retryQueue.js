@@ -47,6 +47,11 @@ export class RetryQueue {
 
     if (!this.db) {
       try {
+        const serialized = JSON.stringify(item.data || '');
+        if (serialized.length > 250000) {
+          console.warn('[RetryQueue] Skipping massive payload in localStorage fallback to protect storage quota.');
+          return null;
+        }
         const raw = localStorage.getItem('erp_sync_retry_queue_backup') || '[]';
         const list = JSON.parse(raw);
         const payload = {

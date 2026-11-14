@@ -496,15 +496,27 @@ const server = http.createServer((req, res) => {
       // Security Gate: Restrict persistent write operations to authenticated sessions or verified API key
       const reqApiKey = req.headers['x-api-key'] || (req.headers['authorization'] ? req.headers['authorization'].replace(/^Bearer\s+/i, '') : '');
       const userRole = req.headers['x-user-role'] || '';
+      const userId = req.headers['x-user-id'] || '';
       const isKeyValid = reqApiKey === SECURE_API_KEY;
       const isAuthorizedRole = ['SUPER_ADMIN', 'ADMIN', 'MAINTENANCE_HEAD', 'MAINTENANCE_SUPERVISOR', 'MAINTENANCE_USER', 'DATA_ENTRY'].includes(userRole);
 
-      if (!isKeyValid && !isAuthorizedRole) {
+      let isVerifiedUser = false;
+      if (isAuthorizedRole && userId && fs.existsSync(DB_FILE)) {
+        try {
+          const dbContent = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}');
+          const found = (dbContent.users || []).find(u => u.id === userId);
+          if (found && found.status === 'ACTIVE' && (found.role === userRole || (found.role && found.role.toUpperCase() === userRole.toUpperCase()))) {
+            isVerifiedUser = true;
+          }
+        } catch (_) {}
+      }
+
+      if (!isKeyValid && !isVerifiedUser) {
         res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({ 
           status: 'error', 
           code: 'UNAUTHORIZED', 
-          message: 'Security Policy: Valid API Key or authenticated session required to persist database records.' 
+          message: 'Security Policy: Valid API Key or verified active user session required to persist database records.' 
         }));
       }
 
@@ -781,7 +793,11 @@ const server = http.createServer((req, res) => {
     cleanUrl = '/';
   }
   let safePath = cleanUrl === '/' ? '/index.html' : cleanUrl;
-  let filePath = path.join(PUBLIC_DIR, path.normalize(safePath).replace(/^(\.\.[\/\\])+/, ''));
+  let resolvedPath = path.resolve(PUBLIC_DIR, '.' + path.normalize(safePath));
+  if (!resolvedPath.startsWith(PUBLIC_DIR)) {
+    resolvedPath = path.join(PUBLIC_DIR, 'index.html');
+  }
+  let filePath = resolvedPath;
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {

@@ -82,6 +82,7 @@ class SyncManager {
     };
     this.secondaryAdapters.set('db_postgresql_replica', defaultPg);
     this.configLoaded = false;
+    this._adapterCircuit = new Map();
 
     // Enterprise Automatic Failover & Recovery System
     this.isFailoverActive = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_db_failover_active') === 'true');
@@ -1093,15 +1094,40 @@ class SyncManager {
     return primaryResult;
   }
 
+  _isCircuitOpen(adapterId) {
+    if (!this._adapterCircuit) return false;
+    const cur = this._adapterCircuit.get(adapterId);
+    return Boolean(cur && cur.openUntil && Date.now() < cur.openUntil);
+  }
+
+  _recordCircuitSuccess(adapterId) {
+    if (!this._adapterCircuit) this._adapterCircuit = new Map();
+    this._adapterCircuit.set(adapterId, { failures: 0, openUntil: 0 });
+  }
+
+  _recordCircuitFailure(adapterId, adapterName) {
+    if (!this._adapterCircuit) this._adapterCircuit = new Map();
+    const cur = this._adapterCircuit.get(adapterId) || { failures: 0, openUntil: 0 };
+    cur.failures = (cur.failures || 0) + 1;
+    if (cur.failures >= 3) {
+      cur.openUntil = Date.now() + 60000;
+      console.warn(`[SyncManager Circuit Breaker] ⚡ Pausing auto-sync fan-out to ${adapterName} for 60s due to repeated connection failures.`);
+    }
+    this._adapterCircuit.set(adapterId, cur);
+  }
+
   async _fanoutTableSave(collection, dataObj, excludeDbId = null) {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
       // Primary gate: adapter must be enabled
       if (!adapter.config.enabled || id === excludeDbId) continue;
       // Secondary gate: real-time auto-sync must be ON
       if (adapter.config.autoSync === false) continue;
+      // Circuit breaker: skip if currently cooling down from connection failures
+      if (this._isCircuitOpen(id)) continue;
 
       adapter.saveTable(collection, dataObj).then(res => {
         if (!res.success) {
+          this._recordCircuitFailure(id, adapter.name);
           console.warn(`[SyncManager] Fan-out failed for ${adapter.name} on ${collection}: ${res.error}`);
           this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, res.error);
           this._recordMetric(id, {
@@ -1110,6 +1136,7 @@ class SyncManager {
             lastSyncTime: new Date().toLocaleString()
           });
         } else {
+          this._recordCircuitSuccess(id);
           if (adapter.config) adapter.config.lastSync = new Date().toLocaleString();
           const currentTotal = (typeof window !== 'undefined' && window.storage)
             ? Object.values(window.storage.data || {}).reduce((sum, t) => sum + (Array.isArray(t) ? t.length : (t && typeof t === 'object' ? Object.keys(t).length : 0)), 0)
@@ -1123,6 +1150,7 @@ class SyncManager {
           });
         }
       }).catch(err => {
+        this._recordCircuitFailure(id, adapter.name);
         this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, err.message);
         this._recordMetric(id, {
           failed: 1,
@@ -1138,12 +1166,17 @@ class SyncManager {
       if (!adapter.config.enabled || id === excludeDbId) continue;
       if (adapter.config.autoSync === false) continue;
       if (typeof adapter.deleteRecord !== 'function') continue;
+      if (this._isCircuitOpen(id)) continue;
 
       adapter.deleteRecord(collection, docId).then(res => {
         if (!res.success) {
+          this._recordCircuitFailure(id, adapter.name);
           this._queueRetry(adapter, collection, docId, 'DELETE_RECORD', null, res.error);
+        } else {
+          this._recordCircuitSuccess(id);
         }
       }).catch(err => {
+        this._recordCircuitFailure(id, adapter.name);
         this._queueRetry(adapter, collection, docId, 'DELETE_RECORD', null, err.message);
       });
     }
@@ -1153,9 +1186,11 @@ class SyncManager {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
       if (!adapter.config.enabled || id === excludeDbId) continue;
       if (adapter.config.autoSync === false) continue;
+      if (this._isCircuitOpen(id)) continue;
 
       adapter.saveRecord(collection, docId, data).then(res => {
         if (!res.success) {
+          this._recordCircuitFailure(id, adapter.name);
           this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, res.error);
           this._recordMetric(id, {
             failed: 1,
@@ -1163,6 +1198,7 @@ class SyncManager {
             lastSyncTime: new Date().toLocaleString()
           });
         } else {
+          this._recordCircuitSuccess(id);
           if (adapter.config) adapter.config.lastSync = new Date().toLocaleString();
           const currentTotal = (typeof window !== 'undefined' && window.storage)
             ? Object.values(window.storage.data || {}).reduce((sum, t) => sum + (Array.isArray(t) ? t.length : (t && typeof t === 'object' ? Object.keys(t).length : 0)), 0)
@@ -1176,6 +1212,7 @@ class SyncManager {
           });
         }
       }).catch(err => {
+        this._recordCircuitFailure(id, adapter.name);
         this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, err.message);
         this._recordMetric(id, {
           failed: 1,
@@ -1233,14 +1270,18 @@ class SyncManager {
         if (result.success) {
           await retryQueue.update(item.id, { status: 'SUCCESS', lastError: null });
         } else {
+          const nextCount = (item.retryCount || 0) + 1;
           await retryQueue.update(item.id, {
-            retryCount: item.retryCount + 1,
+            retryCount: nextCount,
+            status: nextCount >= 5 ? 'FAILED' : 'PENDING',
             lastError: result.error
           });
         }
       } catch (e) {
+        const nextCount = (item.retryCount || 0) + 1;
         await retryQueue.update(item.id, {
-          retryCount: item.retryCount + 1,
+          retryCount: nextCount,
+          status: nextCount >= 5 ? 'FAILED' : 'PENDING',
           lastError: e.message
         });
       }

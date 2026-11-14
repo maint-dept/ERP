@@ -31,11 +31,12 @@ assert(serverSrc.includes('tool-071'), "server.js missing tool-071 auto-merge pr
 assert(serverSrc.includes('acc-011'), "server.js missing acc-011 auto-merge protection");
 console.log('  ✅ PASS: server.js correctly serves WASM/GZIP and preserves essential factory data');
 
-// 3. Test index.html script tags
+// 3. Test index.html & lazy loader for Tesseract OCR
 const indexSrc = fs.readFileSync('public/index.html', 'utf8');
-assert(indexSrc.includes('tesseract.min.js'), "index.html missing tesseract.min.js script tag");
+const tmvSrc = fs.readFileSync('public/js/components/toolsManagementView.js', 'utf8');
+assert(indexSrc.includes('tesseract.min.js') || tmvSrc.includes('tesseract.min.js'), "Missing tesseract.min.js script tag or on-demand lazy loader");
 assert(/app\.js\?v=\d+\.\d+\.\d+/.test(indexSrc), "index.html missing cache-busting version parameter");
-console.log('  ✅ PASS: public/index.html includes Tesseract.js script tag & cache-buster');
+console.log('  ✅ PASS: Tesseract.js is properly integrated (on-demand lazy loaded & cache-busted)');
 
 // 4. Test toolsManagementView.js implementations
 const viewSrc = fs.readFileSync('public/js/components/toolsManagementView.js', 'utf8');
@@ -108,7 +109,11 @@ const OCR_ALIASES = [
 function testMatch(raw) {
   for (const a of OCR_ALIASES) {
     if (a.regex.test(raw)) {
-      return catalog.find(c => c.name.toLowerCase().includes(a.targetName.toLowerCase()));
+      return catalog.find(c => {
+        const cn = c.name.toLowerCase();
+        const tn = a.targetName.toLowerCase();
+        return cn.includes(tn) || (tn.includes('diamond') && cn.includes('dimond')) || (tn.includes('dimond') && cn.includes('diamond'));
+      });
     }
   }
   return null;

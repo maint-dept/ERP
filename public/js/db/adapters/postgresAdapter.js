@@ -24,11 +24,11 @@ export class PostgresAdapter extends BaseAdapter {
         rawEndpoint.includes('://api/pg_api.php') ||
         rawEndpoint === '/api/db/pg' ||
         (rawEndpoint.includes('api/pg_api.php') && !rawEndpoint.startsWith('http'))) {
-      if (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com') {
-        rawEndpoint = window.location.origin + '/api/pg_api.php';
-      } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
-        rawEndpoint = 'https://erp.moviezonex.com/api/pg_api.php';
-      } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+      const hostname = (typeof window !== 'undefined' && window.location) ? (window.location.hostname || '') : '';
+      const origin = (typeof window !== 'undefined' && window.location) ? (window.location.origin || '') : '';
+      if (hostname === 'erp.moviezonex.com') {
+        rawEndpoint = origin + '/api/pg_api.php';
+      } else if (hostname.includes('moviezonex.com') || hostname.includes('github.io')) {
         rawEndpoint = 'https://erp.moviezonex.com/api/pg_api.php';
       } else {
         rawEndpoint = rawEndpoint || '/api/db/pg';

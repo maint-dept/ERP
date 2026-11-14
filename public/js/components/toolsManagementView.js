@@ -7393,7 +7393,11 @@ export function matchItemToCatalog(rawName, catalogList) {
   // 1. Check Factory Aliases first
   for (const alias of OCR_FACTORY_ALIASES) {
     if (alias.regex.test(cleanRaw)) {
-      const match = catalogList.find(c => c.name.toLowerCase().includes(alias.targetName.toLowerCase()));
+      const match = catalogList.find(c => {
+        const cn = (c.name || '').toLowerCase();
+        const tn = (alias.targetName || '').toLowerCase();
+        return cn.includes(tn) || (tn.includes('diamond') && cn.includes('dimond')) || (tn.includes('dimond') && cn.includes('diamond'));
+      });
       if (match) {
         return { item: match, confidence: 0.99, method: 'FACTORY_ALIAS' };
       }
