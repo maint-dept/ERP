@@ -17,7 +17,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AMG ERP">
-  <link rel="manifest" href="manifest.json?v=4.49.0">
+  <link rel="manifest" href="manifest.json?v=4.50.0">
 
   <!-- Crisp PWA Icons & Native App Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -26,22 +26,22 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.49.0">
-  <link rel="modulepreload" href="js/state.js?v=4.49.0">
-  <link rel="modulepreload" href="js/db/storage.js?v=4.49.0">
-  <link rel="modulepreload" href="js/db/schema.js?v=4.49.0">
-  <link rel="modulepreload" href="js/services/authService.js?v=4.49.0">
-  <link rel="modulepreload" href="js/services/router.js?v=4.49.0">
-  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/icons.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/loginView.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/sidebar.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/navbar.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/mobileNav.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.49.0">
-  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.49.0">
+  <link rel="modulepreload" href="js/app.js?v=4.50.0">
+  <link rel="modulepreload" href="js/state.js?v=4.50.0">
+  <link rel="modulepreload" href="js/db/storage.js?v=4.50.0">
+  <link rel="modulepreload" href="js/db/schema.js?v=4.50.0">
+  <link rel="modulepreload" href="js/services/authService.js?v=4.50.0">
+  <link rel="modulepreload" href="js/services/router.js?v=4.50.0">
+  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/icons.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/loginView.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/sidebar.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/navbar.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/mobileNav.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.50.0">
+  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.50.0">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
     (function () {
@@ -270,6 +270,61 @@
       border-right: 1px solid #cbd5e1 !important;
       border-bottom: 1px solid #cbd5e1 !important;
     }
+    /* Modern Executive 1:1 Light Theme Protection (Zero Shrunk / Constricted Guarantee) */
+    html.theme-light body, body.theme-light {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+      font-family: var(--font-main) !important;
+      letter-spacing: normal !important;
+    }
+    body.theme-light h1, body.theme-light h2, body.theme-light h3, body.theme-light h4,
+    body.theme-light .dash-hero-title, body.theme-light .panel-title, body.theme-light .card-title,
+    body.theme-light .brand-text-title, body.theme-light .header-title-text,
+    body.theme-light .section-heading, body.theme-light .page-header-title {
+      font-family: var(--font-main) !important;
+      letter-spacing: -0.2px !important;
+      color: #0f172a !important;
+    }
+    body.theme-light .nav-item, body.theme-light .nav-group-header {
+      margin: 1.5px 0 !important;
+      padding: 7px 10px !important;
+    }
+    body.theme-light .nav-item.active {
+      background: #e0f2fe !important;
+      color: #0284c7 !important;
+      border: 1px solid rgba(2, 132, 199, 0.3) !important;
+      border-left: 3.5px solid #0284c7 !important;
+      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12) !important;
+    }
+    body.theme-light .dash-hero-banner {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      padding: 10px 16px !important;
+      box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06) !important;
+    }
+    body.theme-light .dash-kpi-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 10px !important;
+      padding: 14px 16px !important;
+      box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.06) !important;
+    }
+    body.theme-light .kpi-card-total { border-left: 3.5px solid #0284c7 !important; }
+    body.theme-light .kpi-card-active { border-left: 3.5px solid #10b981 !important; }
+    body.theme-light .kpi-card-maint { border-left: 3.5px solid #f59e0b !important; }
+    body.theme-light .kpi-card-breakdown { border-left: 3.5px solid #ef4444 !important; }
+    body.theme-light .kpi-card-pending { border-left: 3.5px solid #8b5cf6 !important; }
+    body.theme-light .dash-dist-card,
+    body.theme-light .card,
+    body.theme-light .panel,
+    body.theme-light .stat-card {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      padding: 14px 16px !important;
+      box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06) !important;
+    }
   </style>
 
   <!-- ProLicense Editorial Typography & Modern Industrial Fonts -->
@@ -300,10 +355,10 @@
   </script>
 
   <!-- Core ERP Stylesheets (Cache-Busted v4.36.0) -->
-  <link rel="stylesheet" href="css/app.css?v=4.49.0">
-  <link rel="stylesheet" href="css/grid.css?v=4.49.0">
-  <link rel="stylesheet" href="css/components.css?v=4.49.0">
-  <link rel="stylesheet" href="css/print.css?v=4.49.0">
+  <link rel="stylesheet" href="css/app.css?v=4.50.0">
+  <link rel="stylesheet" href="css/grid.css?v=4.50.0">
+  <link rel="stylesheet" href="css/components.css?v=4.50.0">
+  <link rel="stylesheet" href="css/print.css?v=4.50.0">
 
   <!-- Ultra-Fast Boot: All heavy third-party libraries (SheetJS, QRCode, Camera Scanner, Tesseract OCR, PDF.js) are loaded 100% on demand when explicitly requested -->
 </head>
@@ -492,7 +547,7 @@
   </script>
 
   <!-- Main ES Module Application Entrypoint (Cache-Busted v4.46.1) -->
-  <script type="module" src="js/app.js?v=4.49.0"></script>
+  <script type="module" src="js/app.js?v=4.50.0"></script>
 
   <style>
     @keyframes execBarPulse {
