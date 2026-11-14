@@ -8,10 +8,20 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'erp_database.json');
 const SECURE_API_KEY = 'AMG_MNT_SECURE_API_v4_89f2a7';
 
+// Telegram Bot Service Integration
+const telegramBotService = require('./telegramBotService');
+
 // --- REAL-TIME SERVER-SENT EVENTS (SSE) HUB ---
 const sseClients = new Set();
 
 function broadcastRealtimeEvent(eventData) {
+  // If event is transfer creation or breakdown, notify Telegram approvers/engineers
+  if (eventData && (eventData.type === 'transfer:created' || eventData.type === 'transfer:requested')) {
+    if (eventData.data) {
+      telegramBotService.notifyApproversOfTransfer(eventData.data);
+    }
+  }
+
   if (sseClients.size === 0) return 0;
   const payload = `data: ${JSON.stringify(eventData)}\n\n`;
   let sentCount = 0;
@@ -25,6 +35,8 @@ function broadcastRealtimeEvent(eventData) {
   }
   return sentCount;
 }
+
+telegramBotService.setRealtimeBroadcaster(broadcastRealtimeEvent);
 
 // Keep-alive heartbeat every 20 seconds to prevent proxy / firewall timeout
 setInterval(() => {
@@ -466,6 +478,68 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // --- TELEGRAM BOT INTEGRATION API ENDPOINTS ---
+  if (urlPath === '/api/telegram/status') {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const qUserId = parsedUrl.searchParams.get('userId');
+    const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}') : {};
+    const user = (db.users || []).find(u => u.id === qUserId);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({
+      status: 'ok',
+      linked: Boolean(user && user.telegramChatId),
+      telegramUsername: user?.telegramUsername || null,
+      telegramLinkedAt: user?.telegramLinkedAt || null,
+      botUsername: 'MainterpBot'
+    }));
+  }
+
+  if (urlPath === '/api/telegram/generate-link-code') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Method Not Allowed' }));
+    }
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const linkInfo = telegramBotService.generateLinkCodeForUser(payload.userId);
+        if (!linkInfo) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ status: 'error', message: 'User not found' }));
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'ok', ...linkInfo }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'error', message: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === '/api/telegram/unlink') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Method Not Allowed' }));
+    }
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        telegramBotService.unlinkUserTelegram(payload.userId);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'ok', message: 'Telegram unlinked successfully' }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'error', message: err.message }));
+      }
+    });
+    return;
+  }
+
   // Persistent Database Records Store API Endpoints
   if (urlPath === '/api/db/records') {
     if (req.method === 'GET') {
@@ -846,4 +920,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  Document Root: ${PUBLIC_DIR}`);
   console.log('  Press Ctrl+C to stop the server.');
   console.log('=========================================================================');
+
+  // Start Telegram Bot Long-Polling Daemon (@MainterpBot)
+  try {
+    telegramBotService.startPollingLoop();
+  } catch (tgErr) {
+    console.error('[TelegramBot] Failed to start daemon:', tgErr);
+  }
 });

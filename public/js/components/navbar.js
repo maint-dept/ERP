@@ -476,6 +476,17 @@ export function renderNavbar() {
                 </button>
               ` : ''}
 
+              <button type="button" id="btn-navbar-telegram" class="nav-user-dropdown-item" title="Connect Telegram Bot for Instant Alerts & Control">
+                <span class="dropdown-item-icon" style="font-size: 15px;">✈️</span>
+                <div class="dropdown-item-content">
+                  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <span class="dropdown-item-title" style="color: #38bdf8;">Telegram Bot &amp; Alerts</span>
+                    <span class="badge" style="font-size: 9px; padding: 1px 5px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px;">@MainterpBot</span>
+                  </div>
+                  <span class="dropdown-item-desc">Real-time alerts, gate passes &amp; machinery</span>
+                </div>
+              </button>
+
               <button type="button" id="btn-navbar-change-pwd" class="nav-user-dropdown-item" title="Change your account password & profile">
                 <span class="dropdown-item-icon">${icon('key', { size: 15 })}</span>
                 <div class="dropdown-item-content">
@@ -903,6 +914,19 @@ export function initNavbarEvents() {
         m.openCustomNotificationModal();
       }).catch(err => {
         console.error('Failed to open alert composer:', err);
+      });
+    });
+  }
+
+  // Telegram Bot Alerts Button
+  const btnTelegram = document.getElementById('btn-navbar-telegram');
+  if (btnTelegram) {
+    btnTelegram.addEventListener('click', () => {
+      closeDropdown();
+      import('./telegramModal.js').then(m => {
+        m.openTelegramModal();
+      }).catch(err => {
+        console.error('Failed to open telegram modal:', err);
       });
     });
   }
