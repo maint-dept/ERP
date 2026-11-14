@@ -946,17 +946,27 @@ tr.draggable-row.drag-over-bottom {
   border-spacing: 0;
 }
 
-/* Light theme overrides for frozen cells (prolicense.top warm paper standard) */
+/* Light theme overrides for frozen cells & boundary (prolicense.top warm paper standard) */
+body.theme-light .excel-grid-table th.col-frozen-boundary,
+body.theme-light .excel-grid-table td.col-frozen-boundary {
+  border-right: 2px solid #d3cab7 !important;
+  box-shadow: 3px 0 8px -2px rgba(31, 28, 23, 0.08) !important;
+}
+body.theme-light .excel-grid-table thead th,
 body.theme-light .excel-grid-table thead th.col-freeze-sl,
 body.theme-light .excel-grid-table thead th.col-freeze-check,
 body.theme-light .excel-grid-table thead th.col-frozen-cell {
   background-color: #efe9dd !important;
   color: #1f1c17 !important;
+  border-right: 1px solid #d3cab7 !important;
+  border-bottom: 2px solid #d3cab7 !important;
 }
 body.theme-light .excel-grid-table tbody td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody td.col-freeze-check,
 body.theme-light .excel-grid-table tbody td.col-frozen-cell {
   color: #1f1c17 !important;
+  border-right: 1px solid #e5dfd3 !important;
+  border-bottom: 1px solid #e5dfd3 !important;
 }
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-check,
@@ -5094,8 +5104,7 @@ body.theme-light .nav-group-header:hover {
   transform: translateX(3px) !important;
 }
 
-body.theme-light .nav-item.active,
-body.theme-light .nav-group-header.parent-active {
+body.theme-light .nav-item.active {
   background: #1f1c17 !important;
   color: #fffdf8 !important;
   font-weight: 700 !important;
@@ -5103,11 +5112,25 @@ body.theme-light .nav-group-header.parent-active {
   box-shadow: 0 2px 8px rgba(31, 28, 23, 0.15) !important;
 }
 
+body.theme-light .nav-group-header.parent-active {
+  background: rgba(217, 72, 15, 0.08) !important;
+  color: #1f1c17 !important;
+  font-weight: 700 !important;
+  border-left: 3.5px solid #d9480f !important;
+  box-shadow: none !important;
+}
+
 body.theme-light .nav-item.active .nav-icon,
 body.theme-light .nav-item.active .nav-icon-box {
   background: #d9480f !important;
   border-color: #d9480f !important;
   color: #ffffff !important;
+}
+
+body.theme-light .nav-group-header.parent-active .nav-icon-box {
+  background: rgba(217, 72, 15, 0.15) !important;
+  border-color: rgba(217, 72, 15, 0.35) !important;
+  color: #d9480f !important;
 }
 
 body.theme-light .nav-icon-box {

@@ -321077,7 +321077,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T10:21:09.447Z"
+        "updatedAt": "2026-11-14T13:06:10.589Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321095,7 +321095,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T10:21:09.447Z"
+        "updatedAt": "2026-11-14T13:06:10.589Z"
       }
     ],
     "emailConfig": {
@@ -333075,12 +333075,12 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-14T03:20:45.602Z",
-      "updatedAt": "2026-11-14T03:20:45.602Z",
+      "lastLoginAt": "2026-11-14T12:26:50.506Z",
+      "updatedAt": "2026-11-14T12:26:50.506Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
-      "version": 7
+      "version": 8
     },
     {
       "id": "usr-1789211116425-361",
@@ -344684,6 +344684,41 @@
       "timestamp": "2026-11-14T03:20:45.602Z",
       "createdAt": "2026-11-14T03:20:45.602Z",
       "updatedAt": "2026-11-14T03:20:45.602Z"
+    },
+    {
+      "id": "aud-1794656835769-756",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "PRINT_PREVENTIVE_REPORT",
+      "entity": "PREVENTIVE_MAINTENANCE",
+      "entityId": "REPORT",
+      "details": "Printed official Preventive Machine Maintenance Report (3 rows)",
+      "oldData": null,
+      "newData": null,
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-14T11:47:15.769Z",
+      "createdAt": "2026-11-14T11:47:15.770Z",
+      "updatedAt": "2026-11-14T11:47:15.770Z"
+    },
+    {
+      "id": "aud-1794659210506-841",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-14T12:26:50.506Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-14T12:26:50.506Z",
+      "createdAt": "2026-11-14T12:26:50.506Z",
+      "updatedAt": "2026-11-14T12:26:50.506Z"
     }
   ],
   "notifications": [

@@ -20,8 +20,8 @@ import { userAccessService } from '../services/userAccessService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
-import { state } from '../state.js?v=4.46.1';
-import { router } from '../services/router.js?v=4.46.1';
+import { state } from '../state.js?v=4.47.0';
+import { router } from '../services/router.js?v=4.47.0';
 
 // Active Sub-feature Section
 // 'ACCOUNTS' | 'PERMISSIONS' | 'BULK_ASSIGN' | 'PASSWORD_MGMT' | 'EXPORT_ACCOUNTS' | 'ACTIVITY_LOGS' | 'PRESETS'
@@ -2037,7 +2037,7 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
         </colgroup>
         <thead>
           <tr>
-            <th class="uam-col-sticky-card-pass" style="width: 130px; min-width: 130px; text-align: center; padding: 8px 6px; position: sticky; left: 0; top: 0; z-index: 45; background-color: #0b1329;">Card Number</th>
+            <th class="uam-col-sticky-card-pass" style="width: 130px; min-width: 130px; text-align: center; padding: 8px 6px; position: sticky; left: 0; top: 0; z-index: 45;">Card Number</th>
             <th style="width: 190px; text-align: left; padding: 8px 12px;">Employee Name</th>
             <th style="width: 155px; text-align: left; padding: 8px 12px;">Username</th>
             <th style="width: 160px; text-align: left; padding: 8px 10px;">Designation</th>
@@ -2074,20 +2074,20 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
             return `
               <tr>
                 <!-- Card Number (Freeze Pane: Sticky Left: 0) -->
-                <td class="uam-col-sticky-card-pass" style="text-align: center; width: 130px; min-width: 130px; padding: 6px 8px; position: sticky; left: 0; z-index: 18; background-color: #0b1329;">
+                <td class="uam-col-sticky-card-pass" style="text-align: center; width: 130px; min-width: 130px; padding: 6px 8px; position: sticky; left: 0; z-index: 18;">
                   <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
                     <span>${acc.cardNumber}</span>
                   </span>
                 </td>
 
                 <!-- Employee Name & Dept -->
-                <td style="text-align: left; width: 190px; min-width: 190px; padding: 6px 12px; background-color: #0b1329;">
-                  <div style="font-weight: 700; color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.employeeName}">${acc.employeeName}</div>
+                <td style="text-align: left; width: 190px; min-width: 190px; padding: 6px 12px;">
+                  <div style="font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.employeeName}">${acc.employeeName}</div>
                   <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.department || ''}">${acc.department || '—'}</div>
                 </td>
 
                 <!-- Username -->
-                <td style="text-align: left; width: 155px; min-width: 155px; padding: 6px 12px; background-color: #0b1329;">
+                <td style="text-align: left; width: 155px; min-width: 155px; padding: 6px 12px;">
                   <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 110px;" title="@${acc.username}">
                       @${acc.username}
@@ -2101,49 +2101,49 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
                 </td>
 
                 <!-- Designation -->
-                <td style="text-align: left; width: 160px; min-width: 160px; padding: 6px 10px; background-color: #0b1329;">
-                  <div style="font-size: 11.5px; color: #e2e8f0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.designation}">
+                <td style="text-align: left; width: 160px; min-width: 160px; padding: 6px 10px;">
+                  <div style="font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.designation}">
                     ${acc.designation || 'Staff'}
                   </div>
                 </td>
 
                 <!-- Group -->
-                <td style="text-align: left; width: 140px; min-width: 140px; padding: 6px 10px; background-color: #0b1329;">
-                  <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.groupName || 'Al-Muslim Group'}">
+                <td style="text-align: left; width: 140px; min-width: 140px; padding: 6px 10px;">
+                  <div style="font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.groupName || 'Al-Muslim Group'}">
                     ${acc.groupName || 'Al-Muslim Group'}
                   </div>
                 </td>
 
                 <!-- Unit -->
-                <td style="text-align: left; width: 170px; min-width: 170px; padding: 6px 10px; background-color: #0b1329;">
+                <td style="text-align: left; width: 170px; min-width: 170px; padding: 6px 10px;">
                   <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.unitName || '—'}">
                     ${acc.unitName || '—'}
                   </div>
                 </td>
 
                 <!-- Floor -->
-                <td style="text-align: center; width: 100px; min-width: 100px; padding: 6px 6px; background-color: #0b1329;">
+                <td style="text-align: center; width: 100px; min-width: 100px; padding: 6px 6px;">
                   <div style="font-size: 11.5px; color: #38bdf8; font-weight: 600; white-space: nowrap;">
                     ${acc.floorName || '—'}
                   </div>
                 </td>
 
                 <!-- Line -->
-                <td style="text-align: center; width: 110px; min-width: 110px; padding: 6px 6px; background-color: #0b1329;">
+                <td style="text-align: center; width: 110px; min-width: 110px; padding: 6px 6px;">
                   <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;">
                     ${acc.lineName || '—'}
                   </div>
                 </td>
 
                 <!-- Account Status -->
-                <td style="text-align: center; width: 120px; min-width: 120px; padding: 6px 6px; background-color: #0b1329;">
+                <td style="text-align: center; width: 120px; min-width: 120px; padding: 6px 6px;">
                   <span class="badge" style="background: ${isUserActive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${isUserActive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${isUserActive ? '#34d399' : '#f87171'}; font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px; white-space: nowrap;">
                     ${isUserActive ? '🟢 Active' : '🔴 Inactive'}
                   </span>
                 </td>
 
                 <!-- Password Status -->
-                <td style="text-align: center; width: 130px; min-width: 130px; padding: 6px 6px; background-color: #0b1329;">
+                <td style="text-align: center; width: 130px; min-width: 130px; padding: 6px 6px;">
                   ${acc.passwordStatus === 'TEMPORARY' ? `
                     <span class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">🟡 Temporary</span>
                   ` : `
@@ -2152,23 +2152,23 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
                 </td>
 
                 <!-- Last Password Reset -->
-                <td style="text-align: left; width: 160px; min-width: 160px; padding: 6px 10px; font-size: 11px; color: var(--text-muted); white-space: nowrap; background-color: #0b1329;">
+                <td style="text-align: left; width: 160px; min-width: 160px; padding: 6px 10px; font-size: 11px; color: var(--text-muted); white-space: nowrap;">
                   ${acc.lastPasswordReset ? new Date(acc.lastPasswordReset).toLocaleDateString() + ' ' + new Date(acc.lastPasswordReset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
                 </td>
 
                 <!-- Last Login -->
-                <td style="text-align: center; width: 135px; min-width: 135px; padding: 6px 6px; white-space: nowrap; background-color: #0b1329;">
+                <td style="text-align: center; width: 135px; min-width: 135px; padding: 6px 6px; white-space: nowrap;">
                   <div style="font-size: 11px; white-space: nowrap;">
                     ${acc.lastLoginText === 'Never Logged In' || acc.lastLoginText === '—' || !acc.lastLoginText ? `
                       <span style="color: #64748b; font-style: italic;">Never Logged In</span>
                     ` : `
-                      <span style="color: #cbd5e1; font-weight: 600;">${acc.lastLoginText}</span>
+                      <span style="font-weight: 600;">${acc.lastLoginText}</span>
                     `}
                   </div>
                 </td>
 
                 <!-- Actions -->
-                <td style="text-align: center; width: 165px; min-width: 165px; padding: 6px 8px; white-space: nowrap; background-color: #0b1329;">
+                <td style="text-align: center; width: 165px; min-width: 165px; padding: 6px 8px; white-space: nowrap;">
                   <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
                     ${isAdmin ? `
                       <button type="button" class="btn btn-ghost btn-xs btn-quick-change-username" data-user-id="${acc.userId || acc.id}" data-id="${acc.id}" data-current-username="${acc.username}" data-name="${escapeHtml(acc.employeeName)}" data-card="${acc.cardNumber}" title="Admin: Change Username" style="padding: 4px 6px; font-size: 11px; color: #38bdf8; border-radius: 5px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); line-height: 1;">
