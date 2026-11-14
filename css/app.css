@@ -43,8 +43,9 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
 
   --font-bengali: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Siyam Rupali', 'Vrinda', sans-serif;
-  --font-main: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Fira Code', 'SF Mono', Consolas, Menlo, monospace;
+  --font-main: 'DM Sans', 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, Menlo, monospace;
 
   --header-height: 64px;
   --sidebar-width: 280px;
@@ -89,6 +90,62 @@ body.theme-light {
   --shadow-md: 0 1px 0 rgba(31, 28, 23, 0.04), 0 8px 24px -14px rgba(31, 28, 23, 0.25);
   --shadow-lg: 0 1px 0 rgba(31, 28, 23, 0.04), 0 16px 36px -18px rgba(31, 28, 23, 0.32);
   --shadow-xl: 0 24px 48px -18px rgba(31, 28, 23, 0.35);
+}
+
+/* ProLicense Editorial Headings & Fluid Boot Shell in Bright Mode */
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3,
+body.theme-light .brand-text-title,
+body.theme-light .header-title-text,
+body.theme-light .section-heading,
+body.theme-light .page-header-title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+body.theme-light #app-initial-shell {
+  background-color: var(--bg-main) !important;
+  background-image: radial-gradient(rgba(31, 28, 23, 0.08) 1px, transparent 1px) !important;
+}
+
+body.theme-light .public-homepage-wrapper {
+  background: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+body.theme-light .public-header {
+  background: color-mix(in srgb, var(--bg-main) 88%, transparent) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 20px rgba(31, 28, 23, 0.05) !important;
+}
+
+body.theme-light .public-header .header-brand .brand-title,
+body.theme-light .public-header [style*="color: #ffffff"],
+body.theme-light .public-header [style*="color: #fff"] {
+  color: var(--text-primary) !important;
+}
+
+body.theme-light .public-header .btn-home-scroll-link {
+  color: var(--text-muted) !important;
+}
+
+body.theme-light .public-header .btn-home-scroll-link:hover,
+body.theme-light .public-header .btn-home-scroll-link.active {
+  color: var(--text-primary) !important;
+}
+
+body.theme-light .public-homepage-wrapper section {
+  background: transparent !important;
+}
+
+body.theme-light .public-homepage-wrapper footer {
+  background: var(--bg-alt) !important;
+  border-top: 1px solid var(--border-color) !important;
+  color: var(--text-muted) !important;
 }
 
 * {

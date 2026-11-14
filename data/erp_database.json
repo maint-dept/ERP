@@ -321077,7 +321077,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T03:20:25.104Z"
+        "updatedAt": "2026-11-14T10:05:48.161Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321095,8 +321095,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T03:20:25.104Z",
-        "lastSync": "11/14/2026, 3:33:40 PM"
+        "updatedAt": "2026-11-14T10:05:48.162Z"
       }
     ],
     "emailConfig": {

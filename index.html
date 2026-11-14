@@ -218,7 +218,7 @@
     })();
   </script>
 
-  <!-- Instant Daylight/Dark Theme Pre-Init (Zero Visual Flash) -->
+  <!-- Instant Daylight/Dark Theme Pre-Init (Zero Visual Flash - prolicense.top standard) -->
   <script>
     try {
       if (localStorage.getItem('al_muslim_theme') === 'light') {
@@ -227,11 +227,11 @@
     } catch (_) { }
   </script>
 
-  <!-- Modern Industrial Typography with Unicode Bengali Support -->
+  <!-- ProLicense Editorial Typography & Modern Industrial Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Fira+Code:wght@500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Fraunces:ital,opsz,wght@0,9..144,500..800;1,9..144,500..800&family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
   <!-- Global Safe Startup Pre-Initializers -->
@@ -264,6 +264,13 @@
 </head>
 
 <body>
+  <script>
+    try {
+      if (localStorage.getItem('al_muslim_theme') === 'light') {
+        document.body.classList.add('theme-light');
+      }
+    } catch (_) { }
+  </script>
   <!-- Single Page Application Shell Root -->
   <div id="app-root">
     <div id="app-initial-shell"
