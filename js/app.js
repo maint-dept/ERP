@@ -364,6 +364,7 @@ class ERPApplication {
     });
     state.on('columns:changed', () => this.renderMainContent());
     state.on('frozenColumns:changed', () => this.renderMainContent());
+    state.on('theme:changed', () => this.renderMainContent());
     state.on('inventory:updated', () => {
       if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
         const invMod = moduleLoader.getLoaded('inventory');

@@ -301,21 +301,35 @@ export function renderSingleMachineRow(m, idx, ctx) {
     statusBadgeClass = 'badge-active';
   }
 
+  const isLightMode = (typeof document !== 'undefined') && (
+    document.body?.classList.contains('theme-light') || 
+    document.documentElement?.classList.contains('theme-light') || 
+    (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_theme') === 'light')
+  );
+  const rowBg = isSelected 
+    ? (isLightMode ? '#dbeafe' : '#1e40af') 
+    : (isLightMode ? (idx % 2 === 0 ? '#ffffff' : '#f1f5f9') : (idx % 2 === 0 ? '#0f172a' : '#0c1427'));
+  const cellColor = isLightMode ? '#0f172a' : '#f8fafc';
+  const cellBorderRight = isLightMode ? '1px solid #cbd5e1' : '1px solid #1e293b';
+  const cellBorderBottom = isLightMode ? '1px solid #cbd5e1' : '1px solid #1e293b';
+  const boundaryBorder = isLightMode ? '2px solid #cbd5e1' : '2px solid rgba(56, 189, 248, 0.45)';
+  const boundaryShadow = isLightMode ? '4px 0 8px -2px rgba(15, 23, 42, 0.08)' : '4px 0 10px -2px rgba(0, 0, 0, 0.45)';
+
   let row = `<tr class="machine-row ${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
 
   // 1. SL (Sticky Left: 0px)
-  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-clip: border-box !important;">${displaySlNo}</td>`;
+  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: ${isLightMode ? '#475569' : 'var(--text-muted)'} !important; font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-color: ${rowBg} !important; border-right: ${cellBorderRight} !important; border-bottom: ${cellBorderBottom} !important; background-clip: border-box !important;">${displaySlNo}</td>`;
 
   // 2. Selection Checkbox (Sticky Left: slWidth)
   const isOperable = authService.canOperateMachine(m);
-  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-clip: border-box !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
+  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-color: ${rowBg} !important; border-bottom: ${cellBorderBottom} !important; border-right: ${checkIsLastFrozen ? boundaryBorder : cellBorderRight} !important; ${checkIsLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
 
   // Render columns in calculated sequence
   columnLayout.forEach(col => {
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
     const tdStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 12 : 10} !important; background-clip: border-box !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 12 : 10} !important; background-color: ${rowBg} !important; color: ${cellColor} !important; border-bottom: ${cellBorderBottom} !important; border-right: ${col.isLastFrozen ? boundaryBorder : cellBorderRight} !important; ${col.isLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;` 
       : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
     row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
   });
@@ -955,11 +969,25 @@ export function renderInventoryTable() {
 
   const checkIsLastFrozen = effectiveFrozenCount === 0;
 
-  // Build Table Header Columns
+  // Ultra-Resilient Theme Determination (Zero Dependency on CSS Specificity)
+  const isLightMode = (typeof document !== 'undefined') && (
+    document.body?.classList.contains('theme-light') || 
+    document.documentElement?.classList.contains('theme-light') || 
+    (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_theme') === 'light')
+  );
+
+  const thBg = isLightMode ? '#f8fafc' : '#0b1329';
+  const thColor = isLightMode ? '#0f172a' : '#cbd5e1';
+  const thBorderRight = isLightMode ? '1px solid #cbd5e1' : '1px solid #1e293b';
+  const thBorderBottom = isLightMode ? '2.5px solid #0284c7' : '2px solid #0284c7';
+  const boundaryBorder = isLightMode ? '2px solid #cbd5e1' : '2px solid rgba(56, 189, 248, 0.45)';
+  const boundaryShadow = isLightMode ? '4px 0 8px -2px rgba(15, 23, 42, 0.08)' : '4px 0 10px -2px rgba(0, 0, 0, 0.45)';
+
+  // Build Table Header Columns with Guaranteed Inline Background Injection
   let headerHtml = `
     <tr>
-      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; cursor: pointer; left: 0px !important; background-clip: border-box !important;" title="Sort by Serial / Asset Sequence Number">SL</th>
-      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-clip: border-box !important;">
+      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; cursor: pointer; left: 0px !important; background-color: ${thBg} !important; color: ${thColor} !important; border-bottom: ${thBorderBottom} !important; border-right: ${thBorderRight} !important; background-clip: border-box !important;" title="Sort by Serial / Asset Sequence Number">SL</th>
+      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-color: ${thBg} !important; color: ${thColor} !important; border-bottom: ${thBorderBottom} !important; border-right: ${checkIsLastFrozen ? boundaryBorder : thBorderRight} !important; ${checkIsLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;">
         <input type="checkbox" id="check-select-all" title="Select all visible machines" ${machines.length > 0 && selectedIds.size >= machines.length ? 'checked' : ''} />
       </th>
   `;
@@ -968,8 +996,8 @@ export function renderInventoryTable() {
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const thClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
     const thStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 35 : 30} !important; background-clip: border-box !important;` 
-      : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 35 : 30} !important; background-color: ${thBg} !important; color: ${thColor} !important; border-bottom: ${thBorderBottom} !important; border-right: ${col.isLastFrozen ? boundaryBorder : thBorderRight} !important; ${col.isLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;` 
+      : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px; background-color: ${thBg} !important; color: ${thColor} !important; border-bottom: ${thBorderBottom} !important; border-right: ${thBorderRight} !important;`;
     headerHtml += col.renderTh(thStyle, thClass);
   });
 

@@ -670,6 +670,9 @@ export function initNavbarEvents() {
       document.body.classList.toggle('theme-light', isLight);
       document.documentElement.classList.toggle('theme-light', isLight);
       localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
+      if (typeof state !== 'undefined' && state.emit) {
+        state.emit('theme:changed', isLight ? 'light' : 'dark');
+      }
 
       const topThemeBtn = document.getElementById('btn-theme-toggle');
       if (topThemeBtn) {
@@ -1008,6 +1011,9 @@ export function initNavbarEvents() {
       document.body.classList.toggle('theme-light', isLight);
       document.documentElement.classList.toggle('theme-light', isLight);
       localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
+      if (typeof state !== 'undefined' && state.emit) {
+        state.emit('theme:changed', isLight ? 'light' : 'dark');
+      }
       const themeIconEl = themeBtn.querySelector('.theme-icon') || themeBtn;
       themeIconEl.innerHTML = isLight ? icon('moon', { size: 15, color: '#38bdf8' }) : icon('sun', { size: 15, color: '#f59e0b' });
       themeBtn.title = isLight ? 'Theme: Switch to Dark Mode' : 'Theme: Switch to Daylight / Light Mode';

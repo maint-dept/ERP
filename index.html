@@ -17,7 +17,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AMG ERP">
-  <link rel="manifest" href="manifest.json?v=4.48.0">
+  <link rel="manifest" href="manifest.json?v=4.49.0">
 
   <!-- Crisp PWA Icons & Native App Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -26,22 +26,22 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.48.0">
-  <link rel="modulepreload" href="js/state.js?v=4.48.0">
-  <link rel="modulepreload" href="js/db/storage.js?v=4.48.0">
-  <link rel="modulepreload" href="js/db/schema.js?v=4.48.0">
-  <link rel="modulepreload" href="js/services/authService.js?v=4.48.0">
-  <link rel="modulepreload" href="js/services/router.js?v=4.48.0">
-  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/icons.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/loginView.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/sidebar.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/navbar.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/mobileNav.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.48.0">
-  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.48.0">
+  <link rel="modulepreload" href="js/app.js?v=4.49.0">
+  <link rel="modulepreload" href="js/state.js?v=4.49.0">
+  <link rel="modulepreload" href="js/db/storage.js?v=4.49.0">
+  <link rel="modulepreload" href="js/db/schema.js?v=4.49.0">
+  <link rel="modulepreload" href="js/services/authService.js?v=4.49.0">
+  <link rel="modulepreload" href="js/services/router.js?v=4.49.0">
+  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/icons.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/loginView.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/sidebar.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/navbar.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/mobileNav.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.49.0">
+  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.49.0">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
     (function () {
@@ -226,6 +226,51 @@
       }
     } catch (_) { }
   </script>
+  <style id="theme-hard-override">
+    /* Force Light Theme Header & Frozen Column Clean Styling (Cache-Immune) */
+    html.theme-light .excel-grid-table thead th,
+    html.theme-light .excel-grid-table thead th.col-freeze-sl,
+    html.theme-light .excel-grid-table thead th.col-freeze-check,
+    html.theme-light .excel-grid-table thead th.col-freeze-name,
+    html.theme-light .excel-grid-table thead th.col-frozen-cell,
+    html.theme-light .excel-grid-table thead th.col-frozen-boundary,
+    body.theme-light .excel-grid-table thead th,
+    body.theme-light .excel-grid-table thead th.col-freeze-sl,
+    body.theme-light .excel-grid-table thead th.col-freeze-check,
+    body.theme-light .excel-grid-table thead th.col-freeze-name,
+    body.theme-light .excel-grid-table thead th.col-frozen-cell,
+    body.theme-light .excel-grid-table thead th.col-frozen-boundary,
+    html.theme-light thead th.col-frozen-cell,
+    body.theme-light thead th.col-frozen-cell,
+    html.theme-light thead th.col-freeze-sl,
+    body.theme-light thead th.col-freeze-sl,
+    html.theme-light thead th.col-freeze-check,
+    body.theme-light thead th.col-freeze-check,
+    html.theme-light thead th,
+    body.theme-light thead th {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+      border-right: 1px solid #cbd5e1 !important;
+      border-bottom: 2.5px solid #0284c7 !important;
+    }
+    html.theme-light .col-frozen-boundary,
+    body.theme-light .col-frozen-boundary,
+    html.theme-light th.col-frozen-boundary,
+    body.theme-light th.col-frozen-boundary,
+    html.theme-light td.col-frozen-boundary,
+    body.theme-light td.col-frozen-boundary {
+      border-right: 2px solid #cbd5e1 !important;
+      box-shadow: 4px 0 8px -2px rgba(15, 23, 42, 0.08) !important;
+    }
+    html.theme-light .excel-grid-table tbody td.col-frozen-cell,
+    body.theme-light .excel-grid-table tbody td.col-frozen-cell,
+    html.theme-light tbody td.col-frozen-cell,
+    body.theme-light tbody td.col-frozen-cell {
+      color: #0f172a !important;
+      border-right: 1px solid #cbd5e1 !important;
+      border-bottom: 1px solid #cbd5e1 !important;
+    }
+  </style>
 
   <!-- ProLicense Editorial Typography & Modern Industrial Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -255,10 +300,10 @@
   </script>
 
   <!-- Core ERP Stylesheets (Cache-Busted v4.36.0) -->
-  <link rel="stylesheet" href="css/app.css?v=4.48.0">
-  <link rel="stylesheet" href="css/grid.css?v=4.48.0">
-  <link rel="stylesheet" href="css/components.css?v=4.48.0">
-  <link rel="stylesheet" href="css/print.css?v=4.48.0">
+  <link rel="stylesheet" href="css/app.css?v=4.49.0">
+  <link rel="stylesheet" href="css/grid.css?v=4.49.0">
+  <link rel="stylesheet" href="css/components.css?v=4.49.0">
+  <link rel="stylesheet" href="css/print.css?v=4.49.0">
 
   <!-- Ultra-Fast Boot: All heavy third-party libraries (SheetJS, QRCode, Camera Scanner, Tesseract OCR, PDF.js) are loaded 100% on demand when explicitly requested -->
 </head>
@@ -447,7 +492,7 @@
   </script>
 
   <!-- Main ES Module Application Entrypoint (Cache-Busted v4.46.1) -->
-  <script type="module" src="js/app.js?v=4.48.0"></script>
+  <script type="module" src="js/app.js?v=4.49.0"></script>
 
   <style>
     @keyframes execBarPulse {

@@ -321080,7 +321080,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T12:26:26.399Z"
+        "updatedAt": "2026-11-08T08:14:05.815Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321098,8 +321098,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T12:26:26.400Z",
-        "lastSync": "11/14/2026, 8:31:20 PM"
+        "updatedAt": "2026-11-08T08:14:05.815Z",
+        "lastSync": "11/14/2026, 9:19:21 PM"
       }
     ],
     "emailConfig": {
@@ -333079,12 +333079,12 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-14T12:26:50.506Z",
-      "updatedAt": "2026-11-14T13:33:45.117Z",
+      "lastLoginAt": "2026-11-14T15:19:23.003Z",
+      "updatedAt": "2026-11-14T15:19:23.004Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
-      "version": 9,
+      "version": 10,
       "pendingEmail": "motaher.cse@gmail.com",
       "emailVerifyOTP": "432615",
       "emailVerifyOTPExpiry": "2026-11-14T13:48:45.116Z"
@@ -344771,6 +344771,26 @@
       "timestamp": "2026-11-14T13:33:48.343Z",
       "createdAt": "2026-11-14T13:33:48.343Z",
       "updatedAt": "2026-11-14T13:33:48.343Z"
+    },
+    {
+      "id": "aud-1794669563006-103",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-14T15:19:23.003Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-14T15:19:23.006Z",
+      "createdAt": "2026-11-14T15:19:23.006Z",
+      "updatedAt": "2026-11-14T15:19:23.006Z"
     }
   ],
   "notifications": [
@@ -346958,9 +346978,9 @@
       ],
       "timestamp": "2026-11-06T14:28:50.972Z",
       "createdAt": "2026-11-06T14:28:50.972Z",
-      "updatedAt": "2026-11-06T14:28:54.582Z",
-      "readAt": "2026-11-06T14:28:54.581Z",
-      "version": 3
+      "updatedAt": "2026-11-14T14:42:07.208Z",
+      "readAt": "2026-11-14T14:42:07.208Z",
+      "version": 4
     },
     {
       "id": "notif-custom-1794301599502-577",
