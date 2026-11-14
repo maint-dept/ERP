@@ -98,13 +98,23 @@ async function loadTelegramStatus(user) {
 }
 
 function renderConnectView(container, user, meta) {
+  const isExecutive = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
+  const roleBadge = isExecutive 
+    ? '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px;">👑 Executive Admin Sentinel</span>'
+    : '<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px;">🔧 Operations &amp; Mechanics</span>';
+
   container.innerHTML = `
     <div style="background: var(--bg-surface, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #1e293b); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-      <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
-        Connect your ERP account to Telegram
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
+          ${isExecutive ? 'Connect Executive Sentinel Bot' : 'Connect Operations Bot'}
+        </div>
+        ${roleBadge}
       </div>
       <div style="font-size: 12px; color: var(--text-muted); line-height: 1.55;">
-        By connecting <strong>@${meta.botUsername || 'MainterpBot'}</strong>, you will receive real-time alerts for machine breakdowns, approve transfer gate passes with 1-click, and check machinery status on your phone.
+        ${isExecutive 
+          ? 'Connect <strong>@MaintAdminbot</strong> to receive real-time factory audit streams, emergency breakdown sirens, and authorize machine gate passes with 1-click.'
+          : 'Connect <strong>@MainterpBot</strong> to look up machine locations, complete daily PM checklists, and check your assigned tools.'}
       </div>
     </div>
 
