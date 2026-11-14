@@ -5273,6 +5273,7 @@ body.theme-light .modal-dialog,
 body.theme-light .modal-card,
 body.theme-light .modal-overlay > div,
 body.theme-light [id$="-modal-layer"] .modal-dialog,
+body.theme-light #modal-mandatory-push-overlay .modal-dialog,
 body.theme-light .pocket-card-sheet,
 body.theme-light .smart-action-sheet,
 body.theme-light .custom-notif-dialog {
@@ -5281,6 +5282,25 @@ body.theme-light .custom-notif-dialog {
   border: 1px solid #d3cab7 !important;
   box-shadow: 0 1px 0 rgba(31, 28, 23, 0.04), 0 24px 60px -15px rgba(31, 28, 23, 0.35) !important;
   border-radius: 16px !important;
+  color: #1f1c17 !important;
+}
+
+body.theme-light #modal-mandatory-push-overlay [style*="background: linear-gradient"] {
+  background: #efe9dd !important;
+  border-bottom: 1.5px solid #d3cab7 !important;
+}
+
+body.theme-light #modal-mandatory-push-overlay h3 {
+  color: #1f1c17 !important;
+}
+
+body.theme-light #modal-mandatory-push-overlay p {
+  color: #3a352c !important;
+}
+
+body.theme-light #modal-mandatory-push-overlay [style*="background: rgba(15, 23, 42"] {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
   color: #1f1c17 !important;
 }
 
@@ -5555,6 +5575,99 @@ body.theme-light .dash-dist-card:hover {
   box-shadow: 0 1px 0 rgba(31, 28, 23, 0.04), 0 14px 32px -16px rgba(31, 28, 23, 0.28) !important;
 }
 
+/* Dashboard Metric Figures & Distribution Rows in Bright Mode */
+body.theme-light .dash-kpi-val {
+  color: #1f1c17 !important;
+}
+
+body.theme-light .dash-kpi-val.val-emerald {
+  color: #15803d !important;
+}
+
+body.theme-light .dash-kpi-val.val-amber {
+  color: #b45309 !important;
+}
+
+body.theme-light .dash-kpi-val.val-rose {
+  color: #cf3339 !important;
+}
+
+body.theme-light .dash-kpi-val.val-purple {
+  color: #0284c7 !important;
+}
+
+body.theme-light .dash-kpi-lbl {
+  color: #6e6758 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .dash-dist-title {
+  color: #1f1c17 !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .card-cyan .dash-dist-title,
+body.theme-light .card-purple .dash-dist-title {
+  color: #1c6486 !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .card-emerald .dash-dist-title {
+  color: #2f7d4f !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .card-amber .dash-dist-title {
+  color: #b37400 !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .dash-dist-pill.pill-cyan,
+body.theme-light .dash-dist-pill.pill-purple {
+  background: #d9ecf5 !important;
+  color: #1c6486 !important;
+  border: 1px solid #a8d5e8 !important;
+}
+
+body.theme-light .dash-dist-pill.pill-emerald {
+  background: #dcefe2 !important;
+  color: #2f7d4f !important;
+  border: 1px solid #a3d9b5 !important;
+}
+
+body.theme-light .dash-dist-pill.pill-amber {
+  background: #faeed3 !important;
+  color: #b37400 !important;
+  border: 1px solid #f2db9f !important;
+}
+
+body.theme-light .dash-dist-mini-status {
+  color: #6e6758 !important;
+  border-bottom: 1px solid #e2dbcc !important;
+}
+
+body.theme-light .dash-dist-mini-status .mini-status-label strong,
+body.theme-light .dash-dist-mini-status .mini-status-value {
+  color: #1f1c17 !important;
+}
+
+body.theme-light .dash-dist-name {
+  color: #1f1c17 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .dash-dist-desc {
+  color: #6e6758 !important;
+}
+
+body.theme-light .dash-dist-stat.stat-slate {
+  color: #4b4539 !important;
+}
+
+body.theme-light .dash-dist-row:hover {
+  background: #efe9dd !important;
+}
+
 body.theme-light .card-header,
 body.theme-light .panel-header {
   background: #efe9dd !important;
@@ -5803,6 +5916,90 @@ body.theme-light .btn-danger *,
 body.theme-light .badge-active,
 body.theme-light .badge-running {
   color: #ffffff !important;
+}
+
+/* Re-affirm pure ivory text on ALL active buttons and dark pills */
+body.theme-light .btn-tool-cat-pill.active,
+body.theme-light .btn-tool-cat-pill.active *,
+body.theme-light .btn-print-fmt.active,
+body.theme-light .btn-print-fmt.active *,
+body.theme-light .btn-uam-quick-chip.active,
+body.theme-light .btn-uam-quick-chip.active *,
+body.theme-light .nav-item.active,
+body.theme-light .nav-item.active *,
+body.theme-light .tools-tab-btn.active,
+body.theme-light .tools-tab-btn.active * {
+  background: #1f1c17 !important;
+  color: #fffdf8 !important;
+  border-color: #1f1c17 !important;
+}
+
+/* Print Page Format Selector & Document Canvas */
+body.theme-light .screen-print-page [style*="background: #0f172a"] {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+}
+
+body.theme-light .screen-print-page [style*="background: #1e293b"] {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+}
+
+body.theme-light #printable-sheet-wrapper {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+  border-radius: 12px !important;
+}
+
+body.theme-light .screen-print-page [style*="background: rgba(30, 41, 59"] {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+  color: #1f1c17 !important;
+}
+
+body.theme-light #pocket-quick-settings-bar {
+  background: #fffdf8 !important;
+  border: 1px solid #d3cab7 !important;
+  border-radius: 12px !important;
+}
+
+body.theme-light #pocket-quick-settings-bar [style*="background: rgba(0,0,0,0.4)"] {
+  background: #efe9dd !important;
+  border-color: #d3cab7 !important;
+}
+
+body.theme-light .btn-print-fmt:not(.active) {
+  background: transparent !important;
+  color: #4b4539 !important;
+}
+
+body.theme-light #btn-clear-id-fields {
+  background: #efe9dd !important;
+  border: 1px solid #d3cab7 !important;
+  color: #3a352c !important;
+}
+
+body.theme-light #btn-add-to-list {
+  background: #2f7d4f !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.18) !important;
+}
+
+body.theme-light #btn-middle-clear {
+  background: transparent !important;
+  border: 1.5px solid #d3cab7 !important;
+  color: #3a352c !important;
+  border-radius: 8px !important;
+}
+
+body.theme-light #btn-middle-batch-add,
+body.theme-light #btn-open-batch-middle {
+  background: #fffdf8 !important;
+  border: 1.5px solid #d3cab7 !important;
+  color: #1c6486 !important;
+  border-radius: 8px !important;
 }
 
 /* 14. Smooth Oatmeal Linen Scrollbars */
