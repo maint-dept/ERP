@@ -50,41 +50,45 @@
   --sidebar-width: 280px;
 }
 
-/* Light Theme (Microsoft Fluent Design Standard - Crisp & Professional Bright Mode) */
+/* Light Theme (Warm Editorial & Tactile Paper Standard - Inspired by prolicense.top) */
 html.theme-light,
 html.theme-light body,
 body.theme-light {
-  --bg-main: #f3f5f9;
-  --bg-sidebar: #ffffff;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-hover: #f1f5f9;
-  --border-color: #e2e8f0;
-  --border-light: #edf2f7;
-  --border-subtle: #f8fafc;
-  
-  --primary: #0078d4;
-  --primary-hover: #0067b8;
+  --bg-main: #f6f2ea;
+  --bg-alt: #efe9dd;
+  --bg-sidebar: #fffdf8;
+  --bg-surface: #fffdf8;
+  --bg-card: #fffdf8;
+  --bg-hover: #efe9dd;
+  --border-color: #e2dbcc;
+  --border-light: #ece6d8;
+  --border-subtle: #f4f0e6;
+  --line-contrast: #d3cab7;
+
+  --accent: #d9480f;
+  --accent-soft: #fbe3d6;
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
   --primary-light: #e0f2fe;
-  
-  --success: #107c41;
-  --success-light: #ecfdf5;
-  --warning: #d97706;
-  --warning-light: #fffbeb;
-  --danger: #d13438;
-  --danger-light: #fff1f2;
-  --info: #0078d4;
-  --info-light: #eff6ff;
 
-  --text-primary: #1b1b1f;
-  --text-secondary: #323130;
-  --text-muted: #605e5c;
-  --text-inverse: #ffffff;
+  --success: #2f7d4f;
+  --success-light: #dcefe2;
+  --warning: #b37400;
+  --warning-light: #faeed3;
+  --danger: #cf3339;
+  --danger-light: #fde8e8;
+  --info: #1c6486;
+  --info-light: #d9ecf5;
 
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 32px -6px rgba(0, 0, 0, 0.12), 0 8px 12px -4px rgba(0, 0, 0, 0.04);
+  --text-primary: #1f1c17;
+  --text-secondary: #3a352c;
+  --text-muted: #6e6758;
+  --text-inverse: #fffdf8;
+
+  --shadow-sm: 0 1px 2px rgba(31, 28, 23, 0.05);
+  --shadow-md: 0 1px 0 rgba(31, 28, 23, 0.04), 0 8px 24px -14px rgba(31, 28, 23, 0.25);
+  --shadow-lg: 0 1px 0 rgba(31, 28, 23, 0.04), 0 16px 36px -18px rgba(31, 28, 23, 0.32);
+  --shadow-xl: 0 24px 48px -18px rgba(31, 28, 23, 0.35);
 }
 
 * {
@@ -1882,73 +1886,82 @@ body.modal-open div {
 .badge-inactive { background: rgba(148, 163, 184, 0.25); color: #f1f5f9; border: 1.5px solid #64748b; font-weight: 800; }
 .badge-archived { background: rgba(71, 85, 105, 0.35); color: #ffffff; border: 1.5px solid #64748b; font-weight: 800; }
 
-/* Light Theme Universal High-Contrast Badges (Vibrant Saturated Enterprise Contrast) */
+/* Light Theme Universal Badges (Tactile & Organic Badges - prolicense.top standard) */
 body.theme-light .badge-active,
 body.theme-light .badge-running {
-  background: #ecfdf5 !important;
-  color: #047857 !important;
-  border: 1.5px solid #10b981 !important;
-  font-weight: 800 !important;
+  background: #dcefe2 !important;
+  color: #2f7d4f !important;
+  border: 1.5px solid #a3d9b5 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-maint,
 body.theme-light .badge-maintenance {
-  background: #fffbeb !important;
-  color: #b45309 !important;
-  border: 1.5px solid #f59e0b !important;
-  font-weight: 800 !important;
+  background: #fbe3d6 !important;
+  color: #d9480f !important;
+  border: 1.5px solid #f6c4ac !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-breakdown {
-  background: #fff1f2 !important;
-  color: #be123c !important;
-  border: 1.5px solid #f43f5e !important;
-  font-weight: 800 !important;
+  background: #fde8e8 !important;
+  color: #cf3339 !important;
+  border: 1.5px solid #f8b4b4 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-idle,
 body.theme-light .badge-usable,
 body.theme-light .badge-usableidle {
-  background: #f0f9ff !important;
-  color: #0369a1 !important;
-  border: 1.5px solid #0284c7 !important;
-  font-weight: 800 !important;
+  background: #d9ecf5 !important;
+  color: #1c6486 !important;
+  border: 1.5px solid #a8d5e8 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-repairable,
 body.theme-light .badge-repairableidle {
-  background: #fffbeb !important;
-  color: #b45309 !important;
-  border: 1.5px solid #f59e0b !important;
-  font-weight: 800 !important;
+  background: #faeed3 !important;
+  color: #b37400 !important;
+  border: 1.5px solid #f2db9f !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-ambulance {
-  background: #fff1f2 !important;
-  color: #be123c !important;
-  border: 1.5px solid #f43f5e !important;
-  font-weight: 800 !important;
+  background: #fde8e8 !important;
+  color: #cf3339 !important;
+  border: 1.5px solid #f8b4b4 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-pending {
-  background: #fffbeb !important;
-  color: #b45309 !important;
-  border: 1.5px solid #f59e0b !important;
-  font-weight: 800 !important;
+  background: #fbe3d6 !important;
+  color: #d9480f !important;
+  border: 1.5px solid #f6c4ac !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-inactive {
-  background: #f1f5f9 !important;
-  color: #334155 !important;
-  border: 1.5px solid #cbd5e1 !important;
-  font-weight: 800 !important;
+  background: #efe9dd !important;
+  color: #6e6758 !important;
+  border: 1.5px solid #d3cab7 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 body.theme-light .badge-archived {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
-  border: 1.5px solid #94a3b8 !important;
-  font-weight: 800 !important;
+  background: #efe9dd !important;
+  color: #6e6758 !important;
+  border: 1.5px solid #d3cab7 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
 }
 
 /* Toast Notifications */

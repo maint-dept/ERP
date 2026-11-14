@@ -359,22 +359,22 @@
 
 /* Light theme sticky support */
 body.theme-light .manpower-grid-table th.col-actions-header {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  font-weight: 800 !important;
-  border-bottom: 2.5px solid #0284c7 !important;
-  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
+  background-color: #efe9dd !important;
+  color: #1f1c17 !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #d3cab7 !important;
+  box-shadow: -3px 0 8px rgba(31, 28, 23, 0.06);
 }
 
 body.theme-light .manpower-grid-table td.col-actions-cell {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: #fffdf8 !important;
+  color: #1f1c17 !important;
   font-weight: 600 !important;
-  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
+  box-shadow: -3px 0 8px rgba(31, 28, 23, 0.06);
 }
 
 body.theme-light .manpower-grid-table tr:hover td.col-actions-cell {
-  background-color: #e0f2fe !important;
+  background-color: #efe9dd !important;
 }
 
 .manpower-table-scroll-container {
@@ -446,10 +446,15 @@ body.theme-light .manpower-grid-table tr:hover td.col-actions-cell {
 }
 
 body.theme-light .manpower-grid-table th.col-mp-freeze-check,
+body.theme-light .manpower-grid-table th.col-mp-freeze-sl {
+  background-color: #efe9dd !important;
+  color: #1f1c17 !important;
+}
+
 body.theme-light .manpower-grid-table td.col-mp-freeze-check,
-body.theme-light .manpower-grid-table th.col-mp-freeze-sl,
 body.theme-light .manpower-grid-table td.col-mp-freeze-sl {
-  background-color: #ffffff !important;
+  background-color: #fffdf8 !important;
+  color: #1f1c17 !important;
 }
 
 .manpower-bulk-bar {
@@ -966,17 +971,17 @@ td.col-actions-cell {
   body.theme-light .col-freeze-sl,
   body.theme-light .col-freeze-check,
   body.theme-light .col-frozen-cell {
-    background-color: #ffffff !important;
+    background-color: #fffdf8 !important;
     background-clip: border-box !important;
-    border-right: 1px solid #cbd5e1 !important;
+    border-right: 1px solid #d3cab7 !important;
   }
 
   body.theme-light thead th.col-freeze-sl,
   body.theme-light thead th.col-freeze-check,
   body.theme-light thead th.col-frozen-cell {
-    background-color: #f1f5f9 !important;
+    background-color: #efe9dd !important;
     background-clip: border-box !important;
-    border-right: 1px solid #cbd5e1 !important;
+    border-right: 1px solid #d3cab7 !important;
   }
 
   .col-frozen-boundary {
@@ -1114,117 +1119,122 @@ td.col-actions-cell {
    EXCEL GRID & TABLE LIGHT THEME FULL COMPATIBILITY (ORACLE APEX STANDARD)
    ========================================================================== */
 body.theme-light .excel-grid-table thead th {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  font-weight: 800 !important;
+  background-color: #efe9dd !important;
+  color: #1f1c17 !important;
+  font-weight: 700 !important;
   font-size: 11.5px !important;
   letter-spacing: 0.5px;
-  border-bottom: 2.5px solid #0284c7 !important;
-  border-right: 1px solid #cbd5e1 !important;
-  border-left: 1px solid #cbd5e1 !important;
-  border-top: 1px solid #cbd5e1 !important;
+  border-bottom: 2px solid #d3cab7 !important;
+  border-right: 1px solid #e2dbcc !important;
+  border-left: 1px solid #e2dbcc !important;
+  border-top: 1px solid #e2dbcc !important;
   text-transform: uppercase;
 }
 
 body.theme-light .excel-grid-table thead th:hover {
-  background-color: #f1f5f9 !important;
-  color: #0284c7 !important;
+  background-color: #e5decb !important;
+  color: #d9480f !important;
 }
 
 body.theme-light .col-freeze-sl,
 body.theme-light .col-freeze-check,
 body.theme-light .col-freeze-name,
 body.theme-light .col-frozen-cell {
-  border-right-color: #cbd5e1 !important;
-  border-left-color: #cbd5e1 !important;
-  color: #0f172a !important;
+  border-right-color: #d3cab7 !important;
+  border-left-color: #d3cab7 !important;
+  color: #1f1c17 !important;
 }
 
 body.theme-light thead th.col-freeze-sl,
 body.theme-light thead th.col-freeze-check,
 body.theme-light thead th.col-freeze-name,
 body.theme-light thead th.col-frozen-cell {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  border-bottom: 2.5px solid #0284c7 !important;
-  border-right: 1px solid #cbd5e1 !important;
+  background-color: #efe9dd !important;
+  color: #1f1c17 !important;
+  border-bottom: 2px solid #d3cab7 !important;
+  border-right: 1px solid #d3cab7 !important;
 }
 
-/* Light Theme: Neutral Cool Slate Zebra Rows (Zero Mint/Pastel) */
+/* Light Theme: Warm Editorial Zebra Rows (prolicense.top Standard) */
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td {
-  background-color: #f1f5f9 !important;
+  background-color: #f8f5ee !important;
 }
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td {
-  background-color: #ffffff !important;
+  background-color: #fffdf8 !important;
 }
 
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-check,
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-freeze-name,
 body.theme-light .excel-grid-table tbody tr:nth-child(even) td.col-frozen-cell {
-  background-color: #f1f5f9 !important;
+  background-color: #f8f5ee !important;
 }
 
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-check,
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-name,
 body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-frozen-cell {
-  background-color: #ffffff !important;
+  background-color: #fffdf8 !important;
 }
 
-/* Light Theme: Smooth Cool Light Blue Interactive Hover Highlighting Across Whole Row */
+/* Light Theme: Warm Subtle Hover Highlighting Across Whole Row */
 body.theme-light .excel-grid-table tbody tr:hover td {
-  background-color: #e0f2fe !important;
+  background-color: #efe9dd !important;
 }
 
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-check,
 body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-name,
 body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell {
-  background-color: #e0f2fe !important;
+  background-color: #efe9dd !important;
 }
 
-/* Light Theme: Selected Row State */
+/* Light Theme: Selected Row State (Soft Amber Glow) */
 body.theme-light .excel-grid-table tbody tr.selected td {
-  background-color: #dbeafe !important;
+  background-color: #faeed3 !important;
 }
 
 body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-sl,
 body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-check,
 body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-name,
 body.theme-light .excel-grid-table tbody tr.selected td.col-frozen-cell {
-  background-color: #bfdbfe !important;
+  background-color: #faeed3 !important;
 }
 
 body.theme-light .col-frozen-boundary {
-  border-right: 2.5px solid #0284c7 !important;
-  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.08) !important;
+  border-right: 2.5px solid #d3cab7 !important;
+  box-shadow: 3px 0 8px rgba(31, 28, 23, 0.08) !important;
 }
 
-/* Light Theme: Crisp 1px Solid Slate Borders & Pitch-Crisp Slate Typography */
+/* Light Theme: Crisp Hairline Warm Borders & Deep Ink Typography */
 body.theme-light .excel-grid-table tbody td {
-  border-bottom: 1px solid #cbd5e1 !important;
-  border-right: 1px solid #cbd5e1 !important;
-  border-left: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
+  border-bottom: 1px solid #e2dbcc !important;
+  border-right: 1px solid #e2dbcc !important;
+  border-left: 1px solid #e2dbcc !important;
+  color: #1f1c17 !important;
   font-weight: 600 !important;
   font-size: 12px;
 }
 
 body.theme-light .quick-pill {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #1e293b !important;
+  background: #fffdf8 !important;
+  border: 1.5px solid #d3cab7 !important;
+  color: #3a352c !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
 }
 
 body.theme-light .quick-pill:hover {
-  background: #f1f5f9 !important;
-  color: #0284c7 !important;
+  background: #efe9dd !important;
+  color: #1f1c17 !important;
+  border-color: #1f1c17 !important;
 }
 
 body.theme-light .quick-pill.active {
-  background: #0284c7 !important;
-  color: #ffffff !important;
+  background: #1f1c17 !important;
+  color: #fffdf8 !important;
+  border-color: #1f1c17 !important;
+  box-shadow: 0 2px 4px rgba(31, 28, 23, 0.15) !important;
 }
 
 /* Light Theme: Scrollbar Overrides for Native Grid & Main Container */
