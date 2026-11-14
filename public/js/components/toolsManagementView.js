@@ -119,6 +119,10 @@ let dbShowImportDrawer = false;
 let findSelectedIds = new Set();
 let dbSelectedIds = new Set();
 let masterSelectedIds = new Set();
+let dbCurrentPage = 1;
+let dbPageSize = 50; // 50 | 100 | ALL
+let findCurrentPage = 1;
+let findPageSize = 50; // 50 | 100 | ALL
 
 // =========================================================================
 // ADMIN SECURITY AUTHORIZATION CONTROLLER (PROTECTS REMOVE / EDIT / DELETE)
@@ -1677,6 +1681,25 @@ function renderScreen4FindAndSelect() {
   const replacedCount = allocations.filter(a => a.changeStatus === 'REPLACED').length;
   const returnedCount = allocations.filter(a => a.changeStatus === 'RETURNED' || a.changeStatus === 'LOST').length;
 
+  // Pre-aggregate replacement counts in O(H) so we avoid O(N x M) nested loop in table rows!
+  const changeHistory = toolService.getToolChangeHistory() || [];
+  const repCountMap = new Map();
+  changeHistory.forEach(h => {
+    if (h.changeType === 'REPLACED' && h.userId && h.itemCode) {
+      const key = `${String(h.userId).trim().toLowerCase()}_${String(h.itemCode).trim().toLowerCase()}`;
+      repCountMap.set(key, (repCountMap.get(key) || 0) + 1);
+    }
+  });
+
+  // Client-side pagination for instant fluid 60FPS rendering
+  const currentFindSize = findPageSize === 'ALL' ? totalAllocations : (parseInt(findPageSize, 10) || 50);
+  const totalFindPages = Math.max(1, Math.ceil(totalAllocations / (currentFindSize || 1)));
+  if (findCurrentPage > totalFindPages) findCurrentPage = totalFindPages;
+  if (findCurrentPage < 1) findCurrentPage = 1;
+  const findStart = (findCurrentPage - 1) * currentFindSize;
+  const findEnd = findPageSize === 'ALL' ? totalAllocations : Math.min(findStart + currentFindSize, totalAllocations);
+  const pagedAllocations = findPageSize === 'ALL' ? allocations : allocations.slice(findStart, findEnd);
+
   return `
     <div class="screen-find-select" style="display: flex; flex-direction: column; gap: 8px;">
       
@@ -1811,10 +1834,12 @@ function renderScreen4FindAndSelect() {
               </tr>
             </thead>
             <tbody>
-              ${allocations.length === 0 ? `
+              ${pagedAllocations.length === 0 ? `
                 <tr><td colspan="13" style="padding: 30px; text-align: center; color: #94a3b8;">No matching tool allocation records found.</td></tr>
-              ` : allocations.map((a, idx) => {
-    const repCount = a.replacementCount || toolService.getToolReplacementCount(a.userId, a.itemCode);
+              ` : pagedAllocations.map((a, pIdx) => {
+    const idx = findStart + pIdx;
+    const repKey = `${String(a.userId || '').trim().toLowerCase()}_${String(a.itemCode || '').trim().toLowerCase()}`;
+    const repCount = a.replacementCount || repCountMap.get(repKey) || 0;
     const isSelected = findSelectedIds.has(a.id);
     const cellBg = isSelected ? '#3f1c24' : idx % 2 === 0 ? '#1b2537' : '#0f172a';
     return `
@@ -1898,6 +1923,25 @@ function renderScreen4FindAndSelect() {
   }).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- Find & Select Fluid Pagination Bar -->
+        <div style="background: #0f172a; border-top: 1px solid #334155; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 11.5px; color: #94a3b8;">
+            Showing <strong style="color: #fff;">${totalAllocations === 0 ? 0 : findStart + 1}</strong> to <strong style="color: #fff;">${findEnd}</strong> of <strong style="color: #38bdf8;">${totalAllocations}</strong> records (Page ${findCurrentPage} of ${totalFindPages})
+          </span>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <button class="btn-find-page" data-page="1" ${findCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">« First</button>
+            <button class="btn-find-page" data-page="${findCurrentPage - 1}" ${findCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">‹ Prev</button>
+            <span style="color: #38bdf8; font-weight: 800; font-size: 11.5px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); border-radius: 4px;">${findCurrentPage} / ${totalFindPages}</span>
+            <button class="btn-find-page" data-page="${findCurrentPage + 1}" ${findCurrentPage >= totalFindPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Next ›</button>
+            <button class="btn-find-page" data-page="${totalFindPages}" ${findCurrentPage >= totalFindPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Last »</button>
+            <select id="sel-find-page-size" style="background: #1e293b; color: #38bdf8; border: 1px solid #475569; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight:700; cursor:pointer;">
+              <option value="50" ${findPageSize == 50 ? 'selected' : ''}>50 / page</option>
+              <option value="100" ${findPageSize == 100 ? 'selected' : ''}>100 / page</option>
+              <option value="ALL" ${findPageSize === 'ALL' ? 'selected' : ''}>Show All</option>
+            </select>
+          </div>
         </div>
 
         <!-- STICKY HORIZONTAL SCROLLBAR CONTROLLER (PERMANENTLY PINNED AT BOTTOM OF SCREEN) -->
@@ -2237,6 +2281,16 @@ function renderScreen6DatabasePage() {
     });
   }
 
+  // Client-side pagination for instant fluid 60FPS database rendering
+  const totalDbRecords = filteredRecords.length;
+  const currentDbSize = dbPageSize === 'ALL' ? totalDbRecords : (parseInt(dbPageSize, 10) || 50);
+  const totalDbPages = Math.max(1, Math.ceil(totalDbRecords / (currentDbSize || 1)));
+  if (dbCurrentPage > totalDbPages) dbCurrentPage = totalDbPages;
+  if (dbCurrentPage < 1) dbCurrentPage = 1;
+  const dbStart = (dbCurrentPage - 1) * currentDbSize;
+  const dbEnd = dbPageSize === 'ALL' ? totalDbRecords : Math.min(dbStart + currentDbSize, totalDbRecords);
+  const pagedRecords = dbPageSize === 'ALL' ? filteredRecords : filteredRecords.slice(dbStart, dbEnd);
+
   return `
     <div class="screen-database-page" style="display: flex; flex-direction: column; gap: 8px;">
       
@@ -2429,9 +2483,11 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.length === 0 ? `
+                ${pagedRecords.length === 0 ? `
                   <tr><td colspan="9" style="padding: 30px; text-align: center; color: #94a3b8;">No mechanic kits found matching your search.</td></tr>
-                ` : filteredRecords.map((m, idx) => `
+                ` : pagedRecords.map((m, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${m.userId}</td>
@@ -2474,7 +2530,8 @@ function renderScreen6DatabasePage() {
                       </div>
                     </td>
                   </tr>
-                `)}
+                `;
+                })}
               </tbody>
             </table>
           ` : ''}
@@ -2501,9 +2558,10 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.length === 0 ? `
+                ${pagedRecords.length === 0 ? `
                   <tr><td colspan="13" style="padding: 30px; text-align: center; color: #94a3b8;">No records match your search filter.</td></tr>
-                ` : filteredRecords.map((a, idx) => {
+                ` : pagedRecords.map((a, pIdx) => {
+                  const idx = dbStart + pIdx;
                   const reqMatch = (a.requisitionNo || '').trim() || ((a.remarks || '').match(/IR\d+/i) ? (a.remarks.match(/IR\d+/i)[0]) : '');
                   const cleanReq = reqMatch ? (reqMatch.toUpperCase().startsWith('#') ? reqMatch.toUpperCase() : `#${reqMatch.toUpperCase()}`) : '-';
                   let displayRemarks = (a.remarks || '').replace(/ERP\s*Req\s*#?[A-Za-z0-9_-]+[:\s]*[^\n,]*/gi, '').trim();
@@ -2564,7 +2622,9 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.map((t, idx) => `
+                ${pagedRecords.map((t, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #38bdf8;">${t.code}</td>
@@ -2574,7 +2634,8 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; text-align: center; color: #94a3b8;">${t.unit}</td>
                     <td style="padding: 7px 10px; color: #94a3b8;">${t.remarks || '-'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           ` : databaseActiveTable === 'TOOL_CHANGE_HISTORY' ? `
@@ -2596,9 +2657,11 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.length === 0 ? `
+                ${pagedRecords.length === 0 ? `
                   <tr><td colspan="12" style="padding: 30px; text-align: center; color: #94a3b8;">No tool change history records found.</td></tr>
-                ` : filteredRecords.map((h, idx) => `
+                ` : pagedRecords.map((h, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 700; color: #4ade80;">${h.changeDate}</td>
@@ -2623,7 +2686,8 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; color: #cbd5e1; font-size: 11.5px;">${h.remarks || '-'}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #94a3b8;">${h.changedBy || 'admin'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           ` : `
@@ -2640,7 +2704,9 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.map((a, idx) => `
+                ${pagedRecords.map((a, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #ec4899;">${a.code}</td>
@@ -2650,10 +2716,30 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; text-align: center; font-weight: 800; color: #22c55e;">${a.totalStock}</td>
                     <td style="padding: 7px 10px; text-align: center; color: #94a3b8;">${a.unit || 'Pcs'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           `}
+
+          <!-- Database Fluid Pagination Bar -->
+          <div style="background: #0f172a; border-top: 1px solid #334155; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 11.5px; color: #94a3b8;">
+              Showing <strong style="color: #fff;">${totalDbRecords === 0 ? 0 : dbStart + 1}</strong> to <strong style="color: #fff;">${dbEnd}</strong> of <strong style="color: #38bdf8;">${totalDbRecords}</strong> records (Page ${dbCurrentPage} of ${totalDbPages})
+            </span>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <button class="btn-db-page" data-page="1" ${dbCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">« First</button>
+              <button class="btn-db-page" data-page="${dbCurrentPage - 1}" ${dbCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">‹ Prev</button>
+              <span style="color: #38bdf8; font-weight: 800; font-size: 11.5px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); border-radius: 4px;">${dbCurrentPage} / ${totalDbPages}</span>
+              <button class="btn-db-page" data-page="${dbCurrentPage + 1}" ${dbCurrentPage >= totalDbPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Next ›</button>
+              <button class="btn-db-page" data-page="${totalDbPages}" ${dbCurrentPage >= totalDbPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Last »</button>
+              <select id="sel-db-page-size" style="background: #1e293b; color: #38bdf8; border: 1px solid #475569; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight:700; cursor:pointer;">
+                <option value="50" ${dbPageSize == 50 ? 'selected' : ''}>50 / page</option>
+                <option value="100" ${dbPageSize == 100 ? 'selected' : ''}>100 / page</option>
+                <option value="ALL" ${dbPageSize === 'ALL' ? 'selected' : ''}>Show All</option>
+              </select>
+            </div>
+          </div>
 
         </div>
 
@@ -4253,6 +4339,34 @@ export function initToolsManagementEvents() {
     };
   }
 
+  // Find & Select Pagination Handlers
+  root.querySelectorAll('.btn-find-page').forEach(btn => {
+    btn.onclick = () => {
+      const p = parseInt(btn.getAttribute('data-page'), 10);
+      if (!isNaN(p) && p !== findCurrentPage) {
+        findCurrentPage = p;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('find-select');
+          initToolsManagementEvents();
+        }
+      }
+    };
+  });
+
+  const selFindPageSize = document.getElementById('sel-find-page-size');
+  if (selFindPageSize) {
+    selFindPageSize.onchange = () => {
+      findPageSize = selFindPageSize.value;
+      findCurrentPage = 1;
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('find-select');
+        initToolsManagementEvents();
+      }
+    };
+  }
+
   root.querySelectorAll('.check-find-item').forEach(chk => {
     chk.onchange = () => {
       const id = chk.getAttribute('data-id');
@@ -4525,21 +4639,21 @@ export function initToolsManagementEvents() {
     let isSyncingFromTable = false;
     let isSyncingFromSticky = false;
 
-    findTableScroll.addEventListener('scroll', () => {
+    findTableScroll.onscroll = () => {
       if (!isSyncingFromSticky) {
         isSyncingFromTable = true;
         findStickyScroll.scrollLeft = findTableScroll.scrollLeft;
         setTimeout(() => { isSyncingFromTable = false; }, 15);
       }
-    });
+    };
 
-    findStickyScroll.addEventListener('scroll', () => {
+    findStickyScroll.onscroll = () => {
       if (!isSyncingFromTable) {
         isSyncingFromSticky = true;
         findTableScroll.scrollLeft = findStickyScroll.scrollLeft;
         setTimeout(() => { isSyncingFromSticky = false; }, 15);
       }
-    });
+    };
 
     if (btnScrollLeft) {
       btnScrollLeft.onclick = () => {
@@ -5048,6 +5162,34 @@ export function initToolsManagementEvents() {
     };
   }
 
+  // Database Page Fluid Pagination Handlers
+  root.querySelectorAll('.btn-db-page').forEach(btn => {
+    btn.onclick = () => {
+      const p = parseInt(btn.getAttribute('data-page'), 10);
+      if (!isNaN(p) && p !== dbCurrentPage) {
+        dbCurrentPage = p;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('database-page');
+          initToolsManagementEvents();
+        }
+      }
+    };
+  });
+
+  const selDbPageSize = document.getElementById('sel-db-page-size');
+  if (selDbPageSize) {
+    selDbPageSize.onchange = () => {
+      dbPageSize = selDbPageSize.value;
+      dbCurrentPage = 1;
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('database-page');
+        initToolsManagementEvents();
+      }
+    };
+  }
+
   root.querySelectorAll('.check-db-item').forEach(chk => {
     chk.onchange = () => {
       const id = chk.getAttribute('data-id');
@@ -5239,21 +5381,21 @@ export function initToolsManagementEvents() {
     let isDbSyncingFromTable = false;
     let isDbSyncingFromSticky = false;
 
-    dbTableScroll.addEventListener('scroll', () => {
+    dbTableScroll.onscroll = () => {
       if (!isDbSyncingFromSticky) {
         isDbSyncingFromTable = true;
         dbStickyScroll.scrollLeft = dbTableScroll.scrollLeft;
         setTimeout(() => { isDbSyncingFromTable = false; }, 15);
       }
-    });
+    };
 
-    dbStickyScroll.addEventListener('scroll', () => {
+    dbStickyScroll.onscroll = () => {
       if (!isDbSyncingFromTable) {
         isDbSyncingFromSticky = true;
         dbTableScroll.scrollLeft = dbStickyScroll.scrollLeft;
         setTimeout(() => { isDbSyncingFromSticky = false; }, 15);
       }
-    });
+    };
 
     if (btnDbScrollLeft) {
       btnDbScrollLeft.onclick = () => {
@@ -5303,7 +5445,7 @@ function openStaffSelectorModal() {
         </div>
 
         <div id="modal-staff-list" style="flex: 1; overflow-y: auto; padding: 8px;">
-          ${allStaff.map(s => `
+          ${allStaff.slice(0, 50).map(s => `
             <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
               style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
               <div>
@@ -5319,6 +5461,7 @@ function openStaffSelectorModal() {
               </div>
             </div>
           `).join('')}
+          ${allStaff.length > 50 ? `<div style="text-align: center; color: #64748b; font-size: 11px; padding: 6px;">Showing first 50 staff. Type in search box above to filter.</div>` : ''}
         </div>
 
         <div style="padding: 10px 16px; background: #0f172a; border-top: 1px solid #334155; text-align: right;">
@@ -5346,7 +5489,7 @@ function openStaffSelectorModal() {
           (s.designation && s.designation.toLowerCase().includes(q)) ||
           (s.workingArea && s.workingArea.toLowerCase().includes(q))
         );
-        staffList.innerHTML = filtered.map(s => `
+        staffList.innerHTML = filtered.slice(0, 50).map(s => `
         <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
           style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
           <div>
@@ -5361,7 +5504,7 @@ function openStaffSelectorModal() {
             </span>
           </div>
         </div>
-      `).join('');
+      `).join('') + (filtered.length > 50 ? `<div style="text-align: center; color: #64748b; font-size: 11px; padding: 6px;">Showing top 50 of ${filtered.length} matches. Refine search for more.</div>` : '');
       bindStaffModalClicks();
       }, 120);
     };
@@ -7499,14 +7642,22 @@ export function openBatchToolsAllocationModal() {
     const chkSelectAllHeader = document.getElementById('chk-batch-select-all-header');
     if (chkSelectAllHeader) {
       chkSelectAllHeader.onchange = (e) => {
+        const allItems = getAllCatalogItems(batchCategory);
+        const q = batchSearch.toLowerCase().trim();
+        const currentFiltered = allItems.filter(it => {
+          if (!q) return true;
+          return (it.name && it.name.toLowerCase().includes(q)) ||
+            (it.code && String(it.code).toLowerCase().includes(q)) ||
+            (it.category && it.category.toLowerCase().includes(q));
+        });
         if (e.target.checked) {
-          filtered.forEach(it => {
+          currentFiltered.forEach(it => {
             if (!selectedMap.has(it.id)) {
               selectedMap.set(it.id, { item: it, quantity: it.defaultQty || '1', changeStatus: 'NEW_ISSUE' });
             }
           });
         } else {
-          filtered.forEach(it => {
+          currentFiltered.forEach(it => {
             selectedMap.delete(it.id);
           });
         }
