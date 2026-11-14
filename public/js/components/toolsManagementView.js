@@ -2217,6 +2217,7 @@ function renderScreen6DatabasePage() {
   const uniqueMechanics = allMechanicKits.length || new Set(allAllocations.map(a => a.userId)).size;
   const totalMasterTools = masterTools.length;
   const totalMasterAccs = masterAccs.length;
+  const missingStaffCount = allMechanicKits.filter(m => !toolService.getStaffByCardOnly(m.userId) && m.userId !== 'UNASSIGNED').length;
 
   // Filter current active table records based on search query
   let filteredRecords = [];
@@ -2323,14 +2324,19 @@ function renderScreen6DatabasePage() {
           <span style="color: #94a3b8; font-weight: 600;">Registered Mechanics:</span>
           <span style="font-weight: 900; color: #4ade80; font-size: 13px; font-family: monospace;">${uniqueMechanics}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px; background: rgba(253, 224, 71, 0.08); border: 1px solid rgba(253, 224, 71, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
-          <span style="color: #94a3b8; font-weight: 600;">Master Tools:</span>
-          <span style="font-weight: 900; color: #fde047; font-size: 13px; font-family: monospace;">${totalMasterTools}</span>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Manpower Linked:</span>
+          <span style="font-weight: 900; color: #c084fc; font-size: 13px; font-family: monospace;">${allMechanicKits.length - missingStaffCount}/${allMechanicKits.length}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px; background: rgba(244, 114, 182, 0.08); border: 1px solid rgba(244, 114, 182, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
-          <span style="color: #94a3b8; font-weight: 600;">Master Accessories:</span>
-          <span style="font-weight: 900; color: #f472b6; font-size: 13px; font-family: monospace;">${totalMasterAccs}</span>
-        </div>
+        ${missingStaffCount > 0 ? `
+          <button id="btn-db-auto-create-missing-staff" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #38bdf8; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Automatically register the ${missingStaffCount} missing legacy mechanics into Manpower module">
+            <span>👥</span> Auto-Create ${missingStaffCount} Staff in Manpower
+          </button>
+        ` : `
+          <span style="background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid #22c55e; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+            ✓ All Mechanics Synced with Manpower
+          </span>
+        `}
       </div>
 
       <!-- SECTION A: COLLAPSIBLE DIRECT IN-PAGE EXCEL IMPORT DRAWER -->
@@ -2946,7 +2952,7 @@ export function initToolsManagementEvents() {
     // SMART AUTO-SYNC: Check if this mechanic already has an existing toolkit / registration
     const existingKit = toolService.getMechanicActiveKit(activeUserForm.userId);
     if (existingKit && existingKit.exists) {
-      if (autoLoadKit && liveAllocationQueue.length === 0) {
+      if (autoLoadKit) {
         currentRegNo = existingKit.primaryRegNo;
         activeUserForm.regNo = existingKit.primaryRegNo;
         liveAllocationQueue = existingKit.items.map(i => ({ ...i }));
@@ -2958,6 +2964,17 @@ export function initToolsManagementEvents() {
         }
         window.app?.showToast('Existing Kit Synced', `Auto-loaded ${existingKit.totalTools} tools under Reg #${existingKit.primaryRegNo} for ${activeUserForm.userName}`, 'info');
         return;
+      }
+    } else {
+      if (!currentRegNo || !toolService.isRegistrationNumberAvailable(currentRegNo, activeUserForm.userId)) {
+        currentRegNo = toolService.getNextRegistrationNumber();
+        activeUserForm.regNo = currentRegNo;
+      }
+      liveAllocationQueue = [];
+      const container = document.getElementById('tools-tab-content-container');
+      if (container && currentActiveTab === 'tools-add') {
+        container.innerHTML = renderActiveTab('tools-add');
+        initToolsManagementEvents();
       }
     }
   }
@@ -3028,14 +3045,10 @@ export function initToolsManagementEvents() {
         typeaheadBoxScreen2.style.display = 'none';
         return;
       }
-      const exactMatch = toolService.getStaffByIdOrCard(q);
-      if (exactMatch) {
-        autoFillEmployeeBoxes(exactMatch);
-      }
 
       const matches = toolService.searchManpowerStaff(q);
       if (matches.length === 0) {
-        typeaheadBoxScreen2.innerHTML = '<div style="padding: 8px 12px; color: #94a3b8; font-size: 12px;">No matching staff in Manpower database</div>';
+        typeaheadBoxScreen2.innerHTML = '<div style="padding: 8px 12px; color: #94a3b8; font-size: 12px;">No matching staff in database</div>';
       } else {
         typeaheadBoxScreen2.innerHTML = matches.slice(0, 8).map(m => `
           <div class="typeahead-item-screen2" data-id="${m.cardNumber || m.id}"
@@ -3044,7 +3057,7 @@ export function initToolsManagementEvents() {
               <span style="font-weight: 800; color: #38bdf8; font-family: monospace;">${m.cardNumber || m.id}</span> — 
               <span style="color: #fff; font-weight: 700;">${m.name}</span>
             </div>
-            <span style="color: #94a3b8; font-size: 11px;">${m.designation || 'Staff'} • ${m.workingArea || ''}</span>
+            <span style="color: #94a3b8; font-size: 11px;">${m.isLegacyAllocation ? '🛠️ Kit Reg #' + m.primaryRegNo : (m.designation || 'Staff')} • ${m.workingArea || ''}</span>
           </div>
         `).join('');
       }
@@ -3054,8 +3067,8 @@ export function initToolsManagementEvents() {
         item.onclick = () => {
           const id = item.getAttribute('data-id');
           const emp = toolService.getStaffByIdOrCard(id);
-          if (emp) autoFillEmployeeBoxes(emp);
           typeaheadBoxScreen2.style.display = 'none';
+          if (emp) autoFillEmployeeBoxes(emp, true);
         };
       });
     };
@@ -3063,12 +3076,20 @@ export function initToolsManagementEvents() {
     addUserIdInput.oninput = handleAddUserLookup;
     addUserIdInput.onchange = () => {
       const emp = toolService.getStaffByIdOrCard(addUserIdInput.value.trim());
-      if (emp) autoFillEmployeeBoxes(emp);
+      if (emp) autoFillEmployeeBoxes(emp, true);
+    };
+    addUserIdInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        typeaheadBoxScreen2.style.display = 'none';
+        const emp = toolService.getStaffByIdOrCard(addUserIdInput.value.trim());
+        if (emp) autoFillEmployeeBoxes(emp, true);
+      }
     };
     addUserIdInput.onpaste = () => {
       setTimeout(() => {
         const emp = toolService.getStaffByIdOrCard(addUserIdInput.value.trim());
-        if (emp) autoFillEmployeeBoxes(emp);
+        if (emp) autoFillEmployeeBoxes(emp, true);
       }, 50);
     };
   }
@@ -4927,6 +4948,28 @@ export function initToolsManagementEvents() {
     btnDbModalCenter.onclick = () => renderExcelImportCenterModal(databaseDirectImportType);
   }
 
+  // Auto-Create Missing Staff in Manpower from Database screen
+  const btnCreateMissingStaff = document.getElementById('btn-db-auto-create-missing-staff');
+  if (btnCreateMissingStaff) {
+    btnCreateMissingStaff.onclick = async () => {
+      try {
+        btnCreateMissingStaff.disabled = true;
+        btnCreateMissingStaff.innerHTML = '<span>⏳</span> Registering in Manpower...';
+        const res = await toolService.createMissingStaffInManpower();
+        window.app?.showToast('Manpower Synced', `Successfully registered ${res.createdCount} legacy mechanics into the Manpower module.`, 'success');
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab(currentActiveTab);
+          initToolsManagementEvents();
+        }
+      } catch (err) {
+        alert('Sync error: ' + err.message);
+        btnCreateMissingStaff.disabled = false;
+        btnCreateMissingStaff.innerHTML = '<span>👥</span> Retry Auto-Create';
+      }
+    };
+  }
+
   // Download Sample Template for Database screen
   const btnDbDownloadTpl = document.getElementById('btn-db-download-template');
   if (btnDbDownloadTpl) {
@@ -5428,35 +5471,35 @@ function openStaffSelectorModal() {
   const modalLayer = document.getElementById('modal-layer');
   if (!modalLayer) return;
 
-  const allStaff = employeeService.getAllEmployees() || [];
+  const allStaff = toolService.searchManpowerStaff('');
 
   modalLayer.innerHTML = `
     <div class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;">
       <div style="background: #1e293b; border: 1.5px solid #3b82f6; border-radius: 12px; width: 100%; max-width: 650px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6);">
         
         <div style="background: #0284c7; color: #fff; padding: 12px 18px; font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; align-items: center;">
-          <span>Select Employee from Manpower Module</span>
+          <span>Select Employee from Manpower &amp; Equipment Registry</span>
           <button id="btn-close-staff-modal" style="background: transparent; color: #fff; border: none; font-size: 18px; cursor: pointer;">✕</button>
         </div>
 
         <div style="padding: 12px 16px; border-bottom: 1px solid #334155;">
-          <input type="text" id="modal-staff-search" placeholder="Filter by Name, ID, Designation, Area..." 
+          <input type="text" id="modal-staff-search" placeholder="Filter by Name, ID, Card #, Designation, Area..." 
             style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 8px 12px; font-size: 13px;" />
         </div>
 
         <div id="modal-staff-list" style="flex: 1; overflow-y: auto; padding: 8px;">
           ${allStaff.slice(0, 50).map(s => `
-            <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
+            <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation || 'Mechanic'}" data-area="${s.workingArea || ''}"
               style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div style="font-weight: 700; color: #f1f5f9; font-size: 13.5px;">${s.name}</div>
                 <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">
-                  <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation} • ${s.workingArea}
+                  <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation || 'Mechanic'} • ${s.workingArea || ''}
                 </div>
               </div>
               <div>
-                <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;'}">
-                  ${s.status}
+                <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.isLegacyAllocation ? 'rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7;' : (s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;')}">
+                  ${s.isLegacyAllocation ? '🛠️ Kit Reg #' + s.primaryRegNo : (s.status || 'ACTIVE')}
                 </span>
               </div>
             </div>
@@ -5483,24 +5526,19 @@ function openStaffSelectorModal() {
       const q = searchInp.value.toLowerCase().trim();
       clearTimeout(staffSearchTimer);
       staffSearchTimer = setTimeout(() => {
-        const filtered = allStaff.filter(s =>
-          (s.name && s.name.toLowerCase().includes(q)) ||
-          (s.cardNumber && String(s.cardNumber).toLowerCase().includes(q)) ||
-          (s.designation && s.designation.toLowerCase().includes(q)) ||
-          (s.workingArea && s.workingArea.toLowerCase().includes(q))
-        );
+        const filtered = toolService.searchManpowerStaff(q);
         staffList.innerHTML = filtered.slice(0, 50).map(s => `
-        <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
+        <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation || 'Mechanic'}" data-area="${s.workingArea || ''}"
           style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <div style="font-weight: 700; color: #f1f5f9; font-size: 13.5px;">${s.name}</div>
             <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">
-              <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation} • ${s.workingArea}
+              <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation || 'Mechanic'} • ${s.workingArea || ''}
             </div>
           </div>
           <div>
-            <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;'}">
-              ${s.status}
+            <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.isLegacyAllocation ? 'rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7;' : (s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;')}">
+              ${s.isLegacyAllocation ? '🛠️ Kit Reg #' + s.primaryRegNo : (s.status || 'ACTIVE')}
             </span>
           </div>
         </div>
@@ -5515,29 +5553,14 @@ function openStaffSelectorModal() {
       item.onclick = () => {
         const id = item.getAttribute('data-id');
         const emp = toolService.getStaffByIdOrCard(id) || {
+          id,
           cardNumber: id,
           name: item.getAttribute('data-name'),
           designation: item.getAttribute('data-title'),
           workingArea: item.getAttribute('data-area')
         };
-        activeUserForm.userId = emp.cardNumber || emp.id || '';
-        activeUserForm.userName = emp.name || '';
-        activeUserForm.jobTitle = emp.designation || '';
-        activeUserForm.workingArea = emp.workingArea || emp.department || '';
         modalLayer.innerHTML = '';
-
-        // Screen 1
-        if (document.getElementById('input-emp-id')) document.getElementById('input-emp-id').value = activeUserForm.userId;
-        if (document.getElementById('input-emp-name')) document.getElementById('input-emp-name').value = activeUserForm.userName;
-        if (document.getElementById('input-emp-title')) document.getElementById('input-emp-title').value = activeUserForm.jobTitle;
-        if (document.getElementById('input-emp-area')) document.getElementById('input-emp-area').value = activeUserForm.workingArea;
-
-        // Screen 2
-        if (document.getElementById('input-add-user-id')) document.getElementById('input-add-user-id').value = activeUserForm.userId;
-        if (document.getElementById('input-add-user-name')) document.getElementById('input-add-user-name').value = activeUserForm.userName;
-        if (document.getElementById('input-add-job-title')) document.getElementById('input-add-job-title').value = activeUserForm.jobTitle;
-        if (document.getElementById('input-add-working-area')) document.getElementById('input-add-working-area').value = activeUserForm.workingArea;
-        // Form inputs are populated directly; no blocking popup needed
+        autoFillEmployeeBoxes(emp, true);
       };
     });
   }

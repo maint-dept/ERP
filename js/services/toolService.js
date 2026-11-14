@@ -229,17 +229,51 @@ class ToolService {
   // =========================================================================
 
   searchManpowerStaff(search = '') {
-    const all = employeeService.getAllEmployees() || [];
-    if (!search || !search.trim()) {
-      return all.slice(0, 30);
+    const all = (typeof employeeService !== 'undefined' && employeeService.getAllEmployees)
+      ? (employeeService.getAllEmployees() || [])
+      : [];
+    const q = (search || '').toLowerCase().trim();
+    let matches = all;
+    if (q) {
+      matches = all.filter(e =>
+        (e.cardNumber && String(e.cardNumber).toLowerCase().includes(q)) ||
+        (e.name && e.name.toLowerCase().includes(q)) ||
+        (e.designation && e.designation.toLowerCase().includes(q)) ||
+        (e.workingArea && e.workingArea.toLowerCase().includes(q))
+      );
     }
-    const q = search.toLowerCase().trim();
-    return all.filter(e =>
-      (e.cardNumber && String(e.cardNumber).toLowerCase().includes(q)) ||
-      (e.name && e.name.toLowerCase().includes(q)) ||
-      (e.designation && e.designation.toLowerCase().includes(q)) ||
-      (e.workingArea && e.workingArea.toLowerCase().includes(q))
-    );
+
+    // Also cross-reference unique mechanics from allocations who are not yet in Manpower
+    const seenCards = new Set(matches.map(m => String(m.cardNumber || m.id || '').toLowerCase()));
+    const allocs = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    const extraMechanics = [];
+    allocs.forEach(a => {
+      const uId = String(a.userId || '').trim();
+      const uCardLower = uId.toLowerCase();
+      if (!uId || uId === 'UNASSIGNED' || seenCards.has(uCardLower)) return;
+      if (!q || (
+        uCardLower.includes(q) ||
+        String(a.userName || '').toLowerCase().includes(q) ||
+        String(a.regNo || '').toLowerCase().includes(q) ||
+        String(a.jobTitle || '').toLowerCase().includes(q)
+      )) {
+        seenCards.add(uCardLower);
+        extraMechanics.push({
+          id: a.userId,
+          cardNumber: a.userId,
+          name: a.userName,
+          designation: a.jobTitle || 'Mechanic',
+          workingArea: a.workingArea || '',
+          floor: a.floor || '',
+          department: 'MAINTENANCE',
+          status: 'ACTIVE',
+          isLegacyAllocation: true,
+          primaryRegNo: a.regNo
+        });
+      }
+    });
+
+    return [...matches, ...extraMechanics].slice(0, 50);
   }
 
   searchPrintMechanics(search = '') {
@@ -290,7 +324,7 @@ class ToolService {
       const matchReg = (uReg && uReg.includes(query)) || (normReg && normReg.includes(queryNormReg));
       const matchCard = (uCard && uCard.includes(query)) ||
         (cleanAlphaNum.length >= 2 && uAlpha.includes(cleanAlphaNum)) ||
-        (cleanDigits.length >= 3 && (uDigits.includes(cleanDigits) || cleanDigits.includes(uDigits)));
+        (cleanDigits.length >= 3 && uDigits.length >= 3 && (uDigits.includes(cleanDigits) || cleanDigits.includes(uDigits)));
       const matchName = uName && uName.includes(query);
 
       if (matchReg || matchCard || matchName) {
@@ -493,6 +527,35 @@ class ToolService {
     if (cleanLower.length >= 3) {
       match = all.find(e => String(e.name || '').toLowerCase().includes(cleanLower));
       if (match) return match;
+    }
+
+    // 5. Fallback: Search in historical tool allocations (for mechanics imported from legacy files not yet in Manpower)
+    const allocs = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    const allocMatch = allocs.find(a => {
+      const aUser = String(a.userId || '').trim().toLowerCase();
+      const aName = String(a.userName || '').trim().toLowerCase();
+      const aAlpha = aUser.replace(/[^a-z0-9]/g, '');
+      const aDigits = aUser.replace(/[^\d]/g, '');
+      if (aUser === cleanLower) return true;
+      if (cleanAlphaNum.length >= 3 && aAlpha === cleanAlphaNum) return true;
+      if (cleanDigits.length >= 4 && aDigits.length >= 4 && (aDigits === cleanDigits || aDigits.endsWith(cleanDigits))) return true;
+      if (cleanLower.length >= 3 && (aName === cleanLower || aName.includes(cleanLower))) return true;
+      return false;
+    });
+
+    if (allocMatch) {
+      return {
+        id: allocMatch.userId,
+        cardNumber: allocMatch.userId,
+        name: allocMatch.userName || 'Mechanic',
+        designation: allocMatch.jobTitle || 'Mechanic',
+        workingArea: allocMatch.workingArea || '',
+        floor: allocMatch.floor || allocMatch.workingArea || '',
+        department: 'MAINTENANCE',
+        status: 'ACTIVE',
+        isLegacyAllocation: true,
+        primaryRegNo: allocMatch.regNo
+      };
     }
 
     return null;
@@ -737,7 +800,59 @@ class ToolService {
     }
   }
 
-  getRegistrationDetails(regNoOrCard) {
+  /**
+   * One-click reconciliation: Auto-creates employee profiles in Manpower
+   * for legacy mechanics imported from files who don't yet exist in the Manpower module.
+   */
+  async createMissingStaffInManpower() {
+    const allocs = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    const emps = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    const empCardSet = new Set(emps.map(e => String(e.cardNumber || e.id || '').trim().toLowerCase()));
+
+    const uniqueMechanics = new Map();
+    allocs.forEach(a => {
+      const uId = String(a.userId || '').trim();
+      const uLower = uId.toLowerCase();
+      if (!uId || uId === 'UNASSIGNED' || empCardSet.has(uLower)) return;
+      if (!uniqueMechanics.has(uLower)) {
+        uniqueMechanics.set(uLower, {
+          userId: a.userId,
+          userName: a.userName || 'Mechanic',
+          jobTitle: a.jobTitle || 'Mechanic',
+          workingArea: a.workingArea || 'General',
+          floor: a.floor || a.workingArea || ''
+        });
+      }
+    });
+
+    let createdCount = 0;
+    const now = new Date().toISOString();
+    uniqueMechanics.forEach(m => {
+      const newEmp = {
+        id: `emp-auto-${Date.now()}-${createdCount + 1}`,
+        cardNumber: m.userId,
+        name: m.userName,
+        designation: m.jobTitle,
+        department: 'MAINTENANCE',
+        workingArea: m.workingArea,
+        floorName: m.floor,
+        status: 'ACTIVE',
+        createdAt: now,
+        isAutoSyncedFromTools: true
+      };
+      emps.push(newEmp);
+      createdCount++;
+    });
+
+    if (createdCount > 0) {
+      await storage.saveTable(TABLE_NAMES.EMPLOYEES, emps, true);
+      await this.syncAllocationsWithManpower();
+    }
+
+    return { createdCount, totalMissing: uniqueMechanics.size };
+  }
+
+  getRegistrationDetails(regNoOrCard, options = {}) {
     if (!regNoOrCard) return null;
     const raw = String(regNoOrCard).trim();
     if (!raw) return null;
@@ -750,10 +865,15 @@ class ToolService {
     const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
 
     // 1. Match by registration number (ignoring leading #, whitespace, case)
+    let isExplicitRegSearch = false;
     let items = list.filter(a => {
       const aReg = String(a.regNo || '').replace(/^[#\s]+/, '').trim().toLowerCase();
       return aReg && aReg === normReg;
     });
+
+    if (items.length > 0 && (raw.startsWith('#') || (!isNaN(parseInt(raw, 10)) && normReg.length <= 6))) {
+      isExplicitRegSearch = true;
+    }
 
     // 2. Match by exact userId / Employee Card Number (e.g. AMG-0051370 or AMG0051370)
     if (items.length === 0) {
@@ -822,6 +942,11 @@ class ToolService {
       if (emp) {
         return {
           regNo: '',
+          primaryRegNo: '',
+          allRegNos: [],
+          registrationBatches: [],
+          isMultiBatch: false,
+          isConsolidated: false,
           issueDate: new Date().toISOString().split('T')[0],
           userId: emp.cardNumber || emp.id || raw,
           userName: emp.name || '',
@@ -832,25 +957,106 @@ class ToolService {
           accessories: [],
           spareParts: [],
           totalItems: 0,
-          totalTools: 0
+          totalTools: 0,
+          totalAccessories: 0
         };
       }
       return null;
     }
 
-    // If matching by employee resulted in multiple historical registration batches, pick the latest one
-    const uniqueRegs = [...new Set(items.map(i => String(i.regNo || '').trim()).filter(Boolean))];
-    if (uniqueRegs.length > 1 && !raw.startsWith('#') && isNaN(parseInt(raw, 10))) {
-      uniqueRegs.sort((rA, rB) => {
-        const numA = parseInt(String(rA).replace(/[^\d]/g, ''), 10) || 0;
-        const numB = parseInt(String(rB).replace(/[^\d]/g, ''), 10) || 0;
-        return numB - numA;
+    // Identify the mechanic associated with this query
+    const targetUserId = (items[0] && items[0].userId) ? String(items[0].userId).trim() : '';
+
+    // Collect ALL allocations belonging to this mechanic across all historical batches
+    let allMechanicItems = [];
+    if (targetUserId) {
+      const cleanTId = targetUserId.toLowerCase();
+      const cleanTAlpha = cleanTId.replace(/[^a-z0-9]/g, '');
+      const cleanTDigits = cleanTId.replace(/[^\d]/g, '');
+
+      allMechanicItems = list.filter(a => {
+        const aU = String(a.userId || '').trim().toLowerCase();
+        if (!aU) return false;
+        if (aU === cleanTId) return true;
+        if (cleanTAlpha.length >= 3 && aU.replace(/[^a-z0-9]/g, '') === cleanTAlpha) return true;
+        if (cleanTDigits.length >= 3) {
+          const aDig = aU.replace(/[^\d]/g, '');
+          if (aDig && (aDig === cleanTDigits || parseInt(aDig, 10) === parseInt(cleanTDigits, 10))) return true;
+        }
+        return false;
       });
-      const latestReg = uniqueRegs[0];
-      items = items.filter(i => String(i.regNo || '').trim() === latestReg);
+    }
+    if (allMechanicItems.length === 0) {
+      allMechanicItems = items;
     }
 
-    const first = items[0];
+    // Extract and sort all unique registration batches for this mechanic
+    const regBatchMap = new Map();
+    allMechanicItems.forEach(a => {
+      const r = String(a.regNo || '').replace(/^[#\s]+/, '').trim() || 'UNASSIGNED';
+      if (!regBatchMap.has(r)) {
+        regBatchMap.set(r, {
+          regNo: r,
+          issueDate: a.issueDate || '',
+          count: 0,
+          toolsCount: 0,
+          accessoriesCount: 0,
+          items: []
+        });
+      }
+      const b = regBatchMap.get(r);
+      b.count++;
+      if (a.itemType === 'TOOL' || !a.itemType || a.itemType === 'TOOLS') b.toolsCount++;
+      if (a.itemType === 'ACCESSORY' || a.itemType === 'ACCESSORIES') b.accessoriesCount++;
+      b.items.push(a);
+    });
+
+    const registrationBatches = Array.from(regBatchMap.values()).sort((a, b) => {
+      const numA = parseInt(String(a.regNo).replace(/[^\d]/g, ''), 10) || 0;
+      const numB = parseInt(String(b.regNo).replace(/[^\d]/g, ''), 10) || 0;
+      return numB - numA;
+    });
+    const uniqueRegs = registrationBatches.map(b => b.regNo);
+
+    // Determine primary registration number (the largest historical kit or earliest imported batch)
+    let primaryRegNo = String(items[0]?.regNo || uniqueRegs[0] || raw).replace(/^[#\s]+/, '').trim();
+    if (registrationBatches.length > 0) {
+      const largestBatch = [...registrationBatches].sort((a, b) => b.count - a.count)[0];
+      if (largestBatch && largestBatch.regNo) {
+        primaryRegNo = largestBatch.regNo;
+      }
+    }
+
+    // Apply batch selection or consolidation:
+    let isConsolidated = false;
+    if (options.selectedRegNo && options.selectedRegNo !== 'ALL') {
+      const targetBatch = String(options.selectedRegNo).replace(/^[#\s]+/, '').trim();
+      items = allMechanicItems.filter(i => String(i.regNo || '').replace(/^[#\s]+/, '').trim() === targetBatch);
+    } else if (options.exactRegOnly && isExplicitRegSearch) {
+      items = items; // retain only the explicit reg search records
+    } else {
+      // SMART CONSOLIDATION:
+      // Merge all historical batches (imported Excel records + newly registered items)
+      // Group by itemCode or clean normalized itemName so active kits are unified without losing previous records!
+      const toolMap = new Map();
+      const sorted = [...allMechanicItems].sort((a, b) => {
+        const da = a.issueDate || a.createdAt || '';
+        const db = b.issueDate || b.createdAt || '';
+        return da.localeCompare(db);
+      });
+
+      sorted.forEach(it => {
+        const code = String(it.itemCode || '').trim();
+        const name = String(it.itemName || '').trim().toLowerCase();
+        const key = code ? `code_${code}` : `name_${name}`;
+        toolMap.set(key, it);
+      });
+
+      items = Array.from(toolMap.values());
+      isConsolidated = registrationBatches.length > 1;
+    }
+
+    const first = items[0] || allMechanicItems[0];
     const tools = items.filter(i => (i.itemType === 'TOOL' || !i.itemType || i.itemType === 'TOOLS')).sort((a, b) => {
       const codeA = parseInt(a.itemCode, 10) || 0;
       const codeB = parseInt(b.itemCode, 10) || 0;
@@ -863,16 +1069,22 @@ class ToolService {
     // Match STRICTLY by card number only so imported mechanic records are preserved!
     const latestEmp = (first && first.userId) ? this.getStaffByCardOnly(first.userId) : (emp || null);
 
-    const resolvedUserId = (latestEmp && latestEmp.cardNumber) ? latestEmp.cardNumber : (first.userId || raw);
-    const resolvedUserName = (latestEmp && latestEmp.name) ? latestEmp.name : (first.userName || '');
-    const resolvedJobTitle = (latestEmp && latestEmp.designation) ? latestEmp.designation : (first.jobTitle || '');
-    const resolvedFloor = (latestEmp && (latestEmp.floorName || latestEmp.floor)) ? (latestEmp.floorName || latestEmp.floor) : (first.floor || '');
-    const resolvedWorkingArea = (latestEmp && (latestEmp.workingArea || latestEmp.department)) ? (latestEmp.workingArea || (resolvedFloor ? `${resolvedFloor} - ${latestEmp.department || ''}` : latestEmp.department)) : (first.workingArea || '');
+    const resolvedUserId = (latestEmp && latestEmp.cardNumber) ? latestEmp.cardNumber : (first?.userId || raw);
+    const resolvedUserName = (latestEmp && latestEmp.name) ? latestEmp.name : (first?.userName || '');
+    const resolvedJobTitle = (latestEmp && latestEmp.designation) ? latestEmp.designation : (first?.jobTitle || '');
+    const resolvedFloor = (latestEmp && (latestEmp.floorName || latestEmp.floor)) ? (latestEmp.floorName || latestEmp.floor) : (first?.floor || '');
+    const resolvedWorkingArea = (latestEmp && (latestEmp.workingArea || latestEmp.department)) ? (latestEmp.workingArea || (resolvedFloor ? `${resolvedFloor} - ${latestEmp.department || ''}` : latestEmp.department)) : (first?.workingArea || '');
     const isStaff = String(resolvedUserId).includes('-');
 
     return {
-      regNo: String(first.regNo || raw).replace(/^[#\s]+/, '').trim(),
-      issueDate: first.issueDate || new Date().toISOString().split('T')[0],
+      regNo: primaryRegNo,
+      primaryRegNo,
+      allRegNos: uniqueRegs,
+      registrationBatches,
+      isMultiBatch: registrationBatches.length > 1,
+      isConsolidated,
+      selectedBatch: options.selectedRegNo || 'ALL',
+      issueDate: first?.issueDate || new Date().toISOString().split('T')[0],
       userId: resolvedUserId,
       userName: resolvedUserName,
       jobTitle: resolvedJobTitle,
@@ -887,6 +1099,74 @@ class ToolService {
       totalAccessories: accessories.length,
       isStaff
     };
+  }
+
+  getMechanicActiveKit(userIdOrCard) {
+    if (!userIdOrCard) return null;
+    const raw = String(userIdOrCard).trim();
+    if (!raw) return null;
+
+    const details = this.getRegistrationDetails(raw, { consolidateAllBatches: true });
+    if (!details || (!details.totalItems && !details.items?.length)) {
+      return null;
+    }
+
+    return {
+      exists: true,
+      userId: details.userId,
+      userName: details.userName,
+      jobTitle: details.jobTitle,
+      workingArea: details.workingArea,
+      primaryRegNo: details.primaryRegNo || details.regNo,
+      allRegNos: details.allRegNos || [],
+      registrationBatches: details.registrationBatches || [],
+      isMultiBatch: details.isMultiBatch,
+      totalTools: details.totalTools,
+      totalAccessories: details.totalAccessories,
+      totalItems: details.totalItems,
+      latestIssueDate: details.issueDate,
+      items: details.items,
+      tools: details.tools,
+      accessories: details.accessories
+    };
+  }
+
+  async mergeRegistrationBatches(targetRegNo, sourceRegNos = []) {
+    if (!targetRegNo) throw new Error('Target registration number is required.');
+    const cleanTarget = String(targetRegNo).replace(/^[#\s]+/, '').trim();
+    const cleanSources = (Array.isArray(sourceRegNos) ? sourceRegNos : [sourceRegNos])
+      .map(s => String(s).replace(/^[#\s]+/, '').trim())
+      .filter(s => s && s !== cleanTarget);
+
+    if (cleanSources.length === 0) return { mergedCount: 0, targetRegNo: cleanTarget };
+
+    let list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    let mergedCount = 0;
+
+    list.forEach(item => {
+      const itemReg = String(item.regNo || '').replace(/^[#\s]+/, '').trim();
+      if (cleanSources.includes(itemReg)) {
+        item.regNo = cleanTarget;
+        item.mergedFromRegNo = itemReg;
+        item.updatedAt = new Date().toISOString();
+        mergedCount++;
+      }
+    });
+
+    if (mergedCount > 0) {
+      try {
+        await idbCache.setTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+      } catch (_) {}
+      await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list, true);
+
+      auditService.log({
+        action: 'MERGE_TOOL_REGISTRATIONS',
+        details: `Merged ${mergedCount} items from Reg [${cleanSources.join(', ')}] into Primary Reg #${cleanTarget}`,
+        targetId: cleanTarget
+      });
+    }
+
+    return { mergedCount, targetRegNo: cleanTarget };
   }
 
   cleanAllocationRequisitions() {
@@ -1067,7 +1347,24 @@ class ToolService {
     const createdItems = [];
 
     items.forEach((item, index) => {
-      const allocId = `alloc-${finalRegNo}-${item.itemType === 'TOOL' ? 't' : 'a'}-${Date.now()}-${index + 1}`;
+      // Smart Upsert: Check if this item already exists in database table
+      const existingIdx = item.id ? list.findIndex(a => a.id === item.id) : -1;
+      if (existingIdx !== -1) {
+        // Retain and update metadata without duplicating row or deducting stock again
+        list[existingIdx] = {
+          ...list[existingIdx],
+          regNo: finalRegNo,
+          requisitionNo: String(item.requisitionNo || user.requisitionNo || list[existingIdx].requisitionNo || '').trim(),
+          userName: String(user.userName || list[existingIdx].userName || '').trim(),
+          jobTitle: String(user.jobTitle || list[existingIdx].jobTitle || '').trim(),
+          workingArea: String(user.workingArea || list[existingIdx].workingArea || '').trim(),
+          updatedAt: now
+        };
+        createdItems.push(list[existingIdx]);
+        return;
+      }
+
+      const allocId = item.id || `alloc-${finalRegNo}-${item.itemType === 'TOOL' ? 't' : 'a'}-${Date.now()}-${index + 1}`;
       const newAlloc = {
         id: allocId,
         regNo: finalRegNo,
@@ -1092,7 +1389,7 @@ class ToolService {
       list.push(newAlloc);
       createdItems.push(newAlloc);
 
-      // Decrement stock in master catalog if numeric
+      // Decrement stock in master catalog only for NEW items
       const numericQty = parseInt(item.quantity, 10) || 1;
       if (item.itemType === 'TOOL') {
         const tIdx = masterTools.findIndex(t => String(t.code).trim() === String(item.itemCode).trim());

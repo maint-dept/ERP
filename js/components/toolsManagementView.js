@@ -10,8 +10,8 @@
  * 5. Accessories Page (Master Catalog Stock Management, Excel Import/Export)
  */
 
-import { state } from '../state.js?v=4.46.1';
-import { toolService } from '../services/toolService.js?v=4.46.1';
+import { state } from '../state.js?v=4.47.0';
+import { toolService } from '../services/toolService.js?v=4.47.0';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
@@ -79,6 +79,7 @@ function getAllCatalogItems(category = 'ALL') {
 
 let currentRegNo = '';
 let currentPrintRegNo = '';
+let currentPrintBatchFilter = 'ALL'; // 'ALL' or specific regNo (e.g. '1196')
 let currentPrintFormat = 'A4'; // 'A4' | 'POCKET'
 let pocketCustomSettings = {
   preset: 'standard', // 'standard' (125x170mm) | 'a6' (105x148mm) | 'badge' (100x75mm) | 'cr80' (86x54mm) | 'custom'
@@ -118,6 +119,10 @@ let dbShowImportDrawer = false;
 let findSelectedIds = new Set();
 let dbSelectedIds = new Set();
 let masterSelectedIds = new Set();
+let dbCurrentPage = 1;
+let dbPageSize = 50; // 50 | 100 | ALL
+let findCurrentPage = 1;
+let findPageSize = 50; // 50 | 100 | ALL
 
 // =========================================================================
 // ADMIN SECURITY AUTHORIZATION CONTROLLER (PROTECTS REMOVE / EDIT / DELETE)
@@ -635,6 +640,43 @@ function renderScreen2ToolsAddForm() {
           </div>
         </div>
 
+        <!-- Smart Mechanic Existing Kit Notice Banner (Auto-Syncs Imported Excel Data with New Additions) -->
+        <div id="screen2-existing-kit-container">
+          ${(() => {
+            const currentKit = activeUserForm.userId ? toolService.getMechanicActiveKit(activeUserForm.userId) : null;
+            if (!currentKit || !currentKit.exists) return '';
+            const isLoaded = liveAllocationQueue.length > 0;
+            return `
+              <div style="margin-bottom: 14px; background: rgba(14, 165, 233, 0.12); border: 1.5px solid #0284c7; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.25);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">⚡</span>
+                  <div>
+                    <div style="font-weight: 800; font-size: 13px; color: #38bdf8;">
+                      Existing Registration Found: Reg #${currentKit.primaryRegNo} (${currentKit.totalTools} Active Tools in possession)
+                    </div>
+                    <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 2px;">
+                      Mechanic: <strong>${currentKit.userName}</strong> (${currentKit.userId}) • ${currentKit.isMultiBatch ? `<span style="color:#fde047; font-weight:800;">Has ${currentKit.registrationBatches.length} Batches (${currentKit.allRegNos.join(', ')})</span>` : 'Single Unified Kit'}
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button id="btn-screen2-load-existing-kit" style="background: #0284c7; color: #fff; border: 1px solid #38bdf8; padding: 5px 12px; border-radius: 5px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <span>📥</span> ${isLoaded ? `Reload Existing Kit (${currentKit.totalTools} Tools)` : `Load Existing Kit (${currentKit.totalTools} Tools)`}
+                  </button>
+                  <button id="btn-screen2-new-separate-batch" style="background: #1e293b; color: #f59e0b; border: 1px solid #d97706; padding: 5px 12px; border-radius: 5px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Create a separate additional registration batch for this mechanic">
+                    <span>➕</span> Start New Separate Batch
+                  </button>
+                  ${currentKit.isMultiBatch ? `
+                    <button id="btn-screen2-merge-batches" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; border: 1px solid #22c55e; padding: 5px 12px; border-radius: 5px; font-weight: 800; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Merge historical batches into primary Reg #${currentKit.primaryRegNo}">
+                      <span>🔗</span> 1-Click Merge into Reg #${currentKit.primaryRegNo}
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          })()}
+        </div>
+
         <div style="display: grid; grid-template-columns: 1.1fr 1.35fr 130px; gap: 16px; align-items: start;">
           
           <!-- Left Column: Employee Info Display/Edit -->
@@ -1019,6 +1061,30 @@ function renderScreen3PrintPage() {
           </div>
         </div>
       </div>
+
+      <!-- Multi-Batch Sync & Toggle Bar (Links Historical Excel Imports with New Registrations) -->
+      ${(regDetails && regDetails.registrationBatches && regDetails.registrationBatches.length > 1) ? `
+        <div style="background: #1e293b; border: 1.5px solid #0284c7; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-weight: 800; color: #38bdf8; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+              <span>📂</span> Registration Batches (${regDetails.userName} - ${regDetails.userId}):
+            </span>
+            <button class="btn-print-batch-filter ${currentPrintBatchFilter === 'ALL' ? 'active' : ''}" data-batch="ALL"
+              style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; border: 1px solid ${currentPrintBatchFilter === 'ALL' ? '#38bdf8' : '#475569'}; background: ${currentPrintBatchFilter === 'ALL' ? '#0284c7' : '#0f172a'}; color: #fff;">
+              🌟 All Active Tools (${regDetails.isConsolidated ? regDetails.totalTools : (toolService.getRegistrationDetails(currentPrintRegNo)?.totalTools || regDetails.totalTools)} Tools - Consolidated)
+            </button>
+            ${regDetails.registrationBatches.map(b => `
+              <button class="btn-print-batch-filter ${currentPrintBatchFilter === b.regNo ? 'active' : ''}" data-batch="${b.regNo}"
+                style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid ${currentPrintBatchFilter === b.regNo ? '#38bdf8' : '#475569'}; background: ${currentPrintBatchFilter === b.regNo ? '#0284c7' : '#0f172a'}; color: #cbd5e1;">
+                📁 Reg #${b.regNo} (${b.count} Items • ${b.issueDate || 'Imported'})
+              </button>
+            `).join('')}
+          </div>
+          <button id="btn-merge-print-batches" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; border: 1px solid #22c55e; padding: 4px 12px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Merge historical batches into single unified registration">
+            <span>🔗</span> 1-Click Merge into Reg #${regDetails.primaryRegNo}
+          </button>
+        </div>
+      ` : ''}
 
       <!-- Quick Custom Height x Width & Layout Bar (Interactive for Pocket Bag Slip) -->
       ${currentPrintFormat === 'POCKET' ? `
@@ -1615,6 +1681,25 @@ function renderScreen4FindAndSelect() {
   const replacedCount = allocations.filter(a => a.changeStatus === 'REPLACED').length;
   const returnedCount = allocations.filter(a => a.changeStatus === 'RETURNED' || a.changeStatus === 'LOST').length;
 
+  // Pre-aggregate replacement counts in O(H) so we avoid O(N x M) nested loop in table rows!
+  const changeHistory = toolService.getToolChangeHistory() || [];
+  const repCountMap = new Map();
+  changeHistory.forEach(h => {
+    if (h.changeType === 'REPLACED' && h.userId && h.itemCode) {
+      const key = `${String(h.userId).trim().toLowerCase()}_${String(h.itemCode).trim().toLowerCase()}`;
+      repCountMap.set(key, (repCountMap.get(key) || 0) + 1);
+    }
+  });
+
+  // Client-side pagination for instant fluid 60FPS rendering
+  const currentFindSize = findPageSize === 'ALL' ? totalAllocations : (parseInt(findPageSize, 10) || 50);
+  const totalFindPages = Math.max(1, Math.ceil(totalAllocations / (currentFindSize || 1)));
+  if (findCurrentPage > totalFindPages) findCurrentPage = totalFindPages;
+  if (findCurrentPage < 1) findCurrentPage = 1;
+  const findStart = (findCurrentPage - 1) * currentFindSize;
+  const findEnd = findPageSize === 'ALL' ? totalAllocations : Math.min(findStart + currentFindSize, totalAllocations);
+  const pagedAllocations = findPageSize === 'ALL' ? allocations : allocations.slice(findStart, findEnd);
+
   return `
     <div class="screen-find-select" style="display: flex; flex-direction: column; gap: 8px;">
       
@@ -1749,10 +1834,12 @@ function renderScreen4FindAndSelect() {
               </tr>
             </thead>
             <tbody>
-              ${allocations.length === 0 ? `
+              ${pagedAllocations.length === 0 ? `
                 <tr><td colspan="13" style="padding: 30px; text-align: center; color: #94a3b8;">No matching tool allocation records found.</td></tr>
-              ` : allocations.map((a, idx) => {
-    const repCount = a.replacementCount || toolService.getToolReplacementCount(a.userId, a.itemCode);
+              ` : pagedAllocations.map((a, pIdx) => {
+    const idx = findStart + pIdx;
+    const repKey = `${String(a.userId || '').trim().toLowerCase()}_${String(a.itemCode || '').trim().toLowerCase()}`;
+    const repCount = a.replacementCount || repCountMap.get(repKey) || 0;
     const isSelected = findSelectedIds.has(a.id);
     const cellBg = isSelected ? '#3f1c24' : idx % 2 === 0 ? '#1b2537' : '#0f172a';
     return `
@@ -1836,6 +1923,25 @@ function renderScreen4FindAndSelect() {
   }).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- Find & Select Fluid Pagination Bar -->
+        <div style="background: #0f172a; border-top: 1px solid #334155; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 11.5px; color: #94a3b8;">
+            Showing <strong style="color: #fff;">${totalAllocations === 0 ? 0 : findStart + 1}</strong> to <strong style="color: #fff;">${findEnd}</strong> of <strong style="color: #38bdf8;">${totalAllocations}</strong> records (Page ${findCurrentPage} of ${totalFindPages})
+          </span>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <button class="btn-find-page" data-page="1" ${findCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">« First</button>
+            <button class="btn-find-page" data-page="${findCurrentPage - 1}" ${findCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">‹ Prev</button>
+            <span style="color: #38bdf8; font-weight: 800; font-size: 11.5px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); border-radius: 4px;">${findCurrentPage} / ${totalFindPages}</span>
+            <button class="btn-find-page" data-page="${findCurrentPage + 1}" ${findCurrentPage >= totalFindPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Next ›</button>
+            <button class="btn-find-page" data-page="${totalFindPages}" ${findCurrentPage >= totalFindPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Last »</button>
+            <select id="sel-find-page-size" style="background: #1e293b; color: #38bdf8; border: 1px solid #475569; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight:700; cursor:pointer;">
+              <option value="50" ${findPageSize == 50 ? 'selected' : ''}>50 / page</option>
+              <option value="100" ${findPageSize == 100 ? 'selected' : ''}>100 / page</option>
+              <option value="ALL" ${findPageSize === 'ALL' ? 'selected' : ''}>Show All</option>
+            </select>
+          </div>
         </div>
 
         <!-- STICKY HORIZONTAL SCROLLBAR CONTROLLER (PERMANENTLY PINNED AT BOTTOM OF SCREEN) -->
@@ -2063,16 +2169,72 @@ function renderScreen6DatabasePage() {
   const masterAccs = toolService.getAllMasterAccessories('') || [];
   const allToolChangeHistory = toolService.getToolChangeHistory() || [];
 
+  // Group all allocations by mechanic
+  const mechanicMap = new Map();
+  allAllocations.forEach(a => {
+    const rawUid = String(a.userId || 'UNASSIGNED').trim();
+    const cleanKey = rawUid.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!mechanicMap.has(cleanKey)) {
+      mechanicMap.set(cleanKey, {
+        userId: a.userId || 'UNASSIGNED',
+        userName: a.userName || 'Unknown Mechanic',
+        jobTitle: a.jobTitle || 'Mechanic',
+        workingArea: a.workingArea || '',
+        allocations: [],
+        regNos: new Set(),
+        toolsCount: 0,
+        accsCount: 0,
+        hasExcelImport: false,
+        hasSystemCreated: false,
+        latestIssueDate: a.issueDate || ''
+      });
+    }
+    const m = mechanicMap.get(cleanKey);
+    m.allocations.push(a);
+    if (a.regNo) m.regNos.add(String(a.regNo).replace(/^[#\s]+/, '').trim());
+    if (a.itemType === 'TOOL' || !a.itemType || a.itemType === 'TOOLS') m.toolsCount++;
+    if (a.itemType === 'ACCESSORY' || a.itemType === 'ACCESSORIES') m.accsCount++;
+    if (String(a.id || '').startsWith('alloc-imp-') || a.manpowerMatched) m.hasExcelImport = true;
+    else m.hasSystemCreated = true;
+    if (a.issueDate && (!m.latestIssueDate || a.issueDate > m.latestIssueDate)) m.latestIssueDate = a.issueDate;
+  });
+
+  const allMechanicKits = Array.from(mechanicMap.values()).map(m => {
+    const regList = Array.from(m.regNos);
+    return {
+      ...m,
+      primaryRegNo: regList[0] || 'N/A',
+      allRegNos: regList,
+      isMultiBatch: regList.length > 1,
+      totalTools: m.toolsCount,
+      totalAccs: m.accsCount,
+      totalItems: m.allocations.length,
+      source: (m.hasExcelImport && m.hasSystemCreated) ? 'Synced (Excel + System)' : m.hasExcelImport ? 'Excel Imported' : 'System Registered'
+    };
+  }).sort((a, b) => b.totalTools - a.totalTools);
+
   const totalAllocations = allAllocations.length;
-  const uniqueMechanics = new Set(allAllocations.map(a => a.userId)).size;
+  const uniqueMechanics = allMechanicKits.length || new Set(allAllocations.map(a => a.userId)).size;
   const totalMasterTools = masterTools.length;
   const totalMasterAccs = masterAccs.length;
+  const missingStaffCount = allMechanicKits.filter(m => !toolService.getStaffByCardOnly(m.userId) && m.userId !== 'UNASSIGNED').length;
 
   // Filter current active table records based on search query
   let filteredRecords = [];
   const q = databaseSearch.toLowerCase().trim();
 
-  if (databaseActiveTable === 'TOOL_ALLOCATIONS') {
+  if (databaseActiveTable === 'MECHANIC_KITS') {
+    filteredRecords = allMechanicKits.filter(m => {
+      if (!q) return true;
+      return (
+        m.userId.toLowerCase().includes(q) ||
+        m.userName.toLowerCase().includes(q) ||
+        m.jobTitle.toLowerCase().includes(q) ||
+        m.workingArea.toLowerCase().includes(q) ||
+        m.allRegNos.some(r => r.toLowerCase().includes(q))
+      );
+    });
+  } else if (databaseActiveTable === 'TOOL_ALLOCATIONS') {
     filteredRecords = allAllocations.filter(a => {
       if (!q) return true;
       return (
@@ -2120,6 +2282,16 @@ function renderScreen6DatabasePage() {
     });
   }
 
+  // Client-side pagination for instant fluid 60FPS database rendering
+  const totalDbRecords = filteredRecords.length;
+  const currentDbSize = dbPageSize === 'ALL' ? totalDbRecords : (parseInt(dbPageSize, 10) || 50);
+  const totalDbPages = Math.max(1, Math.ceil(totalDbRecords / (currentDbSize || 1)));
+  if (dbCurrentPage > totalDbPages) dbCurrentPage = totalDbPages;
+  if (dbCurrentPage < 1) dbCurrentPage = 1;
+  const dbStart = (dbCurrentPage - 1) * currentDbSize;
+  const dbEnd = dbPageSize === 'ALL' ? totalDbRecords : Math.min(dbStart + currentDbSize, totalDbRecords);
+  const pagedRecords = dbPageSize === 'ALL' ? filteredRecords : filteredRecords.slice(dbStart, dbEnd);
+
   return `
     <div class="screen-database-page" style="display: flex; flex-direction: column; gap: 8px;">
       
@@ -2152,14 +2324,19 @@ function renderScreen6DatabasePage() {
           <span style="color: #94a3b8; font-weight: 600;">Registered Mechanics:</span>
           <span style="font-weight: 900; color: #4ade80; font-size: 13px; font-family: monospace;">${uniqueMechanics}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px; background: rgba(253, 224, 71, 0.08); border: 1px solid rgba(253, 224, 71, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
-          <span style="color: #94a3b8; font-weight: 600;">Master Tools:</span>
-          <span style="font-weight: 900; color: #fde047; font-size: 13px; font-family: monospace;">${totalMasterTools}</span>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Manpower Linked:</span>
+          <span style="font-weight: 900; color: #c084fc; font-size: 13px; font-family: monospace;">${allMechanicKits.length - missingStaffCount}/${allMechanicKits.length}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px; background: rgba(244, 114, 182, 0.08); border: 1px solid rgba(244, 114, 182, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
-          <span style="color: #94a3b8; font-weight: 600;">Master Accessories:</span>
-          <span style="font-weight: 900; color: #f472b6; font-size: 13px; font-family: monospace;">${totalMasterAccs}</span>
-        </div>
+        ${missingStaffCount > 0 ? `
+          <button id="btn-db-auto-create-missing-staff" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #38bdf8; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Automatically register the ${missingStaffCount} missing legacy mechanics into Manpower module">
+            <span>👥</span> Auto-Create ${missingStaffCount} Staff in Manpower
+          </button>
+        ` : `
+          <span style="background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid #22c55e; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+            ✓ All Mechanics Synced with Manpower
+          </span>
+        `}
       </div>
 
       <!-- SECTION A: COLLAPSIBLE DIRECT IN-PAGE EXCEL IMPORT DRAWER -->
@@ -2240,6 +2417,10 @@ function renderScreen6DatabasePage() {
           
           <!-- Table Switcher Buttons -->
           <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+            <button class="btn-db-table-switch ${databaseActiveTable === 'MECHANIC_KITS' ? 'active' : ''}" data-table="MECHANIC_KITS"
+              style="background: ${databaseActiveTable === 'MECHANIC_KITS' ? '#059669' : '#1e293b'}; color: #fff; border: 1px solid ${databaseActiveTable === 'MECHANIC_KITS' ? '#10b981' : '#475569'}; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              👥 Mechanic Kits (${uniqueMechanics})
+            </button>
             <button class="btn-db-table-switch ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? 'active' : ''}" data-table="TOOL_ALLOCATIONS"
               style="background: ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
               📋 Allocations (${allAllocations.length})
@@ -2292,6 +2473,75 @@ function renderScreen6DatabasePage() {
             </div>
           ` : ''}
 
+          ${databaseActiveTable === 'MECHANIC_KITS' ? `
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px;">
+              <thead style="position: sticky; top: 0; z-index: 25;">
+                <tr style="background: #0f172a; color: #cbd5e1;">
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 45px; border-bottom: 2px solid #334155;">#</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; width: 130px; border-bottom: 2px solid #334155;">ID / Card #</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155;">Mechanic Name</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155;">Designation &amp; Section</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 140px; border-bottom: 2px solid #334155;">Registration(s)</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 110px; border-bottom: 2px solid #334155;">Allocated Tools</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 140px; border-bottom: 2px solid #334155;">Source / Status</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 95px; border-bottom: 2px solid #334155;">Latest Date</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 210px; border-bottom: 2px solid #334155;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pagedRecords.length === 0 ? `
+                  <tr><td colspan="9" style="padding: 30px; text-align: center; color: #94a3b8;">No mechanic kits found matching your search.</td></tr>
+                ` : pagedRecords.map((m, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
+                  <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
+                    <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
+                    <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${m.userId}</td>
+                    <td style="padding: 7px 10px; font-weight: 700; color: #f1f5f9;">${m.userName}</td>
+                    <td style="padding: 7px 10px; color: #cbd5e1;">${m.jobTitle} • ${m.workingArea}</td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                      <span style="font-family: monospace; font-weight: 800; color: #f59e0b;">#${m.primaryRegNo}</span>
+                      ${m.isMultiBatch ? `
+                        <div style="font-size: 10px; background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid #ca8a04; border-radius: 4px; padding: 1px 4px; margin-top: 2px; font-weight: 800;">
+                          ⚠️ ${m.allRegNos.length} Batches (${m.allRegNos.join(', ')})
+                        </div>
+                      ` : ''}
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                      <span style="background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid #22c55e; padding: 2px 8px; border-radius: 9999px; font-weight: 800; font-size: 11px;">
+                        🔧 ${m.totalTools} Tools
+                      </span>
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center;">
+                      <span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; background: ${m.source.includes('Synced') ? 'rgba(56, 189, 248, 0.15)' : m.source.includes('Excel') ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.15)'}; color: ${m.source.includes('Synced') ? '#38bdf8' : m.source.includes('Excel') ? '#34d399' : '#c084fc'}; border: 1px solid ${m.source.includes('Synced') ? 'rgba(56, 189, 248, 0.35)' : m.source.includes('Excel') ? 'rgba(16, 185, 129, 0.35)' : 'rgba(168, 85, 247, 0.35)'};">
+                        ${m.source}
+                      </span>
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #cbd5e1; font-size: 11px;">
+                      ${toolService.formatDateDMY(m.latestIssueDate)}
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
+                      <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                        <button class="btn-db-kit-print" data-user="${m.userId}" style="background: #0284c7; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;" title="Print Official Toolkit SOP Slip">
+                          🖨️ Print
+                        </button>
+                        <button class="btn-db-kit-edit" data-user="${m.userId}" data-reg="${m.primaryRegNo}" style="background: #2563eb; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;" title="Edit or Add Tools to this Kit in Add Form">
+                          ✏️ Edit Kit
+                        </button>
+                        ${m.isMultiBatch ? `
+                          <button class="btn-db-kit-merge" data-user="${m.userId}" data-primary="${m.primaryRegNo}" data-all="${m.allRegNos.join(',')}" style="background: #16a34a; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer;" title="Merge historical batches into single unified kit">
+                            🔗 Merge
+                          </button>
+                        ` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+                })}
+              </tbody>
+            </table>
+          ` : ''}
+
           ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? `
             <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px;">
               <thead style="position: sticky; top: 0; z-index: 25;">
@@ -2314,9 +2564,10 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.length === 0 ? `
+                ${pagedRecords.length === 0 ? `
                   <tr><td colspan="13" style="padding: 30px; text-align: center; color: #94a3b8;">No records match your search filter.</td></tr>
-                ` : filteredRecords.map((a, idx) => {
+                ` : pagedRecords.map((a, pIdx) => {
+                  const idx = dbStart + pIdx;
                   const reqMatch = (a.requisitionNo || '').trim() || ((a.remarks || '').match(/IR\d+/i) ? (a.remarks.match(/IR\d+/i)[0]) : '');
                   const cleanReq = reqMatch ? (reqMatch.toUpperCase().startsWith('#') ? reqMatch.toUpperCase() : `#${reqMatch.toUpperCase()}`) : '-';
                   let displayRemarks = (a.remarks || '').replace(/ERP\s*Req\s*#?[A-Za-z0-9_-]+[:\s]*[^\n,]*/gi, '').trim();
@@ -2377,7 +2628,9 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.map((t, idx) => `
+                ${pagedRecords.map((t, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #38bdf8;">${t.code}</td>
@@ -2387,7 +2640,8 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; text-align: center; color: #94a3b8;">${t.unit}</td>
                     <td style="padding: 7px 10px; color: #94a3b8;">${t.remarks || '-'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           ` : databaseActiveTable === 'TOOL_CHANGE_HISTORY' ? `
@@ -2409,9 +2663,11 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.length === 0 ? `
+                ${pagedRecords.length === 0 ? `
                   <tr><td colspan="12" style="padding: 30px; text-align: center; color: #94a3b8;">No tool change history records found.</td></tr>
-                ` : filteredRecords.map((h, idx) => `
+                ` : pagedRecords.map((h, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 700; color: #4ade80;">${h.changeDate}</td>
@@ -2436,7 +2692,8 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; color: #cbd5e1; font-size: 11.5px;">${h.remarks || '-'}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #94a3b8;">${h.changedBy || 'admin'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           ` : `
@@ -2453,7 +2710,9 @@ function renderScreen6DatabasePage() {
                 </tr>
               </thead>
               <tbody>
-                ${filteredRecords.map((a, idx) => `
+                ${pagedRecords.map((a, pIdx) => {
+                  const idx = dbStart + pIdx;
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #ec4899;">${a.code}</td>
@@ -2463,10 +2722,30 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; text-align: center; font-weight: 800; color: #22c55e;">${a.totalStock}</td>
                     <td style="padding: 7px 10px; text-align: center; color: #94a3b8;">${a.unit || 'Pcs'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           `}
+
+          <!-- Database Fluid Pagination Bar -->
+          <div style="background: #0f172a; border-top: 1px solid #334155; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 11.5px; color: #94a3b8;">
+              Showing <strong style="color: #fff;">${totalDbRecords === 0 ? 0 : dbStart + 1}</strong> to <strong style="color: #fff;">${dbEnd}</strong> of <strong style="color: #38bdf8;">${totalDbRecords}</strong> records (Page ${dbCurrentPage} of ${totalDbPages})
+            </span>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <button class="btn-db-page" data-page="1" ${dbCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">« First</button>
+              <button class="btn-db-page" data-page="${dbCurrentPage - 1}" ${dbCurrentPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">‹ Prev</button>
+              <span style="color: #38bdf8; font-weight: 800; font-size: 11.5px; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); border-radius: 4px;">${dbCurrentPage} / ${totalDbPages}</span>
+              <button class="btn-db-page" data-page="${dbCurrentPage + 1}" ${dbCurrentPage >= totalDbPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Next ›</button>
+              <button class="btn-db-page" data-page="${totalDbPages}" ${dbCurrentPage >= totalDbPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : 'style="cursor:pointer;"'} style="background:#1e293b; color:#fff; border:1px solid #475569; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;">Last »</button>
+              <select id="sel-db-page-size" style="background: #1e293b; color: #38bdf8; border: 1px solid #475569; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight:700; cursor:pointer;">
+                <option value="50" ${dbPageSize == 50 ? 'selected' : ''}>50 / page</option>
+                <option value="100" ${dbPageSize == 100 ? 'selected' : ''}>100 / page</option>
+                <option value="ALL" ${dbPageSize === 'ALL' ? 'selected' : ''}>Show All</option>
+              </select>
+            </div>
+          </div>
 
         </div>
 
@@ -2643,7 +2922,7 @@ export function initToolsManagementEvents() {
   }
 
   // Helper: Auto-fill all employee input boxes across Screen 1 & Screen 2
-  function autoFillEmployeeBoxes(emp) {
+  function autoFillEmployeeBoxes(emp, autoLoadKit = true) {
     if (!emp) return;
     activeUserForm.userId = emp.cardNumber || emp.id || '';
     activeUserForm.userName = emp.name || '';
@@ -2669,6 +2948,35 @@ export function initToolsManagementEvents() {
     if (addName) addName.value = activeUserForm.userName;
     if (addTitle) addTitle.value = activeUserForm.jobTitle;
     if (addArea) addArea.value = activeUserForm.workingArea;
+
+    // SMART AUTO-SYNC: Check if this mechanic already has an existing toolkit / registration
+    const existingKit = toolService.getMechanicActiveKit(activeUserForm.userId);
+    if (existingKit && existingKit.exists) {
+      if (autoLoadKit) {
+        currentRegNo = existingKit.primaryRegNo;
+        activeUserForm.regNo = existingKit.primaryRegNo;
+        liveAllocationQueue = existingKit.items.map(i => ({ ...i }));
+        
+        const container = document.getElementById('tools-tab-content-container');
+        if (container && currentActiveTab === 'tools-add') {
+          container.innerHTML = renderActiveTab('tools-add');
+          initToolsManagementEvents();
+        }
+        window.app?.showToast('Existing Kit Synced', `Auto-loaded ${existingKit.totalTools} tools under Reg #${existingKit.primaryRegNo} for ${activeUserForm.userName}`, 'info');
+        return;
+      }
+    } else {
+      if (!currentRegNo || !toolService.isRegistrationNumberAvailable(currentRegNo, activeUserForm.userId)) {
+        currentRegNo = toolService.getNextRegistrationNumber();
+        activeUserForm.regNo = currentRegNo;
+      }
+      liveAllocationQueue = [];
+      const container = document.getElementById('tools-tab-content-container');
+      if (container && currentActiveTab === 'tools-add') {
+        container.innerHTML = renderActiveTab('tools-add');
+        initToolsManagementEvents();
+      }
+    }
   }
 
   // 2. Staff Autocomplete & Instant Auto-Fill in Screen 1 (ID Number)
@@ -2737,14 +3045,10 @@ export function initToolsManagementEvents() {
         typeaheadBoxScreen2.style.display = 'none';
         return;
       }
-      const exactMatch = toolService.getStaffByIdOrCard(q);
-      if (exactMatch) {
-        autoFillEmployeeBoxes(exactMatch);
-      }
 
       const matches = toolService.searchManpowerStaff(q);
       if (matches.length === 0) {
-        typeaheadBoxScreen2.innerHTML = '<div style="padding: 8px 12px; color: #94a3b8; font-size: 12px;">No matching staff in Manpower database</div>';
+        typeaheadBoxScreen2.innerHTML = '<div style="padding: 8px 12px; color: #94a3b8; font-size: 12px;">No matching staff in database</div>';
       } else {
         typeaheadBoxScreen2.innerHTML = matches.slice(0, 8).map(m => `
           <div class="typeahead-item-screen2" data-id="${m.cardNumber || m.id}"
@@ -2753,7 +3057,7 @@ export function initToolsManagementEvents() {
               <span style="font-weight: 800; color: #38bdf8; font-family: monospace;">${m.cardNumber || m.id}</span> — 
               <span style="color: #fff; font-weight: 700;">${m.name}</span>
             </div>
-            <span style="color: #94a3b8; font-size: 11px;">${m.designation || 'Staff'} • ${m.workingArea || ''}</span>
+            <span style="color: #94a3b8; font-size: 11px;">${m.isLegacyAllocation ? '🛠️ Kit Reg #' + m.primaryRegNo : (m.designation || 'Staff')} • ${m.workingArea || ''}</span>
           </div>
         `).join('');
       }
@@ -2763,8 +3067,8 @@ export function initToolsManagementEvents() {
         item.onclick = () => {
           const id = item.getAttribute('data-id');
           const emp = toolService.getStaffByIdOrCard(id);
-          if (emp) autoFillEmployeeBoxes(emp);
           typeaheadBoxScreen2.style.display = 'none';
+          if (emp) autoFillEmployeeBoxes(emp, true);
         };
       });
     };
@@ -2772,12 +3076,20 @@ export function initToolsManagementEvents() {
     addUserIdInput.oninput = handleAddUserLookup;
     addUserIdInput.onchange = () => {
       const emp = toolService.getStaffByIdOrCard(addUserIdInput.value.trim());
-      if (emp) autoFillEmployeeBoxes(emp);
+      if (emp) autoFillEmployeeBoxes(emp, true);
+    };
+    addUserIdInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        typeaheadBoxScreen2.style.display = 'none';
+        const emp = toolService.getStaffByIdOrCard(addUserIdInput.value.trim());
+        if (emp) autoFillEmployeeBoxes(emp, true);
+      }
     };
     addUserIdInput.onpaste = () => {
       setTimeout(() => {
         const emp = toolService.getStaffByIdOrCard(addUserIdInput.value.trim());
-        if (emp) autoFillEmployeeBoxes(emp);
+        if (emp) autoFillEmployeeBoxes(emp, true);
       }, 50);
     };
   }
@@ -2970,16 +3282,18 @@ export function initToolsManagementEvents() {
       if (!reg) return;
       currentRegNo = reg;
       const details = toolService.getRegistrationDetails(reg);
-      if (details) {
+      if (details && details.items && details.items.length > 0) {
+        currentRegNo = details.primaryRegNo || details.regNo || reg;
         activeUserForm = {
           userId: details.userId,
           userName: details.userName,
           jobTitle: details.jobTitle,
           workingArea: details.workingArea,
           issueDate: details.issueDate,
-          regNo: details.regNo
+          regNo: currentRegNo
         };
         liveAllocationQueue = details.items.map(i => ({ ...i }));
+        window.app?.showToast('Registration Loaded', `Loaded ${details.totalTools} tools for ${details.userName} (Reg #${currentRegNo})`, 'success');
       } else {
         alert(`No existing records found for Reg No #${reg}. You can create a new allocation for this number.`);
       }
@@ -2988,6 +3302,72 @@ export function initToolsManagementEvents() {
         container.innerHTML = renderActiveTab('tools-add');
         initToolsManagementEvents();
       }
+    };
+  }
+
+  // 10b. Screen 2 Smart Kit Management Buttons (Load Existing, New Batch, Merge Batches)
+  const btnLoadExistingKit = document.getElementById('btn-screen2-load-existing-kit');
+  if (btnLoadExistingKit) {
+    btnLoadExistingKit.onclick = () => {
+      const uId = activeUserForm.userId;
+      if (!uId) return;
+      const kit = toolService.getMechanicActiveKit(uId);
+      if (kit && kit.exists) {
+        currentRegNo = kit.primaryRegNo;
+        activeUserForm.regNo = kit.primaryRegNo;
+        liveAllocationQueue = kit.items.map(i => ({ ...i }));
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('tools-add');
+          initToolsManagementEvents();
+        }
+        window.app?.showToast('Kit Loaded', `Loaded ${kit.totalTools} tools for Reg #${kit.primaryRegNo}`, 'success');
+      }
+    };
+  }
+
+  const btnNewSeparateBatch = document.getElementById('btn-screen2-new-separate-batch');
+  if (btnNewSeparateBatch) {
+    btnNewSeparateBatch.onclick = () => {
+      const nextReg = toolService.getNextRegistrationNumber();
+      currentRegNo = nextReg;
+      activeUserForm.regNo = nextReg;
+      liveAllocationQueue = [];
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('tools-add');
+        initToolsManagementEvents();
+      }
+      window.app?.showToast('New Batch Initialized', `Started clean batch under Reg #${nextReg}`, 'info');
+    };
+  }
+
+  const btnMergeBatchesScreen2 = document.getElementById('btn-screen2-merge-batches');
+  if (btnMergeBatchesScreen2) {
+    btnMergeBatchesScreen2.onclick = async () => {
+      const uId = activeUserForm.userId;
+      if (!uId) return;
+      const kit = toolService.getMechanicActiveKit(uId);
+      if (!kit || !kit.isMultiBatch) return;
+      ensureAdminAccess('Merge Multi-Registration Batches', async () => {
+        const otherBatches = kit.allRegNos.filter(r => r !== kit.primaryRegNo);
+        const confirmed = confirm(`Merge all items from secondary batches (${otherBatches.join(', ')}) into Primary Reg #${kit.primaryRegNo}?\n\nThis permanently unifies all previous imported tools with new registrations.`);
+        if (confirmed) {
+          await toolService.mergeRegistrationBatches(kit.primaryRegNo, otherBatches);
+          currentRegNo = kit.primaryRegNo;
+          activeUserForm.regNo = kit.primaryRegNo;
+          const freshKit = toolService.getMechanicActiveKit(uId);
+          if (freshKit) {
+            liveAllocationQueue = freshKit.items.map(i => ({ ...i }));
+          }
+          const container = document.getElementById('tools-tab-content-container');
+          if (container) {
+            container.innerHTML = renderActiveTab('tools-add');
+            initToolsManagementEvents();
+          }
+          window.app?.showToast('Batches Unified', `Successfully merged all records into Reg #${kit.primaryRegNo}!`, 'success');
+        }
+      });
     };
   }
 
@@ -3602,6 +3982,40 @@ export function initToolsManagementEvents() {
     document.addEventListener('click', window._toolsPrintSuggestClickHandler);
   }
 
+  // 18b. Multi-Batch Print Filter & Merge Actions
+  root.querySelectorAll('.btn-print-batch-filter').forEach(btn => {
+    btn.onclick = () => {
+      currentPrintBatchFilter = btn.getAttribute('data-batch') || 'ALL';
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('print-page');
+        initToolsManagementEvents();
+      }
+    };
+  });
+
+  const btnMergePrint = document.getElementById('btn-merge-print-batches');
+  if (btnMergePrint) {
+    btnMergePrint.onclick = () => {
+      const details = toolService.getRegistrationDetails(currentPrintRegNo);
+      if (!details || !details.isMultiBatch) return;
+      ensureAdminAccess('Merge Multi-Registration Batches', async () => {
+        const otherBatches = details.allRegNos.filter(r => r !== details.primaryRegNo);
+        const confirmed = confirm(`Merge all records from secondary batches (${otherBatches.join(', ')}) into Primary Reg #${details.primaryRegNo}?\n\nThis permanently unifies all previous imported tools with new registrations.`);
+        if (confirmed) {
+          await toolService.mergeRegistrationBatches(details.primaryRegNo, otherBatches);
+          currentPrintBatchFilter = 'ALL';
+          const container = document.getElementById('tools-tab-content-container');
+          if (container) {
+            container.innerHTML = renderActiveTab('print-page');
+            initToolsManagementEvents();
+          }
+          window.app?.showToast('Batches Merged', `Successfully merged all records into Reg #${details.primaryRegNo}!`, 'success');
+        }
+      });
+    };
+  }
+
   // 19. Print Format Buttons
   const btnFmtA4 = document.getElementById('btn-format-a4');
   const btnFmtPkt = document.getElementById('btn-format-pocket');
@@ -3946,6 +4360,34 @@ export function initToolsManagementEvents() {
     };
   }
 
+  // Find & Select Pagination Handlers
+  root.querySelectorAll('.btn-find-page').forEach(btn => {
+    btn.onclick = () => {
+      const p = parseInt(btn.getAttribute('data-page'), 10);
+      if (!isNaN(p) && p !== findCurrentPage) {
+        findCurrentPage = p;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('find-select');
+          initToolsManagementEvents();
+        }
+      }
+    };
+  });
+
+  const selFindPageSize = document.getElementById('sel-find-page-size');
+  if (selFindPageSize) {
+    selFindPageSize.onchange = () => {
+      findPageSize = selFindPageSize.value;
+      findCurrentPage = 1;
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('find-select');
+        initToolsManagementEvents();
+      }
+    };
+  }
+
   root.querySelectorAll('.check-find-item').forEach(chk => {
     chk.onchange = () => {
       const id = chk.getAttribute('data-id');
@@ -4218,21 +4660,21 @@ export function initToolsManagementEvents() {
     let isSyncingFromTable = false;
     let isSyncingFromSticky = false;
 
-    findTableScroll.addEventListener('scroll', () => {
+    findTableScroll.onscroll = () => {
       if (!isSyncingFromSticky) {
         isSyncingFromTable = true;
         findStickyScroll.scrollLeft = findTableScroll.scrollLeft;
         setTimeout(() => { isSyncingFromTable = false; }, 15);
       }
-    });
+    };
 
-    findStickyScroll.addEventListener('scroll', () => {
+    findStickyScroll.onscroll = () => {
       if (!isSyncingFromTable) {
         isSyncingFromSticky = true;
         findTableScroll.scrollLeft = findStickyScroll.scrollLeft;
         setTimeout(() => { isSyncingFromSticky = false; }, 15);
       }
-    });
+    };
 
     if (btnScrollLeft) {
       btnScrollLeft.onclick = () => {
@@ -4506,6 +4948,28 @@ export function initToolsManagementEvents() {
     btnDbModalCenter.onclick = () => renderExcelImportCenterModal(databaseDirectImportType);
   }
 
+  // Auto-Create Missing Staff in Manpower from Database screen
+  const btnCreateMissingStaff = document.getElementById('btn-db-auto-create-missing-staff');
+  if (btnCreateMissingStaff) {
+    btnCreateMissingStaff.onclick = async () => {
+      try {
+        btnCreateMissingStaff.disabled = true;
+        btnCreateMissingStaff.innerHTML = '<span>⏳</span> Registering in Manpower...';
+        const res = await toolService.createMissingStaffInManpower();
+        window.app?.showToast('Manpower Synced', `Successfully registered ${res.createdCount} legacy mechanics into the Manpower module.`, 'success');
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab(currentActiveTab);
+          initToolsManagementEvents();
+        }
+      } catch (err) {
+        alert('Sync error: ' + err.message);
+        btnCreateMissingStaff.disabled = false;
+        btnCreateMissingStaff.innerHTML = '<span>👥</span> Retry Auto-Create';
+      }
+    };
+  }
+
   // Download Sample Template for Database screen
   const btnDbDownloadTpl = document.getElementById('btn-db-download-template');
   if (btnDbDownloadTpl) {
@@ -4741,6 +5205,34 @@ export function initToolsManagementEvents() {
     };
   }
 
+  // Database Page Fluid Pagination Handlers
+  root.querySelectorAll('.btn-db-page').forEach(btn => {
+    btn.onclick = () => {
+      const p = parseInt(btn.getAttribute('data-page'), 10);
+      if (!isNaN(p) && p !== dbCurrentPage) {
+        dbCurrentPage = p;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('database-page');
+          initToolsManagementEvents();
+        }
+      }
+    };
+  });
+
+  const selDbPageSize = document.getElementById('sel-db-page-size');
+  if (selDbPageSize) {
+    selDbPageSize.onchange = () => {
+      dbPageSize = selDbPageSize.value;
+      dbCurrentPage = 1;
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('database-page');
+        initToolsManagementEvents();
+      }
+    };
+  }
+
   root.querySelectorAll('.check-db-item').forEach(chk => {
     chk.onchange = () => {
       const id = chk.getAttribute('data-id');
@@ -4840,6 +5332,65 @@ export function initToolsManagementEvents() {
     };
   });
 
+  // Screen 6 Mechanic Kits Group Actions
+  root.querySelectorAll('.btn-db-kit-print').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.getAttribute('data-user');
+      if (!uId) return;
+      currentPrintRegNo = uId;
+      currentPrintBatchFilter = 'ALL';
+      navigateToTab('print-page');
+    };
+  });
+
+  root.querySelectorAll('.btn-db-kit-edit').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.getAttribute('data-user');
+      const reg = btn.getAttribute('data-reg');
+      if (!uId) return;
+      const kit = toolService.getMechanicActiveKit(uId);
+      if (kit && kit.exists) {
+        currentRegNo = kit.primaryRegNo || reg;
+        activeUserForm = {
+          userId: kit.userId,
+          userName: kit.userName,
+          jobTitle: kit.jobTitle,
+          workingArea: kit.workingArea,
+          issueDate: kit.latestIssueDate || new Date().toISOString().split('T')[0],
+          regNo: currentRegNo,
+          requisitionNo: ''
+        };
+        liveAllocationQueue = kit.items.map(i => ({ ...i }));
+      } else {
+        const emp = toolService.getStaffByIdOrCard(uId) || { cardNumber: uId, id: uId };
+        autoFillEmployeeBoxes(emp, true);
+      }
+      navigateToTab('tools-add');
+      window.app?.showToast('Mechanic Kit Loaded', `Loaded kit for ${activeUserForm.userName} in Add Form`, 'info');
+    };
+  });
+
+  root.querySelectorAll('.btn-db-kit-merge').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.getAttribute('data-user');
+      const primary = btn.getAttribute('data-primary');
+      const all = (btn.getAttribute('data-all') || '').split(',').map(s => s.trim()).filter(r => r && r !== primary);
+      if (!uId || !primary || all.length === 0) return;
+      ensureAdminAccess('Merge Mechanic Registration Batches', async () => {
+        const confirmed = confirm(`Merge all records from secondary batches (${all.join(', ')}) into Primary Reg #${primary} for this mechanic?\n\nThis permanently unifies all previous imported tools with new registrations.`);
+        if (confirmed) {
+          await toolService.mergeRegistrationBatches(primary, all);
+          const container = document.getElementById('tools-tab-content-container');
+          if (container) {
+            container.innerHTML = renderActiveTab('database-page');
+            initToolsManagementEvents();
+          }
+          window.app?.showToast('Batches Unified', `Successfully merged records into Reg #${primary}!`, 'success');
+        }
+      });
+    };
+  });
+
   // Edit Allocation Row in Table Explorer & Find
   root.querySelectorAll('.btn-db-edit-alloc, .btn-edit-alloc-find').forEach(btn => {
     btn.onclick = () => {
@@ -4873,21 +5424,21 @@ export function initToolsManagementEvents() {
     let isDbSyncingFromTable = false;
     let isDbSyncingFromSticky = false;
 
-    dbTableScroll.addEventListener('scroll', () => {
+    dbTableScroll.onscroll = () => {
       if (!isDbSyncingFromSticky) {
         isDbSyncingFromTable = true;
         dbStickyScroll.scrollLeft = dbTableScroll.scrollLeft;
         setTimeout(() => { isDbSyncingFromTable = false; }, 15);
       }
-    });
+    };
 
-    dbStickyScroll.addEventListener('scroll', () => {
+    dbStickyScroll.onscroll = () => {
       if (!isDbSyncingFromTable) {
         isDbSyncingFromSticky = true;
         dbTableScroll.scrollLeft = dbStickyScroll.scrollLeft;
         setTimeout(() => { isDbSyncingFromSticky = false; }, 15);
       }
-    });
+    };
 
     if (btnDbScrollLeft) {
       btnDbScrollLeft.onclick = () => {
@@ -4920,39 +5471,40 @@ function openStaffSelectorModal() {
   const modalLayer = document.getElementById('modal-layer');
   if (!modalLayer) return;
 
-  const allStaff = employeeService.getAllEmployees() || [];
+  const allStaff = toolService.searchManpowerStaff('');
 
   modalLayer.innerHTML = `
     <div class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;">
       <div style="background: #1e293b; border: 1.5px solid #3b82f6; border-radius: 12px; width: 100%; max-width: 650px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6);">
         
         <div style="background: #0284c7; color: #fff; padding: 12px 18px; font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; align-items: center;">
-          <span>Select Employee from Manpower Module</span>
+          <span>Select Employee from Manpower &amp; Equipment Registry</span>
           <button id="btn-close-staff-modal" style="background: transparent; color: #fff; border: none; font-size: 18px; cursor: pointer;">✕</button>
         </div>
 
         <div style="padding: 12px 16px; border-bottom: 1px solid #334155;">
-          <input type="text" id="modal-staff-search" placeholder="Filter by Name, ID, Designation, Area..." 
+          <input type="text" id="modal-staff-search" placeholder="Filter by Name, ID, Card #, Designation, Area..." 
             style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 8px 12px; font-size: 13px;" />
         </div>
 
         <div id="modal-staff-list" style="flex: 1; overflow-y: auto; padding: 8px;">
-          ${allStaff.map(s => `
-            <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
+          ${allStaff.slice(0, 50).map(s => `
+            <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation || 'Mechanic'}" data-area="${s.workingArea || ''}"
               style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <div style="font-weight: 700; color: #f1f5f9; font-size: 13.5px;">${s.name}</div>
                 <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">
-                  <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation} • ${s.workingArea}
+                  <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation || 'Mechanic'} • ${s.workingArea || ''}
                 </div>
               </div>
               <div>
-                <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;'}">
-                  ${s.status}
+                <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.isLegacyAllocation ? 'rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7;' : (s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;')}">
+                  ${s.isLegacyAllocation ? '🛠️ Kit Reg #' + s.primaryRegNo : (s.status || 'ACTIVE')}
                 </span>
               </div>
             </div>
           `).join('')}
+          ${allStaff.length > 50 ? `<div style="text-align: center; color: #64748b; font-size: 11px; padding: 6px;">Showing first 50 staff. Type in search box above to filter.</div>` : ''}
         </div>
 
         <div style="padding: 10px 16px; background: #0f172a; border-top: 1px solid #334155; text-align: right;">
@@ -4974,28 +5526,23 @@ function openStaffSelectorModal() {
       const q = searchInp.value.toLowerCase().trim();
       clearTimeout(staffSearchTimer);
       staffSearchTimer = setTimeout(() => {
-        const filtered = allStaff.filter(s =>
-          (s.name && s.name.toLowerCase().includes(q)) ||
-          (s.cardNumber && String(s.cardNumber).toLowerCase().includes(q)) ||
-          (s.designation && s.designation.toLowerCase().includes(q)) ||
-          (s.workingArea && s.workingArea.toLowerCase().includes(q))
-        );
-        staffList.innerHTML = filtered.map(s => `
-        <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
+        const filtered = toolService.searchManpowerStaff(q);
+        staffList.innerHTML = filtered.slice(0, 50).map(s => `
+        <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation || 'Mechanic'}" data-area="${s.workingArea || ''}"
           style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <div style="font-weight: 700; color: #f1f5f9; font-size: 13.5px;">${s.name}</div>
             <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">
-              <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation} • ${s.workingArea}
+              <span style="font-family: monospace; color: #38bdf8; font-weight: 700;">${s.cardNumber || s.id}</span> • ${s.designation || 'Mechanic'} • ${s.workingArea || ''}
             </div>
           </div>
           <div>
-            <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;'}">
-              ${s.status}
+            <span style="font-size: 10.5px; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: ${s.isLegacyAllocation ? 'rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7;' : (s.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #86efac;' : 'rgba(239, 68, 68, 0.2); color: #fca5a5;')}">
+              ${s.isLegacyAllocation ? '🛠️ Kit Reg #' + s.primaryRegNo : (s.status || 'ACTIVE')}
             </span>
           </div>
         </div>
-      `).join('');
+      `).join('') + (filtered.length > 50 ? `<div style="text-align: center; color: #64748b; font-size: 11px; padding: 6px;">Showing top 50 of ${filtered.length} matches. Refine search for more.</div>` : '');
       bindStaffModalClicks();
       }, 120);
     };
@@ -5006,29 +5553,14 @@ function openStaffSelectorModal() {
       item.onclick = () => {
         const id = item.getAttribute('data-id');
         const emp = toolService.getStaffByIdOrCard(id) || {
+          id,
           cardNumber: id,
           name: item.getAttribute('data-name'),
           designation: item.getAttribute('data-title'),
           workingArea: item.getAttribute('data-area')
         };
-        activeUserForm.userId = emp.cardNumber || emp.id || '';
-        activeUserForm.userName = emp.name || '';
-        activeUserForm.jobTitle = emp.designation || '';
-        activeUserForm.workingArea = emp.workingArea || emp.department || '';
         modalLayer.innerHTML = '';
-
-        // Screen 1
-        if (document.getElementById('input-emp-id')) document.getElementById('input-emp-id').value = activeUserForm.userId;
-        if (document.getElementById('input-emp-name')) document.getElementById('input-emp-name').value = activeUserForm.userName;
-        if (document.getElementById('input-emp-title')) document.getElementById('input-emp-title').value = activeUserForm.jobTitle;
-        if (document.getElementById('input-emp-area')) document.getElementById('input-emp-area').value = activeUserForm.workingArea;
-
-        // Screen 2
-        if (document.getElementById('input-add-user-id')) document.getElementById('input-add-user-id').value = activeUserForm.userId;
-        if (document.getElementById('input-add-user-name')) document.getElementById('input-add-user-name').value = activeUserForm.userName;
-        if (document.getElementById('input-add-job-title')) document.getElementById('input-add-job-title').value = activeUserForm.jobTitle;
-        if (document.getElementById('input-add-working-area')) document.getElementById('input-add-working-area').value = activeUserForm.workingArea;
-        // Form inputs are populated directly; no blocking popup needed
+        autoFillEmployeeBoxes(emp, true);
       };
     });
   }
@@ -7133,14 +7665,22 @@ export function openBatchToolsAllocationModal() {
     const chkSelectAllHeader = document.getElementById('chk-batch-select-all-header');
     if (chkSelectAllHeader) {
       chkSelectAllHeader.onchange = (e) => {
+        const allItems = getAllCatalogItems(batchCategory);
+        const q = batchSearch.toLowerCase().trim();
+        const currentFiltered = allItems.filter(it => {
+          if (!q) return true;
+          return (it.name && it.name.toLowerCase().includes(q)) ||
+            (it.code && String(it.code).toLowerCase().includes(q)) ||
+            (it.category && it.category.toLowerCase().includes(q));
+        });
         if (e.target.checked) {
-          filtered.forEach(it => {
+          currentFiltered.forEach(it => {
             if (!selectedMap.has(it.id)) {
               selectedMap.set(it.id, { item: it, quantity: it.defaultQty || '1', changeStatus: 'NEW_ISSUE' });
             }
           });
         } else {
-          filtered.forEach(it => {
+          currentFiltered.forEach(it => {
             selectedMap.delete(it.id);
           });
         }
@@ -7393,7 +7933,11 @@ export function matchItemToCatalog(rawName, catalogList) {
   // 1. Check Factory Aliases first
   for (const alias of OCR_FACTORY_ALIASES) {
     if (alias.regex.test(cleanRaw)) {
-      const match = catalogList.find(c => c.name.toLowerCase().includes(alias.targetName.toLowerCase()));
+      const match = catalogList.find(c => {
+        const cn = (c.name || '').toLowerCase();
+        const tn = (alias.targetName || '').toLowerCase();
+        return cn.includes(tn) || (tn.includes('diamond') && cn.includes('dimond')) || (tn.includes('dimond') && cn.includes('diamond'));
+      });
       if (match) {
         return { item: match, confidence: 0.99, method: 'FACTORY_ALIAS' };
       }
