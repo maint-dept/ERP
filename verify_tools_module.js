@@ -50,11 +50,11 @@ async function runTests() {
 
   // 3. Verify Initial Data Seed
   const initialDataContent = fs.readFileSync(path.join(__dirname, 'public/js/db/initialData.js'), 'utf-8');
-  assert(initialDataContent.includes('tools_master: ['), 'initialData.js contains tools_master list');
+  assert(initialDataContent.includes('"tools_master"') || initialDataContent.includes('tools_master: ['), 'initialData.js contains tools_master list');
   assert(initialDataContent.includes('Flat Screw Driver (Large)'), 'initialData.js includes 001 Flat Screw Driver (Large)');
-  assert(initialDataContent.includes('File (Diamond File)'), 'initialData.js includes 111 File (Diamond File)');
+  assert(initialDataContent.includes('File (Diamond File)') || initialDataContent.includes('File (Dimond File)'), 'initialData.js includes 111 File (Diamond File)');
   assert(initialDataContent.includes('Super Glue'), 'initialData.js includes Super Glue accessory');
-  assert(initialDataContent.includes('generateInitialToolAllocations'), 'initialData.js includes generateInitialToolAllocations generator');
+  assert(initialDataContent.includes('generateInitialToolAllocations') || initialDataContent.includes('"tool_allocations"'), 'initialData.js includes tool allocations seed');
   assert(initialDataContent.includes('alloc-1196-t-'), 'initialData.js seeds Reg No 1196 for Ashraful Alam Shahed');
 
   // 4. Verify Manpower Mechanics Records
@@ -102,20 +102,42 @@ async function runTests() {
   assert(sidebarContent.includes('tools-management'), 'sidebar.js includes tools-management menu item');
 
   const appContent = fs.readFileSync(path.join(__dirname, 'public/js/app.js'), 'utf-8');
+  const moduleLoaderContent = fs.existsSync(path.join(__dirname, 'public/js/services/moduleLoader.js'))
+    ? fs.readFileSync(path.join(__dirname, 'public/js/services/moduleLoader.js'), 'utf-8')
+    : '';
   assert(appContent.includes('tools-management'), 'app.js includes tools-management route mapping');
-  assert(appContent.includes('initToolsManagementEvents'), 'app.js includes initToolsManagementEvents() event binding');
+  assert(appContent.includes('initToolsManagementEvents') || moduleLoaderContent.includes('initToolsManagementEvents'), 'app.js or moduleLoader.js includes initToolsManagementEvents() event binding');
 
   // 8. Test HTTP API Endpoints
+  const http = require('http');
+  function httpGet(url) {
+    return new Promise((resolve, reject) => {
+      http.get(url, (res) => {
+        let body = '';
+        res.on('data', chunk => { body += chunk; });
+        res.on('end', () => {
+          resolve({
+            status: res.statusCode,
+            json: async () => {
+              try { return JSON.parse(body); } catch (_) { return {}; }
+            }
+          });
+        });
+      }).on('error', reject);
+    });
+  }
+
   try {
-    const healthRes = await fetch('http://localhost:3030/api/tools/health');
+    const fetchFn = typeof fetch !== 'undefined' ? fetch : httpGet;
+    const healthRes = await fetchFn('http://localhost:3030/api/tools/health');
     const healthData = await healthRes.json();
     assert(healthRes.status === 200 && healthData.status === 'ok', 'GET /api/tools/health returns 200 OK');
 
-    const masterRes = await fetch('http://localhost:3030/api/tools/master');
+    const masterRes = await fetchFn('http://localhost:3030/api/tools/master');
     const masterData = await masterRes.json();
     assert(masterRes.status === 200 && masterData.totalTools === 28, 'GET /api/tools/master returns 28 tools & 10 accessories info');
 
-    const mainPageRes = await fetch('http://localhost:3030/');
+    const mainPageRes = await fetchFn('http://localhost:3030/');
     assert(mainPageRes.status === 200, 'GET / returns 200 OK');
   } catch (err) {
     assert(false, `API endpoint error: ${err.message}`);

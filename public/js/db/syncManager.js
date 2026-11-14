@@ -208,7 +208,7 @@ class SyncManager {
             const t = (conf.type || '').toUpperCase();
             if (t === 'MYSQL') {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
-              if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+              if (typeof window !== 'undefined' && window.location && (window.location.hostname || '').includes('moviezonex.com')) {
                 ep = window.location.origin + '/mysql_api.php';
               } else if (!ep || ep === '/api/db/mysql' || ep === 'mysql_api.php' || ep === '/mysql_api.php' || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
                 ep = defaultMysqlEndpoint;
@@ -222,7 +222,7 @@ class SyncManager {
               adapter = new MysqlAdapter(conf);
             } else if (t === 'POSTGRESQL' || t === 'POSTGRES') {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
-              if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+              if (typeof window !== 'undefined' && window.location && (window.location.hostname || '').includes('moviezonex.com')) {
                 ep = window.location.origin + '/api/pg_api.php';
               } else if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
                 ep = defaultPgEndpoint;
