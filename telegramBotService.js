@@ -282,6 +282,54 @@ function formatTransferCard(tr) {
 `.trim();
 }
 
+// Dynamic Adaptive RBAC Menu Builder for Operations Bot (@MainterpBot)
+function buildDynamicUserMenu(user) {
+  const keyboard = [];
+  const commands = [];
+
+  const canMachines = hasPermission(user, 'machines', 'VIEW');
+  const canPM = hasPermission(user, 'preventive_maintenance', 'VIEW');
+  const canTools = hasPermission(user, 'tools_management', 'VIEW');
+  const canTransfers = hasPermission(user, 'transfers', 'VIEW');
+
+  const row1 = [];
+  if (canMachines) {
+    row1.push({ text: '🔍 Search Machine' });
+    commands.push('🔍 /find <serial> — মেশিন সার্চ ও অবস্থা পর্যবেক্ষণ');
+  }
+  if (canPM) {
+    row1.push({ text: '🛠️ PM Checklist' });
+    commands.push('🛠️ /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
+  }
+  if (row1.length > 0) keyboard.push(row1);
+
+  const row2 = [];
+  if (canTools) {
+    row2.push({ text: '🔧 My Tools' });
+    commands.push('🔧 /tools — আপনার নামে বরাদ্দকৃত টুলস ও যন্ত্রপাতি');
+  }
+  if (canTransfers) {
+    row2.push({ text: '🚚 Transfers' });
+    commands.push('🚚 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
+  }
+  if (row2.length > 0) keyboard.push(row2);
+
+  const row3 = [];
+  if (canMachines) {
+    row3.push({ text: '🚑 Ambulance Fleet' });
+    commands.push('🚑 /ambulance — স্ট্যান্ডবাই অ্যাম্বুলেন্স মেশিন তালিকা');
+  }
+  row3.push({ text: '🚪 Disconnect' });
+  keyboard.push(row3);
+
+  return {
+    keyboard,
+    commandsText: commands.length > 0 
+      ? commands.join('\n') 
+      : '⚠️ আপনার অ্যাকাউন্টে বর্তমানে কোনো সক্রিয় ফিচার পারমিশন বরাদ্দ নেই।'
+  };
+}
+
 // ============================================================================
 // 1. OPERATIONS BOT HANDLER (@MainterpBot) - General Users & Floor Staff
 // ============================================================================
@@ -319,10 +367,21 @@ async function handleUserBotMessage(msg) {
 
     logAuditAndAlert(db, targetUser, 'USER_TELEGRAM_LINKED', 'USER', targetUser.id, `Linked Operations Bot (@MainterpBot)`);
 
+    const { keyboard, commandsText } = buildDynamicUserMenu(targetUser);
+
     return userBotRequest('sendMessage', {
       chat_id: chatId,
-      text: `🎉 <b>অভিনন্দন ${targetUser.name}!</b>\nঅ্যাকাউন্ট সফলভাবে সংযুক্ত হয়েছে।\nরোল: <code>${targetUser.presetName || targetUser.role}</code>\n\nকমান্ড দেখতে /start লিখুন।`,
-      parse_mode: 'HTML'
+      text: `
+🎉 <b>অভিনন্দন ${targetUser.name}!</b>
+━━━━━━━━━━━━━━━━━━━━
+আপনার অ্যাকাউন্ট সফলভাবে সংযুক্ত হয়েছে।
+👤 <b>রোল:</b> <code>${targetUser.presetName || targetUser.role}</code>
+
+<b>আপনার অনুমোদিত ফিচারসমূহ:</b>
+${commandsText}
+`.trim(),
+      parse_mode: 'HTML',
+      reply_markup: { keyboard, resize_keyboard: true }
     });
   }
 
@@ -340,36 +399,198 @@ async function handleUserBotMessage(msg) {
 ২. প্রোফাইল থেকে <b>Telegram Bot & Alerts</b>-এ ক্লিক করে ৬ ডিজিটের কোড নিন।
 ৩. এখানে পাঠান: <code>/link YOUR_CODE</code>
 `.trim(),
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        reply_markup: { remove_keyboard: true }
       });
     }
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: '⚠️ আপনার টেলিগ্রাম অ্যাকাউন্টটি এখনও লিঙ্ক করা হয়নি। অনুগ্রহ করে `/start` লিখে নির্দেশনা দেখুন।',
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      reply_markup: { remove_keyboard: true }
     });
   }
 
-  // Operations Bot Menu
+  // Dynamic Operations Bot Menu (/start or /help)
   if (text === '/start' || text === '/help') {
+    const { keyboard, commandsText } = buildDynamicUserMenu(user);
+
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: `
 👋 <b>নমস্কার, ${user.name}!</b>
 🛡️ <b>অ্যাক্সেস রোল:</b> <code>${user.presetName || user.role}</code>
 ━━━━━━━━━━━━━━━━━━━━
-🔍 /find &lt;serial&gt; — মেশিন সার্চ ও অবস্থা পর্যবেক্ষণ
-🛠️ /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা
-🚑 /ambulance — স্ট্যান্ডবাই অ্যাম্বুলেন্স মেশিন
-🔧 /tools — আপনার নামে বরাদ্দকৃত টুলস
-🚪 /unlink — টেলিগ্রাম সংযোগ বিচ্ছিন্ন করুন
+<b>আপনার অনুমোদিত লাইভ ফিচারসমূহ:</b>
+${commandsText}
+
+<i>নিচের বাটনগুলোতে ট্যাপ করে সরাসরি অপশন ব্যবহার করুন:</i>
 `.trim(),
+      parse_mode: 'HTML',
+      reply_markup: { keyboard, resize_keyboard: true }
+    });
+  }
+
+  // Machine Search Prompt button
+  if (text === '🔍 Search Machine') {
+    if (!hasPermission(user, 'machines', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🔍 অনুগ্রহ করে মেশিনের <b>সিরিয়াল নম্বর, মডেল বা অ্যাসেট আইডি</b> লিখে পাঠান (যেমন: <code>D/N-A-92</code> বা <code>857</code> বা <code>APW</code>):',
       parse_mode: 'HTML'
     });
   }
 
-  // Machine Search
+  // PM Checklist Button or /pm
+  if (text === '🛠️ PM Checklist' || text === '/pm') {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+
+    const db = getDatabase();
+    const pms = (db.preventive_maintenance || []).slice(0, 6);
+
+    if (pms.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ বর্তমানে কোনো পেন্ডিং প্রিভেন্টিভ মেইনটেন্যান্স (PM) শিডিউল নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+
+    let reply = `🛠️ <b>আজকের প্রিভেন্টিভ মেইনটেন্যান্স (PM) তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    pms.forEach((p, idx) => {
+      const statusIcon = p.serviceStatus === 'OVERDUE' ? '🔴' : '🟡';
+      reply += `<b>${idx + 1}. ${p.machineName || 'Machine'}</b> (<code>${p.serialNumber || '—'}</code>)\n`;
+      reply += `   📍 Floor: ${p.floor || '—'}, Line: ${p.line || '—'}\n`;
+      reply += `   📊 Status: ${statusIcon} ${p.serviceStatus || 'DUE'} | Date: ${p.nextServiceDate || p.serviceDate || 'Today'}\n\n`;
+    });
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // My Tools Button or /tools
+  if (text === '🔧 My Tools' || text === '/tools') {
+    if (!hasPermission(user, 'tools_management', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+
+    const db = getDatabase();
+    const userCode = (user.employeeId || user.username || '').toLowerCase();
+    const userName = (user.name || '').toLowerCase();
+
+    const myAllocations = (db.tool_allocations || []).filter(a => {
+      const aUser = (a.userId || '').toLowerCase();
+      const aName = (a.userName || '').toLowerCase();
+      return (userCode && aUser === userCode) || (userName && aName.includes(userName));
+    });
+
+    if (myAllocations.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `ℹ️ আপনার আইডি (<code>${user.employeeId || user.username}</code>) নামে বর্তমানে কোনো টুলস বা ইকুইপমেন্ট ইস্যু করা নেই।`,
+        parse_mode: 'HTML'
+      });
+    }
+
+    let reply = `🔧 <b>আপনার নামে বরাদ্দকৃত টুলস তালিকা (${myAllocations.length} টি):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    myAllocations.forEach((t, idx) => {
+      reply += `<b>${idx + 1}. ${t.itemName || 'Tool'}</b>\n`;
+      reply += `   🔢 Qty: <b>${t.quantity || 1}</b> | Reg No: <code>${t.regNo || '—'}</code> | Date: ${t.issueDate || '—'}\n`;
+    });
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Transfers Button or /transfers
+  if (text === '🚚 Transfers' || text === '/transfers') {
+    if (!hasPermission(user, 'transfers', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+
+    const db = getDatabase();
+    const pendingRequests = (db.transfer_requests || []).filter(r => r.status === 'PENDING' || r.status === 'IN_PROGRESS');
+
+    if (pendingRequests.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ <b>বর্তমানে কোনো পেন্ডিং ট্রান্সফার রিকোয়েস্ট নেই।</b>',
+        parse_mode: 'HTML'
+      });
+    }
+
+    for (const tr of pendingRequests.slice(0, 3)) {
+      await userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: formatTransferCard(tr),
+        parse_mode: 'HTML'
+      });
+    }
+    return;
+  }
+
+  // Standby Ambulance Button or /ambulance
+  if (text === '🚑 Ambulance Fleet' || text === '/ambulance') {
+    if (!hasPermission(user, 'machines', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+
+    const db = getDatabase();
+    const ambulances = (db.machines || []).filter(m => m.isAmbulance === true);
+    if (ambulances.length === 0) {
+      return userBotRequest('sendMessage', { chat_id: chatId, text: 'ℹ️ বর্তমানে কোনো মেশিন অ্যাম্বুলেন্স হিসেবে মার্ক করা নেই।' });
+    }
+    let reply = `🚑 <b>স্ট্যান্ডবাই অ্যাম্বুলেন্স মেশিন (${ambulances.length} টি)</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    ambulances.slice(0, 8).forEach((m, idx) => {
+      reply += `<b>${idx + 1}. ${m.machineName}</b> (<code>${m.serialNumber}</code>)\n   📍 ${m.floor || '—'}, Line: ${m.line || '—'}\n`;
+    });
+    return userBotRequest('sendMessage', { chat_id: chatId, text: reply, parse_mode: 'HTML' });
+  }
+
+  // Disconnect / Unlink
+  if (text === '🚪 Disconnect' || text === '/unlink') {
+    unlinkUserTelegram(user.id);
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '👋 টেলিগ্রাম সংযোগ বিচ্ছিন্ন করা হয়েছে। পুনরায় সংযোগ করতে `/start` চাপুন।',
+      reply_markup: { remove_keyboard: true }
+    });
+  }
+
+  // Search Machine by Serial / Text Query
   if (text.startsWith('/find ') || (!text.startsWith('/') && text.length >= 2)) {
+    if (!hasPermission(user, 'machines', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ আপনার মেশিনারি ইনভেন্টরি দেখার অনুমতি নেই।'
+      });
+    }
+
     const query = text.startsWith('/find ') ? text.replace('/find ', '').trim() : text;
     const db = getDatabase();
     const qLower = query.toLowerCase();
@@ -395,26 +616,6 @@ async function handleUserBotMessage(msg) {
       text: formatMachineCard(matches[0]),
       parse_mode: 'HTML'
     });
-  }
-
-  // Standby Ambulance
-  if (text === '/ambulance') {
-    const db = getDatabase();
-    const ambulances = (db.machines || []).filter(m => m.isAmbulance === true);
-    if (ambulances.length === 0) {
-      return userBotRequest('sendMessage', { chat_id: chatId, text: 'ℹ️ বর্তমানে কোনো মেশিন অ্যাম্বুলেন্স হিসেবে মার্ক করা নেই।' });
-    }
-    let reply = `🚑 <b>স্ট্যান্ডবাই অ্যাম্বুলেন্স মেশিন (${ambulances.length} টি)</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
-    ambulances.slice(0, 8).forEach((m, idx) => {
-      reply += `<b>${idx + 1}. ${m.machineName}</b> (<code>${m.serialNumber}</code>)\n   📍 ${m.floor || '—'}, Line: ${m.line || '—'}\n`;
-    });
-    return userBotRequest('sendMessage', { chat_id: chatId, text: reply, parse_mode: 'HTML' });
-  }
-
-  // Unlink
-  if (text === '/unlink') {
-    unlinkUserTelegram(user.id);
-    return userBotRequest('sendMessage', { chat_id: chatId, text: '👋 টেলিগ্রাম সংযোগ বিচ্ছিন্ন করা হয়েছে।' });
   }
 }
 
@@ -508,6 +709,11 @@ async function handleAdminBotMessage(msg) {
   // ==========================================
   // AUTHORIZED ADMIN SENTINEL COMMANDS
   // ==========================================
+  const adminKeyboard = [
+    [{ text: '🚚 Pending Gate Passes' }, { text: '📊 Factory Status' }],
+    [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
+    [{ text: '💾 Backup Database' }, { text: '📢 Broadcast Alert' }]
+  ];
 
   // /start or /help (Executive Dashboard)
   if (text === '/start' || text === '/help') {
@@ -528,32 +734,21 @@ async function handleAdminBotMessage(msg) {
 🚑 <b>Ambulance Standby:</b> <code>${ambulance}</code>
 🚚 <b>Pending Gate Passes:</b> <code>${pendingTr}</code>
 ━━━━━━━━━━━━━━━━━━━━
-<b>Executive Commands:</b>
-🚚 /transfers — Review & Authorize Gate Passes
-📊 /status — Live Factory Infrastructure Health
-🛡️ /audit — Stream Recent System Audit Logs
-🚑 /ambulance — Emergency Standby Fleet Tracking
-💾 /backup — Trigger Instant Database Snapshot
-📢 /broadcast &lt;text&gt; — Send Factory-wide Notice
+<b>Executive Live Menu:</b>
+🚚 <b>Pending Gate Passes</b> — Review & Authorize
+📊 <b>Factory Status</b> — Live Infrastructure Health
+🛡️ <b>Audit Trail</b> — Real-time System Change Log
+🚑 <b>Ambulance Fleet</b> — Standby Fleet Tracking
+💾 <b>Backup Database</b> — Instant Disk Snapshot
+📢 <b>Broadcast Alert</b> — Send Factory-wide Notice
 `.trim(),
       parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: `🚚 Pending Gate Passes (${pendingTr})`, callback_data: 'ADMIN_TRANSFERS' },
-            { text: '📊 Status & Health', callback_data: 'ADMIN_STATUS' }
-          ],
-          [
-            { text: '🛡️ Audit Trail Stream', callback_data: 'ADMIN_AUDIT' },
-            { text: '🚑 Ambulance Fleet', callback_data: 'ADMIN_AMBULANCE' }
-          ]
-        ]
-      }
+      reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
     });
   }
 
-  // /transfers (Gate Pass Authorization)
-  if (text === '/transfers') {
+  // Pending Gate Passes Button or /transfers
+  if (text === '🚚 Pending Gate Passes' || text === '/transfers') {
     const pendingRequests = (db.transfer_requests || []).filter(r => r.status === 'PENDING' || r.status === 'IN_PROGRESS');
 
     if (pendingRequests.length === 0) {
@@ -583,8 +778,8 @@ async function handleAdminBotMessage(msg) {
     return;
   }
 
-  // /audit (Audit Trail Stream)
-  if (text === '/audit') {
+  // Audit Trail Button or /audit
+  if (text === '🛡️ Audit Trail' || text === '/audit') {
     const logs = (db.audit_logs || []).slice(0, 7);
     if (logs.length === 0) {
       return adminBotRequest('sendMessage', { chat_id: chatId, text: 'ℹ️ কোনো অডিট লগ রেকর্ড নেই।' });
@@ -603,8 +798,8 @@ async function handleAdminBotMessage(msg) {
     });
   }
 
-  // /status (Live System Overview)
-  if (text === '/status') {
+  // Factory Status Button or /status
+  if (text === '📊 Factory Status' || text === '/status') {
     const machines = db.machines || [];
     const total = machines.length;
     const running = machines.filter(m => m.running || m.status === 'RUNNING').length;
@@ -629,8 +824,21 @@ async function handleAdminBotMessage(msg) {
     });
   }
 
-  // /backup (Trigger Instant Snapshot)
-  if (text === '/backup') {
+  // Ambulance Fleet Button or /ambulance
+  if (text === '🚑 Ambulance Fleet' || text === '/ambulance') {
+    const ambulances = (db.machines || []).filter(m => m.isAmbulance === true);
+    if (ambulances.length === 0) {
+      return adminBotRequest('sendMessage', { chat_id: chatId, text: 'ℹ️ বর্তমানে কোনো মেশিন অ্যাম্বুলেন্স হিসেবে মার্ক করা নেই।' });
+    }
+    let reply = `🚑 <b>Ambulance Fleet Status (${ambulances.length} Ready):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    ambulances.slice(0, 10).forEach((m, i) => {
+      reply += `${i+1}. <b>${m.machineName}</b> (<code>${m.serialNumber}</code>) — Floor: ${m.floor || '—'}, Line: ${m.line || '—'}\n`;
+    });
+    return adminBotRequest('sendMessage', { chat_id: chatId, text: reply, parse_mode: 'HTML' });
+  }
+
+  // Backup Database Button or /backup
+  if (text === '💾 Backup Database' || text === '/backup') {
     const snapshotName = `backup-manual-${Date.now()}.json`;
     const dest = path.join(DATA_DIR, 'backups', snapshotName);
     try {
@@ -644,6 +852,15 @@ async function handleAdminBotMessage(msg) {
     } catch (e) {
       return adminBotRequest('sendMessage', { chat_id: chatId, text: `❌ Backup failed: ${e.message}` });
     }
+  }
+
+  // Broadcast Alert Prompt
+  if (text === '📢 Broadcast Alert') {
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '📢 সমস্ত কর্মীদের কাছে জরুরি নোটিশ পাঠাতে নিচের ফরম্যাটে মেসেজ লিখুন:\n\n<code>/broadcast আপনার মেসেজ এখানে লিখুন</code>',
+      parse_mode: 'HTML'
+    });
   }
 
   // /broadcast <text>
