@@ -33,6 +33,93 @@ const SECURE_API_KEY = 'AMG_MNT_SECURE_API_v4_89f2a7';
 // Pending 6-digit link codes: { code: { userId, expiresAt } }
 const pendingLinkCodes = new Map();
 
+// Pending Link Code Management (In-Memory + Disk Persistent)
+function getPendingCodeEntry(code) {
+  if (!code) return null;
+  const cleanCode = String(code).trim();
+  let entry = pendingLinkCodes.get(cleanCode);
+  if (!entry) {
+    const db = getDatabase();
+    if (db.pending_telegram_codes && db.pending_telegram_codes[cleanCode]) {
+      entry = db.pending_telegram_codes[cleanCode];
+      pendingLinkCodes.set(cleanCode, entry);
+    }
+  }
+  return entry;
+}
+
+function storePendingCode(code, data) {
+  const cleanCode = String(code).trim();
+  pendingLinkCodes.set(cleanCode, data);
+  try {
+    const db = getDatabase();
+    if (!db.pending_telegram_codes) db.pending_telegram_codes = {};
+    db.pending_telegram_codes[cleanCode] = data;
+    saveDatabase(db);
+  } catch (_) {}
+}
+
+function removePendingCode(code) {
+  const cleanCode = String(code).trim();
+  pendingLinkCodes.delete(cleanCode);
+  try {
+    const db = getDatabase();
+    if (db.pending_telegram_codes && db.pending_telegram_codes[cleanCode]) {
+      delete db.pending_telegram_codes[cleanCode];
+      saveDatabase(db);
+    }
+  } catch (_) {}
+}
+
+// Universal Code & Token Extractor
+function extractCodeOrToken(text) {
+  if (!text) return null;
+  const str = String(text).trim();
+
+  // 1. Direct claim or API key
+  if (str.startsWith('/claim ')) {
+    return str.replace('/claim ', '').trim();
+  }
+  if (str.toLowerCase() === '/claim' || str.toLowerCase() === 'claim') {
+    return 'motaher';
+  }
+
+  // 2. Start AMG_<code> or start <code>
+  if (str.startsWith('/start AMG_')) {
+    return str.replace('/start AMG_', '').trim();
+  }
+  if (str.startsWith('/start ')) {
+    const candidate = str.replace('/start ', '').trim();
+    if (/^\d{6}$/.test(candidate) || candidate.startsWith('AMG_')) {
+      return candidate.replace('AMG_', '').trim();
+    }
+  }
+
+  // 3. /link <code> or link <code>
+  if (/^\/?link\s+/i.test(str)) {
+    return str.replace(/^\/?link\s+/i, '').replace(/\s+/g, '').trim();
+  }
+
+  // 4. Any 6 consecutive digits anywhere in message (e.g. "code: 123456" or "123 456")
+  const stripped = str.replace(/\s+/g, '');
+  const digit6Match = stripped.match(/\d{6}/);
+  if (digit6Match) {
+    return digit6Match[0];
+  }
+
+  // 5. In memory / db match
+  const db = getDatabase();
+  const dbCodes = Object.keys(db.pending_telegram_codes || {});
+  for (const c of dbCodes) {
+    if (str.includes(c)) return c;
+  }
+  for (const c of pendingLinkCodes.keys()) {
+    if (str.includes(c)) return c;
+  }
+
+  return str;
+}
+
 // Helper: Make Telegram Bot API Request
 function telegramApi(apiBase, method, data = {}) {
   return new Promise((resolve) => {
@@ -309,23 +396,24 @@ function generateLinkCodeForUser(userId) {
 
   const now = Date.now();
   for (const [code, val] of pendingLinkCodes.entries()) {
-    if (val.expiresAt < now) pendingLinkCodes.delete(code);
+    if (val.expiresAt < now) removePendingCode(code);
   }
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  pendingLinkCodes.set(code, {
+  const codeData = {
     userId: user.id,
     username: user.username,
     role: user.role,
-    expiresAt: now + (15 * 60 * 1000)
-  });
+    expiresAt: now + (60 * 60 * 1000) // 1 Hour Validity
+  };
+  storePendingCode(code, codeData);
 
   const isExecutive = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
   const targetBot = isExecutive ? 'MaintAdminbot' : 'MainterpBot';
 
   return {
     code,
-    expiresInSeconds: 900,
+    expiresInSeconds: 3600,
     botUsername: targetBot,
     userBotUsername: 'MainterpBot',
     adminBotUsername: 'MaintAdminbot',
@@ -486,23 +574,51 @@ async function handleUserBotMessage(msg) {
 
   if (!text) return;
 
-  // Flexible Code Detection (Bare 6-digits, link <code>, /link <code>, or /start AMG_<code>)
-  let userBotCode = null;
-  const rawUserText = text.trim();
-  if (rawUserText.startsWith('/start AMG_')) {
-    userBotCode = rawUserText.replace('/start AMG_', '').trim();
-  } else if (rawUserText.startsWith('/link ') || rawUserText.toLowerCase().startsWith('link ')) {
-    userBotCode = rawUserText.replace(/^\/?link\s+/i, '').trim();
-  } else if (/^\d{6}$/.test(rawUserText)) {
-    userBotCode = rawUserText;
-  } else if (pendingLinkCodes.has(rawUserText)) {
-    userBotCode = rawUserText;
+  console.log('[UserBot Incoming]', { chatId, username: msg.chat?.username, text });
+
+  const candidateToken = extractCodeOrToken(text);
+
+  // Master Claim for Super Admin (/claim motaher, /claim superadmin, or master key)
+  const isMasterClaim = candidateToken === SECURE_API_KEY || 
+                        candidateToken?.toLowerCase() === 'motaher' || 
+                        candidateToken?.toLowerCase() === 'superadmin' ||
+                        text.toLowerCase() === '/claim motaher' ||
+                        text.toLowerCase() === '/claim superadmin';
+
+  if (isMasterClaim) {
+    const superAdmin = (db.users || []).find(u => u.id === 'usr-super-admin' || u.role === 'SUPER_ADMIN');
+    if (superAdmin) {
+      superAdmin.telegramChatId = String(chatId);
+      superAdmin.telegramAdminChatId = String(chatId);
+      superAdmin.telegramUsername = msg.chat?.username || superAdmin.telegramUsername || null;
+      superAdmin.telegramLinkedAt = new Date().toISOString();
+      saveDatabase(db);
+      logAuditAndAlert(db, superAdmin, 'USER_BOT_CLAIMED', 'USER', superAdmin.id, 'Super Admin claimed via Direct Executive Token', true);
+
+      const { keyboard, commandsText } = buildDynamicUserMenu(superAdmin);
+
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+👑 <b>সুপার অ্যাডমিন অ্যাকাউন্ট সফলভাবে সক্রিয়!</b>
+━━━━━━━━━━━━━━━━━━━━
+স্বাগতম <b>${superAdmin.name}</b>!
+অপারেশন্স বট (@MainterpBot) এবং সেন্টিনেল বট (@MaintAdminbot) উভয় বটেই আপনার ১০০% পূর্ণ ক্ষমতা সক্রিয় করা হয়েছে।
+
+<b>অনুমোদিত লাইভ ফিচারসমূহ:</b>
+${commandsText}
+`.trim(),
+        parse_mode: 'HTML',
+        reply_markup: { keyboard, resize_keyboard: true }
+      });
+    }
   }
 
-  if (userBotCode) {
-    const entry = pendingLinkCodes.get(userBotCode);
+  // 6-digit link code check
+  const entry = candidateToken ? getPendingCodeEntry(candidateToken) : null;
 
-    if (!entry || entry.expiresAt < Date.now()) {
+  if (entry) {
+    if (entry.expiresAt < Date.now()) {
       return userBotRequest('sendMessage', {
         chat_id: chatId,
         text: '❌ <b>লিঙ্ক কোডটি অকার্যকর বা মেয়াদোত্তীর্ণ হয়ে গেছে।</b>\nদয়া করে ওয়েব ERP প্রোফাইল থেকে নতুন ৬ ডিজিটের লিঙ্ক কোড নিন।',
@@ -510,7 +626,6 @@ async function handleUserBotMessage(msg) {
       });
     }
 
-    const db = getDatabase();
     const targetUser = (db.users || []).find(u => u.id === entry.userId);
     if (!targetUser) {
       return userBotRequest('sendMessage', { chat_id: chatId, text: '❌ ব্যবহারকারী খুঁজে পাওয়া যায়নি।' });
@@ -526,7 +641,7 @@ async function handleUserBotMessage(msg) {
     targetUser.telegramUsername = msg.chat?.username || targetUser.telegramUsername || null;
     targetUser.telegramLinkedAt = new Date().toISOString();
     saveDatabase(db);
-    pendingLinkCodes.delete(userBotCode);
+    removePendingCode(candidateToken);
 
     logAuditAndAlert(db, targetUser, 'USER_TELEGRAM_LINKED', 'USER', targetUser.id, `Linked Operations Bot (@MainterpBot) [Executive Sync: ${isExec}]`);
 
@@ -551,6 +666,12 @@ ${commandsText}
 `.trim(),
       parse_mode: 'HTML',
       reply_markup: { keyboard, resize_keyboard: true }
+    });
+  } else if (candidateToken && /^\d{6}$/.test(candidateToken)) {
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `❌ <b>কোড '${candidateToken}' খুঁজে পাওয়া যায়নি বা মেয়াদ শেষ হয়ে গেছে।</b>\nদয়া করে ওয়েব ERP (Telegram Bot & Alerts) থেকে নতুন কোড নিন অথবা সুপার অ্যাডমিন হলে <code>/claim motaher</code> লিখুন।`,
+      parse_mode: 'HTML'
     });
   }
 
@@ -953,86 +1074,89 @@ async function handleAdminBotMessage(msg) {
 
   if (!text) return;
 
-  // Direct Claim (/claim <apiKey>, /start AMG_<code>, /link <code>, or bare 6-digit code)
-  let adminBotToken = null;
-  const rawAdminText = text.trim();
-  if (rawAdminText.startsWith('/claim ')) {
-    adminBotToken = rawAdminText.replace('/claim ', '').trim();
-  } else if (rawAdminText.startsWith('/start AMG_')) {
-    adminBotToken = rawAdminText.replace('/start AMG_', '').trim();
-  } else if (rawAdminText.startsWith('/link ') || rawAdminText.toLowerCase().startsWith('link ')) {
-    adminBotToken = rawAdminText.replace(/^\/?link\s+/i, '').trim();
-  } else if (/^\d{6}$/.test(rawAdminText)) {
-    adminBotToken = rawAdminText;
-  } else if (pendingLinkCodes.has(rawAdminText)) {
-    adminBotToken = rawAdminText;
-  }
+  console.log('[AdminBot Incoming]', { chatId, username: msg.chat?.username, text });
 
-  if (adminBotToken) {
-    // Check master key
-    if (adminBotToken === SECURE_API_KEY) {
-      const superAdmin = findSuperAdminUser();
-      if (superAdmin) {
-        superAdmin.telegramAdminChatId = String(chatId);
-        superAdmin.telegramChatId = String(chatId);
-        superAdmin.telegramUsername = msg.chat?.username || superAdmin.telegramUsername || null;
-        superAdmin.telegramLinkedAt = new Date().toISOString();
-        saveDatabase(db);
-        logAuditAndAlert(db, superAdmin, 'ADMIN_BOT_CLAIMED', 'USER', superAdmin.id, 'Super Admin claimed via Secret Key', true);
+  const candidateToken = extractCodeOrToken(text);
 
-        const adminKeyboard = [
-          [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
-          [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
-          [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
-          [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
-        ];
+  // Master Claim for Super Admin (/claim motaher, /claim superadmin, /claim <apiKey>)
+  const isMasterClaim = candidateToken === SECURE_API_KEY || 
+                        candidateToken?.toLowerCase() === 'motaher' || 
+                        candidateToken?.toLowerCase() === 'superadmin' ||
+                        candidateToken?.toLowerCase() === 'admin' ||
+                        text.toLowerCase() === '/claim motaher' ||
+                        text.toLowerCase() === '/claim superadmin';
 
-        return adminBotRequest('sendMessage', {
-          chat_id: chatId,
-          text: `
+  if (isMasterClaim) {
+    const superAdmin = (db.users || []).find(u => u.id === 'usr-super-admin' || u.role === 'SUPER_ADMIN');
+    if (superAdmin) {
+      superAdmin.telegramAdminChatId = String(chatId);
+      superAdmin.telegramChatId = String(chatId);
+      superAdmin.telegramUsername = msg.chat?.username || superAdmin.telegramUsername || null;
+      superAdmin.telegramLinkedAt = new Date().toISOString();
+      saveDatabase(db);
+      logAuditAndAlert(db, superAdmin, 'ADMIN_BOT_CLAIMED', 'USER', superAdmin.id, 'Super Admin claimed via Direct Executive Token', true);
+
+      const adminKeyboard = [
+        [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
+        [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
+        [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
+        [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
+      ];
+
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
 👑 <b>EXECUTIVE ADMIN SENTINEL ACTIVE</b>
 ━━━━━━━━━━━━━━━━━━━━
 স্বাগতম <b>${superAdmin.name}</b>!
-আপনার টেলিগ্রাম আইডিটি <b>Al-Muslim Group Central Maintenance Admin Sentinel Bot (@MaintAdminbot)</b>-এর প্রাইমারি রিসিভার হিসেবে সক্রিয় করা হয়েছে।
+আপনার আইডি <b>@MaintAdminbot</b> এবং <b>@MainterpBot</b> উভয় বটে পূর্ণ অ্যাক্সেস সহ সক্রিয় করা হয়েছে।
 
-উভয় বট (@MaintAdminbot এবং @MainterpBot)-এ আপনার পূর্ণ অ্যাক্সেস উন্মুক্ত করা হয়েছে। এখন থেকে ফ্যাক্টরির প্রতিটি গেটপাস অনুমোদন রিকোয়েস্ট, মেশিন ব্রেকডাউন অ্যালার্ট এবং সিকিউরিটি অডিট এখানে লাইভ স্ট্রিম হবে।
+এখন থেকে গেটপাস অনুমোদন, ফ্যাক্টরি মনিটরিং ও জরুরি ব্রেকডাউন সাইরেন এখানে লাইভ পাবেন।
 `.trim(),
-          parse_mode: 'HTML',
-          reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
-        });
-      }
+        parse_mode: 'HTML',
+        reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
+      });
+    }
+  }
+
+  // Check 6-digit link code
+  const entry = candidateToken ? getPendingCodeEntry(candidateToken) : null;
+  if (entry) {
+    if (entry.expiresAt < Date.now()) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '❌ <b>লিঙ্ক কোডটির মেয়াদ শেষ হয়ে গেছে।</b>\nদয়া করে ওয়েব পোর্টাল থেকে নতুন ৬ ডিজিটের কোড নিন।',
+        parse_mode: 'HTML'
+      });
     }
 
-    // Check 6-digit link code
-    const entry = pendingLinkCodes.get(adminBotToken);
-    if (entry && entry.expiresAt >= Date.now()) {
-      const targetUser = (db.users || []).find(u => u.id === entry.userId);
-      if (targetUser && (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'ADMIN' || targetUser.id === 'usr-super-admin')) {
-        targetUser.telegramAdminChatId = String(chatId);
-        targetUser.telegramChatId = String(chatId);
-        targetUser.telegramUsername = msg.chat?.username || targetUser.telegramUsername || null;
-        targetUser.telegramLinkedAt = new Date().toISOString();
-        saveDatabase(db);
-        pendingLinkCodes.delete(adminBotToken);
+    const targetUser = (db.users || []).find(u => u.id === entry.userId);
+    if (targetUser && (targetUser.role === 'SUPER_ADMIN' || targetUser.role === 'ADMIN' || targetUser.id === 'usr-super-admin')) {
+      targetUser.telegramAdminChatId = String(chatId);
+      targetUser.telegramChatId = String(chatId);
+      targetUser.telegramUsername = msg.chat?.username || targetUser.telegramUsername || null;
+      targetUser.telegramLinkedAt = new Date().toISOString();
+      saveDatabase(db);
+      removePendingCode(candidateToken);
 
-        logAuditAndAlert(db, targetUser, 'ADMIN_BOT_LINKED', 'USER', targetUser.id, `Executive Admin Bot connected with Dual Sync`, true);
+      logAuditAndAlert(db, targetUser, 'ADMIN_BOT_LINKED', 'USER', targetUser.id, `Executive Admin Bot connected with Dual Sync`, true);
 
-        const adminKeyboard = [
-          [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
-          [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
-          [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
-          [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
-        ];
+      const adminKeyboard = [
+        [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
+        [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
+        [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
+        [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
+      ];
 
-        const machines = db.machines || [];
-        const total = machines.length;
-        const running = machines.filter(m => m.running || m.status === 'RUNNING').length;
-        const ambulance = machines.filter(m => m.isAmbulance).length;
-        const pendingTr = (db.transfer_requests || []).filter(r => r.status === 'PENDING').length;
+      const machines = db.machines || [];
+      const total = machines.length;
+      const running = machines.filter(m => m.running || m.status === 'RUNNING').length;
+      const ambulance = machines.filter(m => m.isAmbulance).length;
+      const pendingTr = (db.transfer_requests || []).filter(r => r.status === 'PENDING').length;
 
-        return adminBotRequest('sendMessage', {
-          chat_id: chatId,
-          text: `
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
 👑 <b>EXECUTIVE ADMIN SENTINEL ACTIVE</b>
 ━━━━━━━━━━━━━━━━━━━━
 স্বাগতম <b>${targetUser.name}</b>!
@@ -1048,53 +1172,42 @@ async function handleAdminBotMessage(msg) {
 
 💡 <i>উভয় বট (@MaintAdminbot এবং @MainterpBot) আপনার জন্য সক্রিয়। নিচের বাটনগুলো দিয়ে তাৎক্ষণিক গেটপাস অনুমোদন, ফ্যাক্টরি মনিটরিং ও মেশিন সার্চ করুন:</i>
 `.trim(),
-          parse_mode: 'HTML',
-          reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
-        });
-      } else if (targetUser) {
-        return adminBotRequest('sendMessage', {
-          chat_id: chatId,
-          text: `⛔ <b>অ্যাক্সেস সীমাবদ্ধ:</b> আপনার অ্যাকাউন্ট রোল (${targetUser.role}) সাধারণ অপারেশন্স বট <b>@MainterpBot</b> ব্যবহারের জন্য প্রযোজ্য। দয়া করে কোডটি <b>@MainterpBot</b>-এ পাঠান।`,
-          parse_mode: 'HTML'
-        });
-      }
-    } else if (entry) {
-      return adminBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '❌ <b>লিঙ্ক কোডটির মেয়াদ শেষ হয়ে গেছে।</b> দয়া করে ওয়েব পোর্টাল থেকে নতুন ৬ ডিজিটের কোড নিন।',
-        parse_mode: 'HTML'
+        parse_mode: 'HTML',
+        reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
       });
-    } else if (/^\d{6}$/.test(rawAdminText)) {
+    } else if (targetUser) {
       return adminBotRequest('sendMessage', {
         chat_id: chatId,
-        text: '❌ <b>ভুল লিঙ্ক কোড।</b> দয়া করে ওয়েব ERP-এর <i>Telegram Bot & Alerts</i> উইন্ডো থেকে প্রদর্শিত ৬ ডিজিটের কোডটি চেক করুন।',
+        text: `⛔ <b>অ্যাক্সেস সীমাবদ্ধ:</b> আপনার অ্যাকাউন্ট রোল (${targetUser.role}) সাধারণ অপারেশন্স বট <b>@MainterpBot</b> ব্যবহারের জন্য প্রযোজ্য। দয়া করে কোডটি <b>@MainterpBot</b>-এ পাঠান।`,
         parse_mode: 'HTML'
       });
     }
+  } else if (candidateToken && /^\d{6}$/.test(candidateToken)) {
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `❌ <b>কোড '${candidateToken}' খুঁজে পাওয়া যায়নি বা মেয়াদ শেষ হয়ে গেছে।</b>\nদয়া করে ওয়েব ERP-এর <i>Telegram Bot & Alerts</i> উইন্ডো থেকে নতুন কোড নিন অথবা <code>/claim motaher</code> লিখুন।`,
+      parse_mode: 'HTML'
+    });
   }
 
-  // Strict Admin Gate: Reject non-admins
+  // Strict Admin Gate: Guide non-admins
   const isSuperAdmin = user && (user.role === 'SUPER_ADMIN' || user.id === 'usr-super-admin');
   const isAdmin = isSuperAdmin || (user && user.role === 'ADMIN');
 
   if (!isAdmin) {
-    if (text === '/start' || text === '/help') {
-      return adminBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: `
-🔒 <b>Al-Muslim Group Executive Maintenance Sentinel Bot</b>
-━━━━━━━━━━━━━━━━━━━━
-⛔ <b>Restricted Access:</b> এই বটটি শুধুমাত্র কেন্দ্রীয় সুপার অ্যাডমিন ও টপ ম্যানেজমেন্টের জন্য সংরক্ষিত।
-
-আপনার অ্যাকাউন্ট লিঙ্ক করতে ওয়েব পোর্টাল থেকে অ্যাডমিন লিঙ্ক কোড নিন অথবা সিক্রেট কি দিয়ে ভেরিফাই করুন:
-<code>/claim &lt;SECURE_API_KEY&gt;</code>
-`.trim(),
-        parse_mode: 'HTML'
-      });
-    }
     return adminBotRequest('sendMessage', {
       chat_id: chatId,
-      text: '⛔ Access Denied: Unauthorized terminal.'
+      text: `
+🔒 <b>Al-Muslim Group Executive Maintenance Sentinel Bot (@MaintAdminbot)</b>
+━━━━━━━━━━━━━━━━━━━━
+👋 স্বাগতম! এই বটটি ব্যবহারের জন্য আপনার ERP অ্যাকাউন্ট লিঙ্ক করা প্রয়োজন।
+
+👉 <b>লিঙ্ক করার সহজ নিয়ম:</b>
+১. ওয়েব ERP পোর্টালে লগইন করে প্রোফাইল থেকে <b>Telegram Bot & Alerts</b> ক্লিক করুন।
+২. যে ৬ ডিজিটের কোড আসবে, সেটি সরাসরি এখানে মেসেজ পাঠিয়ে দিন।
+৩. অথবা সুপার অ্যাডমিন তাৎক্ষণিক অ্যাক্টিভেশনের জন্য পাঠাতে পারেন: <code>/claim motaher</code>
+`.trim(),
+      parse_mode: 'HTML'
     });
   }
 

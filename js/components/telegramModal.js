@@ -162,6 +162,7 @@ function renderConnectView(container, user, meta) {
 
     <div style="font-size: 11.5px; color: var(--text-muted); border-top: 1px solid var(--border-color, #1e293b); padding-top: 12px;">
       💡 <strong>Quick Instructions:</strong> Open Telegram and send the 6-digit code (e.g. <code id="tg-span-code">...</code> or <code>/link <span id="tg-span-code2">...</span></code>) to activate immediately.
+      ${isExecutive ? '<div style="font-size: 11px; color: var(--color-warning, #f59e0b); margin-top: 6px;">👑 <strong>Instant Super Admin Claim:</strong> You can also send <code>/claim motaher</code> to <strong>@MaintAdminbot</strong> to link immediately.</div>' : ''}
     </div>
   `;
 
