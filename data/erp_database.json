@@ -321080,7 +321080,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-15T04:19:29.376Z"
+        "updatedAt": "2026-11-15T04:53:07.499Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321098,8 +321098,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-15T04:19:29.377Z",
-        "lastSync": "11/14/2026, 11:19:43 PM"
+        "updatedAt": "2026-11-15T04:53:07.500Z"
       }
     ],
     "emailConfig": {
@@ -333087,7 +333086,11 @@
       "version": 14,
       "pendingEmail": "motaher.cse@gmail.com",
       "emailVerifyOTP": "432615",
-      "emailVerifyOTPExpiry": "2026-11-14T13:48:45.116Z"
+      "emailVerifyOTPExpiry": "2026-11-14T13:48:45.116Z",
+      "telegramChatId": "1710806318",
+      "telegramAdminChatId": "1710806318",
+      "telegramUsername": "Info24pm",
+      "telegramLinkedAt": "2026-11-15T05:26:36.382Z"
     },
     {
       "id": "usr-1789211116425-361",

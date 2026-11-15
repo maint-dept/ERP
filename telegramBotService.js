@@ -302,7 +302,10 @@ function isMachineInUserScope(user, machine, db = null) {
 }
 
 function formatUserScopeDescription(user, db = null) {
-  if (!user || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return 'Factory-Wide (Unrestricted)';
+  if (!db) {
+    try { db = getDatabase(); } catch (_) {}
+  }
+  if (!user || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin') return 'Factory-Wide (Unrestricted)';
   const s = user.assignedScope;
   if (!s) return 'No Location Assigned';
   if (s.allGroups && s.allUnits) return 'Factory-Wide (All Units & Floors)';
@@ -498,6 +501,68 @@ function formatDigitalGatePass(tr, authorizerName) {
 `.trim();
 }
 
+// Render Interactive Quick Features Hub Card with Scoped Metrics
+function renderQuickFeaturesHub(user, db, isExecutive = false) {
+  if (!db) {
+    try { db = getDatabase(); } catch (_) {}
+  }
+  const metrics = calculateScopedServiceMetrics(db, user, 7);
+  const metrics30 = calculateScopedServiceMetrics(db, user, 30);
+  const scopeDesc = formatUserScopeDescription(user, db);
+
+  const text = `
+⚡ <b>AL-MUSLIM GROUP • QUICK FEATURES HUB</b> ⚡
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 <b>ইউজার:</b> <b>${user.name}</b> (<code>${user.presetName || user.role}</code>)
+📍 <b>লোকেশন স্কোপ:</b> <code>${scopeDesc}</code>
+🏭 <b>আওতাভুক্ত মেশিন বহর:</b> <code>${metrics.totalScopeMachines.toLocaleString()}</code> টি
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 <b>লাইভ স্কোপড মেট্রিক্স (LIVE SCOPE METRICS):</b>
+🛠️ <b>গত ৭ দিনে সম্পন্ন সার্ভিস:</b> <b>${metrics.recentServicedCount}</b> টি | <b>(৩০ দিনে):</b> <b>${metrics30.recentServicedCount}</b> টি
+⏰ <b>আজ/শিডিউলে ডিউ (Due Now):</b> <b>${metrics.dueCount}</b> টি
+🔴 <b>জরুরি ওভারডিউ অ্যালার্ট:</b> <b>${metrics.overdueCount}</b> টি
+🚚 <b>চলমান ট্রান্সফার রিকোয়েস্ট:</b> <b>${metrics.pendingTransfersCount}</b> টি
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+👇 <i>নিচের ওয়ান-ক্লিক বাটন প্রেস করে সরাসরি সম্পন্ন করুন:</i>
+`.trim();
+
+  const inline_keyboard = [
+    [
+      { text: '🔍 Instant Search', callback_data: 'HUB_FIND' },
+      { text: '🚚 Transfer Request', callback_data: 'HUB_TRANSFER' }
+    ],
+    [
+      { text: '🛠️ Service & Sticker', callback_data: 'HUB_SERVICE' },
+      { text: '🚨 Report Breakdown', callback_data: 'HUB_BREAKDOWN' }
+    ],
+    [
+      { text: `⏰ Due Services (${metrics.dueCount})`, callback_data: 'HUB_DUE' },
+      { text: `🔴 Overdue Alerts (${metrics.overdueCount})`, callback_data: 'HUB_OVERDUE' }
+    ],
+    [
+      { text: '📊 7-Day Metrics', callback_data: 'HUB_SERVICES_7' },
+      { text: '📊 30-Day Metrics', callback_data: 'HUB_SERVICES_30' }
+    ],
+    [
+      { text: '📋 PM Checklist', callback_data: 'HUB_PM' },
+      { text: '🚑 Ambulance Fleet', callback_data: 'HUB_AMBULANCE' }
+    ],
+    [
+      { text: '📊 Factory Status', callback_data: 'HUB_STATUS' },
+      { text: '📦 Pending Transfers', callback_data: 'HUB_TRANSFERS' }
+    ]
+  ];
+
+  if (isExecutive) {
+    inline_keyboard.push([
+      { text: '🛡️ Executive Audit', callback_data: 'ADMIN_AUDIT' },
+      { text: '💾 Backup Database', callback_data: 'ADMIN_BACKUP' }
+    ]);
+  }
+
+  return { text, inline_keyboard, metrics, metrics30 };
+}
+
 // Dynamic Adaptive RBAC Menu Builder for Operations Bot (@MainterpBot)
 function buildDynamicUserMenu(user) {
   const keyboard = [];
@@ -510,47 +575,53 @@ function buildDynamicUserMenu(user) {
   const canTransfers = hasPermission(user, 'transfers', 'VIEW') || isExec;
   const canReportBreakdown = canMachines || canPM || canTransfers;
 
-  // Row 1: Search & Breakdown
-  const row1 = [];
+  // Row 1: Quick Features Hub & Machine Search
+  const row1 = [{ text: '⚡ Quick Features Hub' }];
+  commands.push('⚡ /quick — কুইক ফিচার হাব ও লাইভ মেট্রিক্স ড্যাশবোর্ড');
   if (canMachines) {
     row1.push({ text: '🔍 Search Machine' });
     commands.push('🔍 /find <serial> — মেশিন সার্চ ও অবস্থা পর্যবেক্ষণ');
   }
-  if (canReportBreakdown) {
-    row1.push({ text: '🚨 Report Breakdown' });
-    commands.push('🚨 /breakdown <serial> <details> — জরুরি ব্রেকডাউন নোটিশ');
-  }
-  if (row1.length > 0) keyboard.push(row1);
+  keyboard.push(row1);
 
-  // Row 2: Servicing & PM Checklist
+  // Row 2: Service, Transfer, Breakdown
   const row2 = [];
   if (canPM) {
     row2.push({ text: '🛠️ Service Machine' });
     commands.push('🛠️ /service <serial> <remarks> — সার্ভিসিং ও পিএম সম্পন্ন লগ');
-    row2.push({ text: '📋 PM Checklist' });
-    commands.push('📋 /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
-    row2.push({ text: '📊 Service Metrics' });
-    commands.push('📊 /services [days] — গত ৭ বা ৩০ দিনের সার্ভিসিং, ডিউ এবং ওভারডিউ মেট্রিক্স');
-    commands.push('⏰ /due — বর্তমানে ডিউ থাকা সার্ভিস তালিকা');
-    commands.push('🔴 /overdue — ওভারডিউ হয়ে থাকা মেশিনারি অ্যালার্ট');
+  }
+  if (canTransfers) {
+    row2.push({ text: '🚚 Request Transfer' });
+    commands.push('🚚 /transfer <serial> <dest_line> [reason] — মেশিন স্থানান্তর রিকোয়েস্ট');
+    commands.push('🔄 /relocate <serial> <dest_line> — লোকেশন স্থানান্তর ও ভেরিফিকেশন');
+  }
+  if (canReportBreakdown) {
+    row2.push({ text: '🚨 Report Breakdown' });
+    commands.push('🚨 /breakdown <serial> <details> — জরুরি ব্রেকডাউন নোটিশ');
   }
   if (row2.length > 0) keyboard.push(row2);
 
-  // Row 3: Transfers (Request & Tracking)
+  // Row 3: Metrics, Due, Overdue
   const row3 = [];
-  if (canTransfers) {
-    row3.push({ text: '🚚 Request Transfer' });
-    commands.push('🚚 /transfer <serial> <dest_line> [reason] — মেশিন স্থানান্তর রিকোয়েস্ট');
-    row3.push({ text: '📦 Transfers' });
-    commands.push('📦 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
+  if (canPM) {
+    row3.push({ text: '📊 Service Metrics' });
+    commands.push('📊 /services [days] — গত ৭ বা ৩০ দিনের সার্ভিসিং মেট্রিক্স');
+    row3.push({ text: '⏰ Due Services' });
+    commands.push('⏰ /due — আজ বা শিডিউলে ডিউ থাকা সার্ভিস তালিকা');
+    row3.push({ text: '🔴 Overdue Alerts' });
+    commands.push('🔴 /overdue — জরুরি ওভারডিউ মেশিনারি অ্যালার্ট');
   }
   if (row3.length > 0) keyboard.push(row3);
 
-  // Row 4: Tools & Ambulance
+  // Row 4: PM Checklist, Transfers, Ambulance
   const row4 = [];
-  if (canTools) {
-    row4.push({ text: '🔧 My Tools' });
-    commands.push('🔧 /tools — বরাদ্দকৃত টুলস ও যন্ত্রপাতি');
+  if (canPM) {
+    row4.push({ text: '📋 PM Checklist' });
+    commands.push('📋 /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
+  }
+  if (canTransfers) {
+    row4.push({ text: '📦 Transfers' });
+    commands.push('📦 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
   }
   if (canMachines) {
     row4.push({ text: '🚑 Ambulance Fleet' });
@@ -558,8 +629,16 @@ function buildDynamicUserMenu(user) {
   }
   if (row4.length > 0) keyboard.push(row4);
 
-  // Row 5: Factory Status & Disconnect
-  keyboard.push([{ text: '📊 Factory Status' }, { text: '🚪 Disconnect' }]);
+  // Row 5: Factory Status, Tools, Disconnect
+  const row5 = [{ text: '📊 Factory Status' }];
+  commands.push('📊 /status — ফ্যাক্টরি ও লাইন বর্তমান অবস্থা');
+  if (canTools) {
+    row5.push({ text: '🔧 My Tools' });
+    commands.push('🔧 /tools — বরাদ্দকৃত টুলস ও যন্ত্রপাতি');
+  }
+  row5.push({ text: '🚪 Disconnect' });
+  commands.push('🚪 /unlink — টেলিগ্রাম সংযোগ বিচ্ছিন্নকরণ');
+  keyboard.push(row5);
 
   return {
     keyboard,
@@ -939,12 +1018,12 @@ function calculateScopedServiceMetrics(db, user, days = 7) {
 async function handleUserBotMessage(msg) {
   const chatId = msg.chat?.id;
   const text = (msg.text || '').trim();
+  const db = getDatabase();
   const user = findUserByChatId(chatId);
 
   // Photo attachment upload handler (e.g. Broken machine part photo)
   if (msg.photo && msg.photo.length > 0 && user) {
     const caption = (msg.caption || '').trim();
-    const db = getDatabase();
     logAuditAndAlert(db, user, 'PHOTO_UPLOAD_TELEGRAM', 'MACHINE', caption || 'PHOTO', `Uploaded equipment photo with note: ${caption || 'No caption'}`);
     return userBotRequest('sendMessage', {
       chat_id: chatId,
@@ -958,13 +1037,21 @@ async function handleUserBotMessage(msg) {
   console.log('[UserBot Incoming]', { chatId, username: msg.chat?.username, text });
 
   const candidateToken = extractCodeOrToken(text);
+  const lowerText = text.toLowerCase().trim();
 
-  // Master Claim for Super Admin (/claim motaher, /claim superadmin, or master key)
+  // Master Claim for Super Admin (/claim motaher, /claim superadmin, /claim, motaher, or master key)
   const isMasterClaim = candidateToken === SECURE_API_KEY || 
                         candidateToken?.toLowerCase() === 'motaher' || 
                         candidateToken?.toLowerCase() === 'superadmin' ||
-                        text.toLowerCase() === '/claim motaher' ||
-                        text.toLowerCase() === '/claim superadmin';
+                        lowerText === '/claim' ||
+                        lowerText.startsWith('/claim') ||
+                        lowerText === '/claim motaher' ||
+                        lowerText === '/claim superadmin' ||
+                        lowerText === 'motaher' ||
+                        lowerText === '/start motaher' ||
+                        lowerText === '/start superadmin' ||
+                        lowerText === '/link motaher' ||
+                        lowerText === '/link superadmin';
 
   if (isMasterClaim) {
     const superAdmin = (db.users || []).find(u => u.id === 'usr-super-admin' || u.role === 'SUPER_ADMIN');
@@ -972,11 +1059,13 @@ async function handleUserBotMessage(msg) {
       superAdmin.telegramChatId = String(chatId);
       superAdmin.telegramAdminChatId = String(chatId);
       superAdmin.telegramUsername = msg.chat?.username || superAdmin.telegramUsername || null;
+      superAdmin.status = 'ACTIVE';
       superAdmin.telegramLinkedAt = new Date().toISOString();
       saveDatabase(db);
       logAuditAndAlert(db, superAdmin, 'USER_BOT_CLAIMED', 'USER', superAdmin.id, 'Super Admin claimed via Direct Executive Token', true);
 
       const { keyboard, commandsText } = buildDynamicUserMenu(superAdmin);
+      const hub = renderQuickFeaturesHub(superAdmin, db, true);
 
       return userBotRequest('sendMessage', {
         chat_id: chatId,
@@ -986,7 +1075,10 @@ async function handleUserBotMessage(msg) {
 স্বাগতম <b>${superAdmin.name}</b>!
 অপারেশন্স বট (@MainterpBot) এবং সেন্টিনেল বট (@MaintAdminbot) উভয় বটেই আপনার ১০০% পূর্ণ ক্ষমতা সক্রিয় করা হয়েছে।
 
-<b>অনুমোদিত লাইভ ফিচারসমূহ:</b>
+${hub.text}
+
+━━━━━━━━━━━━━━━━━━━━
+<b>অনুমোদিত কমান্ডসমূহ:</b>
 ${commandsText}
 `.trim(),
         parse_mode: 'HTML',
@@ -1019,6 +1111,7 @@ ${commandsText}
     if (isExec) {
       targetUser.telegramAdminChatId = String(chatId);
     }
+    targetUser.status = 'ACTIVE';
     targetUser.telegramUsername = msg.chat?.username || targetUser.telegramUsername || null;
     targetUser.telegramLinkedAt = new Date().toISOString();
     saveDatabase(db);
@@ -1027,6 +1120,7 @@ ${commandsText}
     logAuditAndAlert(db, targetUser, 'USER_TELEGRAM_LINKED', 'USER', targetUser.id, `Linked Operations Bot (@MainterpBot) [Executive Sync: ${isExec}]`);
 
     const { keyboard, commandsText } = buildDynamicUserMenu(targetUser);
+    const hub = renderQuickFeaturesHub(targetUser, db, isExec);
 
     const execNotice = isExec 
       ? `\n\n👑 <b>Super Admin Executive Notice:</b>\nআপনার অ্যাকাউন্টটি একই সাথে <b>Executive Sentinel Bot (@MaintAdminbot)</b>-এর সাথেও পূর্ণ ক্ষমতায় সক্রিয় করা হয়েছে। আপনি উভয় বট এবং ওয়েব পোর্টালে ১০০% আনরেস্ট্রিক্টেড এক্সেস উপভোগ করবেন।`
@@ -1042,6 +1136,9 @@ ${commandsText}
 📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(targetUser, db)}</code>
 ${execNotice}
 
+${hub.text}
+
+━━━━━━━━━━━━━━━━━━━━
 <b>আপনার অনুমোদিত ফিচারসমূহ:</b>
 ${commandsText}
 `.trim(),
@@ -1066,9 +1163,10 @@ ${commandsText}
 ━━━━━━━━━━━━━━━━━━━━
 ফ্যাক্টরির মেশিনারি ট্র্যাকিং, PM চেকলিস্ট ও ব্রেকডাউন অ্যালার্টের জন্য আপনার ERP অ্যাকাউন্ট সংযুক্ত করুন।
 
-১. ওয়েব পোর্টালে লগইন করুন।
+১. ওয়েব পোর্টালে লগইন করুন (https://erp.moviezonex.com)।
 ২. প্রোফাইল থেকে <b>Telegram Bot & Alerts</b>-এ ক্লিক করে ৬ ডিজিটের কোড নিন।
-৩. এখানে পাঠান: <code>/link YOUR_CODE</code>
+৩. এখানে পাঠান: <code>/link YOUR_CODE</code> অথবা সরাসরি ৬ ডিজিটের কোড লিখুন।
+৪. সুপার অ্যাডমিন তাৎক্ষণিক অ্যাক্টিভেশনের জন্য লিখুন: <code>/claim motaher</code>
 `.trim(),
         parse_mode: 'HTML',
         reply_markup: { remove_keyboard: true }
@@ -1076,16 +1174,29 @@ ${commandsText}
     }
     return userBotRequest('sendMessage', {
       chat_id: chatId,
-      text: '⚠️ আপনার টেলিগ্রাম অ্যাকাউন্টটি এখনও লিঙ্ক করা হয়নি। অনুগ্রহ করে `/start` লিখে নির্দেশনা দেখুন।',
+      text: '⚠️ আপনার টেলিগ্রাম অ্যাকাউন্টটি এখনও লিঙ্ক করা হয়নি। অনুগ্রহ করে `/start` লিখে নির্দেশনা দেখুন অথবা সুপার অ্যাডমিন হলে `/claim motaher` লিখুন।',
       parse_mode: 'HTML',
       reply_markup: { remove_keyboard: true }
     });
   }
 
+  const isExec = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
+
+  // Quick Features Hub (/quick or /menu or button)
+  if (text === '⚡ Quick Features Hub' || text === '⚡ Quick Features' || text === 'Quick Features' || text === '/quick' || text === '/menu') {
+    const hub = renderQuickFeaturesHub(user, db, isExec);
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: hub.text,
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: hub.inline_keyboard }
+    });
+  }
+
   // Dynamic Operations Bot Menu (/start or /help)
   if (text === '/start' || text === '/help') {
-    const db = getDatabase();
     const { keyboard, commandsText } = buildDynamicUserMenu(user);
+    const hub = renderQuickFeaturesHub(user, db, isExec);
 
     return userBotRequest('sendMessage', {
       chat_id: chatId,
@@ -1094,7 +1205,10 @@ ${commandsText}
 🛡️ <b>অ্যাক্সেস রোল:</b> <code>${user.presetName || user.role}</code>
 📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(user, db)}</code>
 ━━━━━━━━━━━━━━━━━━━━
-<b>আপনার অনুমোদিত লাইভ ফিচারসমূহ:</b>
+${hub.text}
+
+━━━━━━━━━━━━━━━━━━━━
+<b>অনুমোদিত কমান্ডসমূহ:</b>
 ${commandsText}
 
 <i>নিচের বাটনগুলোতে ট্যাপ করে সরাসরি অপশন ব্যবহার করুন:</i>
@@ -1247,113 +1361,7 @@ ${commandsText}
     });
   }
 
-  // Service Metrics & Past X Days Summary (/services [days] or 📊 Service Metrics)
-  if (text === '📊 Service Metrics' || text.startsWith('/services') || text.startsWith('/pm_stats')) {
-    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
-      });
-    }
 
-    const db = getDatabase();
-    const parts = text.split(/\s+/);
-    const requestedDays = parts.length > 1 && parseInt(parts[1], 10) > 0 ? parseInt(parts[1], 10) : 7;
-    const metrics = calculateScopedServiceMetrics(db, user, requestedDays);
-
-    let reply = `
-📊 <b>সার্ভিসিং ও পিএম মেট্রিক্স (${requestedDays} দিনের রিপোর্ট):</b>
-━━━━━━━━━━━━━━━━━━━━
-📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(user, db)}</code>
-🏭 <b>আওতাভুক্ত মেশিন:</b> <code>${metrics.totalScopeMachines}</code> টি
-━━━━━━━━━━━━━━━━━━━━
-🛠️ <b>গত ${requestedDays} দিনে সম্পন্ন সার্ভিস:</b> <b>${metrics.recentServicedCount}</b> টি
-⏰ <b>আজ/শিডিউলে ডিউ (Due Now):</b> <b>${metrics.dueCount}</b> টি
-🔴 <b>জরুরি ওভারডিউ (Overdue Alert):</b> <b>${metrics.overdueCount}</b> টি
-🚚 <b>চলমান ট্রান্সফার রিকোয়েস্ট:</b> <b>${metrics.pendingTransfersCount}</b> টি
-━━━━━━━━━━━━━━━━━━━━
-`;
-
-    if (metrics.recentServiced.length > 0) {
-      reply += `\n<b>✅ সম্প্রতি সম্পন্ন সার্ভিসিং:</b>\n`;
-      metrics.recentServiced.forEach((s, idx) => {
-        reply += `${idx + 1}. <b>${s.machineName || 'Machine'}</b> (<code>${s.serialNumber || '—'}</code>)\n`;
-        reply += `   📍 Line: ${s.line || '—'}, Floor: ${s.floor || '—'}\n`;
-        reply += `   🏷️ Stk: <code>${s.serviceStickerSerial || '—'}</code> | 📅 ${s.serviceDate || '—'} by ${s.servicedBy || 'Tech'}\n`;
-      });
-    }
-
-    if (metrics.overdueItems.length > 0) {
-      reply += `\n<b>🔴 জরুরি ওভারডিউ অ্যালার্ট:</b>\n`;
-      metrics.overdueItems.forEach((o, idx) => {
-        reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>) | Line: <b>${o.line}</b> | Due: <code>${o.dueDate}</code>\n`;
-      });
-    }
-
-    reply += `\n<i>💡 টিপ: অন্য দিনের হিসাব দেখতে লিখুন <code>/services 15</code> বা <code>/services 30</code></i>`;
-
-    return userBotRequest('sendMessage', {
-      chat_id: chatId,
-      text: reply.trim(),
-      parse_mode: 'HTML'
-    });
-  }
-
-  // Due List Command (/due)
-  if (text === '/due') {
-    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
-      });
-    }
-    const db = getDatabase();
-    const metrics = calculateScopedServiceMetrics(db, user, 7);
-    if (metrics.dueItems.length === 0) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '✅ আপনার লোকেশন স্কোপে বর্তমানে কোনো পেন্ডিং ডিউ (Due) সার্ভিস নেই।',
-        parse_mode: 'HTML'
-      });
-    }
-    let reply = `⏰ <b>বর্তমানে ডিউ থাকা মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
-    metrics.dueItems.forEach((d, idx) => {
-      reply += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line}</b>, Floor: ${d.floor} | Due: <code>${d.dueDate}</code>\n`;
-    });
-    return userBotRequest('sendMessage', {
-      chat_id: chatId,
-      text: reply.trim(),
-      parse_mode: 'HTML'
-    });
-  }
-
-  // Overdue List Command (/overdue)
-  if (text === '/overdue') {
-    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
-      });
-    }
-    const db = getDatabase();
-    const metrics = calculateScopedServiceMetrics(db, user, 7);
-    if (metrics.overdueItems.length === 0) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '✅ চমৎকার! আপনার লোকেশন স্কোপে কোনো ওভারডিউ (Overdue) সার্ভিস নেই।',
-        parse_mode: 'HTML'
-      });
-    }
-    let reply = `🔴 <b>জরুরি ওভারডিউ মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
-    metrics.overdueItems.forEach((o, idx) => {
-      reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>)\n   📍 Line: <b>${o.line}</b>, Floor: ${o.floor} | Overdue Date: <code>${o.dueDate}</code>\n`;
-    });
-    return userBotRequest('sendMessage', {
-      chat_id: chatId,
-      text: reply.trim(),
-      parse_mode: 'HTML'
-    });
-  }
 
   // My Tools Button or /tools
   if (text === '🔧 My Tools' || text === '/tools') {
@@ -1395,113 +1403,7 @@ ${commandsText}
     });
   }
 
-  // Service Metrics & Past X Days Summary (/services [days] or 📊 Service Metrics)
-  if (text === '📊 Service Metrics' || text.startsWith('/services') || text.startsWith('/pm_stats')) {
-    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
-      });
-    }
 
-    const db = getDatabase();
-    const parts = text.split(/\s+/);
-    const requestedDays = parts.length > 1 && parseInt(parts[1], 10) > 0 ? parseInt(parts[1], 10) : 7;
-    const metrics = calculateScopedServiceMetrics(db, user, requestedDays);
-
-    let reply = `
-📊 <b>সার্ভিসিং ও পিএম মেট্রিক্স (${requestedDays} দিনের রিপোর্ট):</b>
-━━━━━━━━━━━━━━━━━━━━
-📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(user, db)}</code>
-🏭 <b>আওতাভুক্ত মেশিন:</b> <code>${metrics.totalScopeMachines}</code> টি
-━━━━━━━━━━━━━━━━━━━━
-🛠️ <b>গত ${requestedDays} দিনে সম্পন্ন সার্ভিস:</b> <b>${metrics.recentServicedCount}</b> টি
-⏰ <b>আজ/শিডিউলে ডিউ (Due Now):</b> <b>${metrics.dueCount}</b> টি
-🔴 <b>জরুরি ওভারডিউ (Overdue Alert):</b> <b>${metrics.overdueCount}</b> টি
-🚚 <b>চলমান ট্রান্সফার রিকোয়েস্ট:</b> <b>${metrics.pendingTransfersCount}</b> টি
-━━━━━━━━━━━━━━━━━━━━
-`;
-
-    if (metrics.recentServiced.length > 0) {
-      reply += `\n<b>✅ সম্প্রতি সম্পন্ন সার্ভিসিং:</b>\n`;
-      metrics.recentServiced.forEach((s, idx) => {
-        reply += `${idx + 1}. <b>${s.machineName || 'Machine'}</b> (<code>${s.serialNumber || '—'}</code>)\n`;
-        reply += `   📍 Line: ${s.line || '—'}, Floor: ${s.floor || '—'}\n`;
-        reply += `   🏷️ Stk: <code>${s.serviceStickerSerial || '—'}</code> | 📅 ${s.serviceDate || '—'} by ${s.servicedBy || 'Tech'}\n`;
-      });
-    }
-
-    if (metrics.overdueItems.length > 0) {
-      reply += `\n<b>🔴 জরুরি ওভারডিউ অ্যালার্ট:</b>\n`;
-      metrics.overdueItems.forEach((o, idx) => {
-        reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>) | Line: <b>${o.line}</b> | Due: <code>${o.dueDate}</code>\n`;
-      });
-    }
-
-    reply += `\n<i>💡 টিপ: অন্য দিনের হিসাব দেখতে লিখুন <code>/services 15</code> বা <code>/services 30</code></i>`;
-
-    return userBotRequest('sendMessage', {
-      chat_id: chatId,
-      text: reply.trim(),
-      parse_mode: 'HTML'
-    });
-  }
-
-  // Due List Command (/due)
-  if (text === '/due') {
-    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
-      });
-    }
-    const db = getDatabase();
-    const metrics = calculateScopedServiceMetrics(db, user, 7);
-    if (metrics.dueItems.length === 0) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '✅ আপনার লোকেশন স্কোপে বর্তমানে কোনো পেন্ডিং ডিউ (Due) সার্ভিস নেই।',
-        parse_mode: 'HTML'
-      });
-    }
-    let reply = `⏰ <b>বর্তমানে ডিউ থাকা মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
-    metrics.dueItems.forEach((d, idx) => {
-      reply += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line}</b>, Floor: ${d.floor} | Due: <code>${d.dueDate}</code>\n`;
-    });
-    return userBotRequest('sendMessage', {
-      chat_id: chatId,
-      text: reply.trim(),
-      parse_mode: 'HTML'
-    });
-  }
-
-  // Overdue List Command (/overdue)
-  if (text === '/overdue') {
-    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
-      });
-    }
-    const db = getDatabase();
-    const metrics = calculateScopedServiceMetrics(db, user, 7);
-    if (metrics.overdueItems.length === 0) {
-      return userBotRequest('sendMessage', {
-        chat_id: chatId,
-        text: '✅ চমৎকার! আপনার লোকেশন স্কোপে কোনো ওভারডিউ (Overdue) সার্ভিস নেই।',
-        parse_mode: 'HTML'
-      });
-    }
-    let reply = `🔴 <b>জরুরি ওভারডিউ মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
-    metrics.overdueItems.forEach((o, idx) => {
-      reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>)\n   📍 Line: <b>${o.line}</b>, Floor: ${o.floor} | Overdue Date: <code>${o.dueDate}</code>\n`;
-    });
-    return userBotRequest('sendMessage', {
-      chat_id: chatId,
-      text: reply.trim(),
-      parse_mode: 'HTML'
-    });
-  }
 
   // Line / Floor Summary Query (/line <name> or /floor <name>)
   if (text.startsWith('/line ') || text.startsWith('/floor ')) {
@@ -1837,10 +1739,23 @@ ${commandsText}
       });
     }
 
+    const targetM = permittedMatches[0];
+    const sn = targetM.serialNumber || targetM.id;
     return userBotRequest('sendMessage', {
       chat_id: chatId,
-      text: formatMachineCard(permittedMatches[0]),
-      parse_mode: 'HTML'
+      text: formatMachineCard(targetM),
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '🚚 Transfer Machine', callback_data: `PROMPT_TR:${sn}` },
+            { text: '🛠️ Service Entry', callback_data: `PROMPT_SRV:${sn}` }
+          ],
+          [
+            { text: '🚨 Report Breakdown', callback_data: `PROMPT_BD:${sn}` }
+          ]
+        ]
+      }
     });
   }
 }
@@ -1859,14 +1774,22 @@ async function handleAdminBotMessage(msg) {
   console.log('[AdminBot Incoming]', { chatId, username: msg.chat?.username, text });
 
   const candidateToken = extractCodeOrToken(text);
+  const lowerText = text.toLowerCase().trim();
 
-  // Master Claim for Super Admin (/claim motaher, /claim superadmin, /claim <apiKey>)
+  // Master Claim for Super Admin (/claim motaher, /claim superadmin, /claim, motaher, etc.)
   const isMasterClaim = candidateToken === SECURE_API_KEY || 
                         candidateToken?.toLowerCase() === 'motaher' || 
                         candidateToken?.toLowerCase() === 'superadmin' ||
                         candidateToken?.toLowerCase() === 'admin' ||
-                        text.toLowerCase() === '/claim motaher' ||
-                        text.toLowerCase() === '/claim superadmin';
+                        lowerText === '/claim' ||
+                        lowerText.startsWith('/claim') ||
+                        lowerText === '/claim motaher' ||
+                        lowerText === '/claim superadmin' ||
+                        lowerText === 'motaher' ||
+                        lowerText === '/start motaher' ||
+                        lowerText === '/start superadmin' ||
+                        lowerText === '/link motaher' ||
+                        lowerText === '/link superadmin';
 
   if (isMasterClaim) {
     const superAdmin = (db.users || []).find(u => u.id === 'usr-super-admin' || u.role === 'SUPER_ADMIN');
@@ -1874,16 +1797,21 @@ async function handleAdminBotMessage(msg) {
       superAdmin.telegramAdminChatId = String(chatId);
       superAdmin.telegramChatId = String(chatId);
       superAdmin.telegramUsername = msg.chat?.username || superAdmin.telegramUsername || null;
+      superAdmin.status = 'ACTIVE';
       superAdmin.telegramLinkedAt = new Date().toISOString();
       saveDatabase(db);
       logAuditAndAlert(db, superAdmin, 'ADMIN_BOT_CLAIMED', 'USER', superAdmin.id, 'Super Admin claimed via Direct Executive Token', true);
 
       const adminKeyboard = [
-        [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
-        [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
-        [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
-        [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
+        [{ text: '⚡ Quick Features Hub' }, { text: '📊 Factory Status' }],
+        [{ text: '🚚 Pending Gate Passes' }, { text: '🔍 Search Machine' }],
+        [{ text: '🚚 Request Transfer' }, { text: '🛠️ Service Machine' }],
+        [{ text: '📊 Service Metrics' }, { text: '🔴 Overdue Alerts' }, { text: '🚑 Ambulance Fleet' }],
+        [{ text: '📋 Executive Brief' }, { text: '🛡️ Audit Trail' }],
+        [{ text: '💾 Backup Database' }, { text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
       ];
+
+      const hub = renderQuickFeaturesHub(superAdmin, db, true);
 
       return adminBotRequest('sendMessage', {
         chat_id: chatId,
@@ -1891,9 +1819,9 @@ async function handleAdminBotMessage(msg) {
 👑 <b>EXECUTIVE ADMIN SENTINEL ACTIVE</b>
 ━━━━━━━━━━━━━━━━━━━━
 স্বাগতম <b>${superAdmin.name}</b>!
-আপনার আইডি <b>@MaintAdminbot</b> এবং <b>@MainterpBot</b> উভয় বটে পূর্ণ অ্যাক্সেস সহ সক্রিয় করা হয়েছে।
+আপনার আইডি <b>@MaintAdminbot</b> এবং <b>@MainterpBot</b> উভয় বটে পূর্ণ ক্ষমতা সহ সক্রিয় করা হয়েছে।
 
-এখন থেকে গেটপাস অনুমোদন, ফ্যাক্টরি মনিটরিং ও জরুরি ব্রেকডাউন সাইরেন এখানে লাইভ পাবেন।
+${hub.text}
 `.trim(),
         parse_mode: 'HTML',
         reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
@@ -1997,20 +1925,28 @@ async function handleAdminBotMessage(msg) {
   // AUTHORIZED ADMIN SENTINEL COMMANDS
   // ==========================================
   const adminKeyboard = [
-    [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
+    [{ text: '⚡ Quick Features Hub' }, { text: '📊 Factory Status' }],
+    [{ text: '🚚 Pending Gate Passes' }, { text: '🔍 Search Machine' }],
     [{ text: '🚚 Request Transfer' }, { text: '🛠️ Service Machine' }],
-    [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
-    [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
-    [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
+    [{ text: '📊 Service Metrics' }, { text: '🔴 Overdue Alerts' }, { text: '🚑 Ambulance Fleet' }],
+    [{ text: '📋 Executive Brief' }, { text: '🛡️ Audit Trail' }],
+    [{ text: '💾 Backup Database' }, { text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
   ];
+
+  // Quick Features Hub (/quick or /menu or button)
+  if (text === '⚡ Quick Features Hub' || text === '⚡ Quick Features' || text === 'Quick Features' || text === '/quick' || text === '/menu') {
+    const hub = renderQuickFeaturesHub(user, db, true);
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: hub.text,
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: hub.inline_keyboard }
+    });
+  }
 
   // /start or /help (Executive Dashboard)
   if (text === '/start' || text === '/help') {
-    const machines = db.machines || [];
-    const total = machines.length;
-    const running = machines.filter(m => m.running || m.status === 'RUNNING').length;
-    const ambulance = machines.filter(m => m.isAmbulance).length;
-    const pendingTr = (db.transfer_requests || []).filter(r => r.status === 'PENDING').length;
+    const hub = renderQuickFeaturesHub(user, db, true);
 
     return adminBotRequest('sendMessage', {
       chat_id: chatId,
@@ -2018,16 +1954,18 @@ async function handleAdminBotMessage(msg) {
 👑 <b>CENTRAL MAINTENANCE COMMAND CENTER</b>
 👤 <b>Commander:</b> ${user.name} (${user.role})
 ━━━━━━━━━━━━━━━━━━━━
-🏭 <b>Total Fleet:</b> <code>${total.toLocaleString()}</code> machines
-🟢 <b>Running:</b> <code>${running.toLocaleString()}</code>
-🚑 <b>Ambulance Standby:</b> <code>${ambulance}</code>
-🚚 <b>Pending Gate Passes:</b> <code>${pendingTr}</code>
+${hub.text}
+
 ━━━━━━━━━━━━━━━━━━━━
 <b>Executive Live Menu:</b>
+⚡ <b>Quick Features Hub</b> — All-in-one Quick Action Center
 🔍 <b>Search Machine</b> — Instant Machinery Lookup & Line
 🚚 <b>Pending Gate Passes</b> — Review & Authorize
 🚚 <b>Request Transfer</b> — Relocate Machinery Across Units
 🛠️ <b>Service Machine</b> — Maintenance & PM Sign-off
+📊 <b>Service Metrics</b> — Past 7/30-Day Fleet Servicing
+🔴 <b>Overdue Alerts</b> — Critical Equipment Overdue Fleet
+📋 <b>PM Checklist</b> — Today's Scheduled Maintenance
 📊 <b>Factory Status</b> — Live Infrastructure Health
 🛡️ <b>Audit Trail</b> — Real-time System Change Log
 🚑 <b>Ambulance Fleet</b> — Standby Fleet Tracking
@@ -2038,6 +1976,129 @@ async function handleAdminBotMessage(msg) {
 `.trim(),
       parse_mode: 'HTML',
       reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
+    });
+  }
+
+  // Due List Command (/due or button)
+  if (text === '⏰ Due Services' || text === '/due') {
+    const metrics = calculateScopedServiceMetrics(db, user, 7);
+    if (metrics.dueItems.length === 0) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ বর্তমানে কোনো পেন্ডিং ডিউ (Due) সার্ভিস নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+    let reply = `⏰ <b>Executive Due Services Fleet (${metrics.dueItems.length} machines):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    metrics.dueItems.forEach((d, idx) => {
+      reply += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line}</b>, Floor: ${d.floor} | Due: <code>${d.dueDate}</code>\n`;
+    });
+    return adminBotRequest('sendMessage', { chat_id: chatId, text: reply.trim(), parse_mode: 'HTML' });
+  }
+
+  // Overdue List Command (/overdue or button)
+  if (text === '🔴 Overdue Alerts' || text === '/overdue') {
+    const metrics = calculateScopedServiceMetrics(db, user, 7);
+    if (metrics.overdueItems.length === 0) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ চমৎকার! বর্তমানে কোনো ওভারডিউ (Overdue) সার্ভিস নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+    let reply = `🔴 <b>Critical Overdue Services Fleet (${metrics.overdueItems.length} machines):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    metrics.overdueItems.forEach((o, idx) => {
+      reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>)\n   📍 Line: <b>${o.line}</b>, Floor: ${o.floor} | Overdue Date: <code>${o.dueDate}</code>\n`;
+    });
+    return adminBotRequest('sendMessage', { chat_id: chatId, text: reply.trim(), parse_mode: 'HTML' });
+  }
+
+  // PM Checklist Command (/pm)
+  if (text === '📋 PM Checklist' || text === '/pm') {
+    const rawPms = (db.preventive_maintenance || []).slice(0, 8);
+    if (rawPms.length === 0) {
+      return adminBotRequest('sendMessage', { chat_id: chatId, text: '✅ বর্তমানে কোনো পেন্ডিং প্রিভেন্টিভ মেইনটেন্যান্স (PM) নেই।', parse_mode: 'HTML' });
+    }
+    let reply = `📋 <b>Executive Preventive Maintenance Checklist:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    rawPms.forEach((p, idx) => {
+      const statusIcon = p.serviceStatus === 'OVERDUE' ? '🔴' : '🟡';
+      reply += `<b>${idx + 1}. ${p.machineName || 'Machine'}</b> (<code>${p.serialNumber || '—'}</code>)\n`;
+      reply += `   📍 Floor: ${p.floor || '—'}, Line: ${p.line || '—'}\n`;
+      reply += `   📊 Status: ${statusIcon} ${p.serviceStatus || 'DUE'} | Next: ${p.nextServiceDate || 'Today'}\n\n`;
+    });
+    return adminBotRequest('sendMessage', { chat_id: chatId, text: reply.trim(), parse_mode: 'HTML' });
+  }
+
+  // Service Machine Prompt or Button
+  if (text === '🛠️ Service Machine') {
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+🛠️ <b>Executive Machine Servicing Sign-Off:</b>
+━━━━━━━━━━━━━━━━━━━━
+মেশিনের সার্ভিসিং বা মেরামত রেকর্ড এন্ট্রি করতে লিখুন:
+<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;কাজের বিবরণ&gt;</code>
+
+<i>উদাহরণ:</i>
+<code>/service D/N-A-92 Motor tuned, oil lubricated</code>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Execute Machine Servicing Entry
+  if (text.startsWith('/service ') || text.startsWith('/pm_complete ')) {
+    const rawClean = text.replace(/^\/(service|pm_complete)\s+/i, '').trim();
+    const firstSpaceIdx = rawClean.indexOf(' ');
+
+    if (firstSpaceIdx === -1) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `⚠️ <b>ভুল ফরম্যাট!</b> অনুগ্রহ করে কাজের বিবরণ সহ লিখুন:\n<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;সার্ভিসিং কাজের বিবরণ&gt;</code>`,
+        parse_mode: 'HTML'
+      });
+    }
+
+    const serial = rawClean.substring(0, firstSpaceIdx).trim();
+    let remarks = rawClean.substring(firstSpaceIdx + 1).trim();
+    let customSticker = null;
+
+    const stkMatch = remarks.match(/(?:sticker|stk)\s*[:=]\s*([a-zA-Z0-9\-_]+)/i);
+    if (stkMatch) {
+      customSticker = stkMatch[1];
+      remarks = remarks.replace(stkMatch[0], '').trim();
+    }
+
+    const result = processMachineServicingEntry(db, user, serial, remarks, customSticker);
+
+    if (result.error) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: result.error,
+        parse_mode: 'HTML'
+      });
+    }
+
+    const statusBadge = result.wasUnderMaintenance 
+      ? '🟢 <b>RESTORED TO RUNNING</b> (ব্রেকডাউন থেকে সচল করা হয়েছে)' 
+      : '🟢 <b>ACTIVE & ON-SCHEDULE</b>';
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+✅ <b>মেশিন সার্ভিসিং সফলভাবে সম্পন্ন হয়েছে!</b>
+━━━━━━━━━━━━━━━━━━━━
+⚙️ <b>মেশিন:</b> ${result.machine.machineName} (<code>${result.machine.serialNumber}</code>)
+🏷️ <b>সার্ভিস স্টিকার নং:</b> <code>${result.stickerNo}</code>
+📍 <b>লোকেশন:</b> ${result.machine.floor || '—'}, Line: <b>${result.machine.line || '—'}</b>
+👤 <b>টেকনিশিয়ান/এক্সিকিউটিভ:</b> ${user.name} (${user.role})
+📝 <b>সার্ভিসিং কাজ:</b> <i>${remarks}</i>
+🚦 <b>ফ্যাক্টরি স্ট্যাটাস:</b> ${statusBadge}
+📅 <b>পরবর্তী সার্ভিস:</b> ${result.pmRecord.nextServiceDate} (90 দিন পর)
+━━━━━━━━━━━━━━━━━━━━
+<i>অফিসিয়াল সেন্ট্রাল ডাটাবেজে স্থায়ীভাবে রেকর্ড সংরক্ষিত হয়েছে।</i>
+`.trim(),
+      parse_mode: 'HTML'
     });
   }
 
@@ -2645,12 +2706,12 @@ async function handleAdminBotCallback(cbQuery) {
     });
   }
 
-  if (data === 'ADMIN_TRANSFERS') {
+  if (data === 'ADMIN_TRANSFERS' || data === 'HUB_TRANSFERS') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
     return handleAdminBotMessage({ chat: { id: chatId }, text: '/transfers' });
   }
 
-  if (data === 'ADMIN_STATUS') {
+  if (data === 'ADMIN_STATUS' || data === 'HUB_STATUS') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
     return handleAdminBotMessage({ chat: { id: chatId }, text: '/status' });
   }
@@ -2660,7 +2721,12 @@ async function handleAdminBotCallback(cbQuery) {
     return handleAdminBotMessage({ chat: { id: chatId }, text: '/audit' });
   }
 
-  if (data === 'ADMIN_AMBULANCE') {
+  if (data === 'ADMIN_BACKUP' || data === 'HUB_BACKUP') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '💾 Backup Database' });
+  }
+
+  if (data === 'ADMIN_AMBULANCE' || data === 'HUB_AMBULANCE') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
     const ambulances = (db.machines || []).filter(m => m.isAmbulance === true);
     let reply = `🚑 <b>Ambulance Fleet Status (${ambulances.length} Ready):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
@@ -2669,6 +2735,235 @@ async function handleAdminBotCallback(cbQuery) {
     });
     return adminBotRequest('sendMessage', { chat_id: chatId, text: reply, parse_mode: 'HTML' });
   }
+
+  if (data === 'HUB_FIND') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '🔍 Search Machine' });
+  }
+
+  if (data === 'HUB_TRANSFER') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '🚚 Request Transfer' });
+  }
+
+  if (data === 'HUB_SERVICE') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '🛠️ Service Machine' });
+  }
+
+  if (data === 'HUB_BREAKDOWN') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🚨 জরুরি ব্রেকডাউন নোটিশ পাঠাতে লিখুন:\n<code>/breakdown &lt;মেশিন সিরিয়াল&gt; &lt;সমস্যা&gt;</code>',
+      parse_mode: 'HTML'
+    });
+  }
+
+  if (data === 'HUB_DUE') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '/due' });
+  }
+
+  if (data === 'HUB_OVERDUE') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '/overdue' });
+  }
+
+  if (data === 'HUB_SERVICES_7') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '/services 7' });
+  }
+
+  if (data === 'HUB_SERVICES_30') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '/services 30' });
+  }
+
+  if (data === 'HUB_PM') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleAdminBotMessage({ chat: { id: chatId }, text: '/pm' });
+  }
+}
+
+// Callback Query Handler for Operations Bot (@MainterpBot)
+async function handleUserBotCallback(cbQuery) {
+  const queryId = cbQuery.id;
+  const data = cbQuery.data || '';
+  const chatId = cbQuery.message?.chat?.id;
+  const messageId = cbQuery.message?.message_id;
+  const db = getDatabase();
+  const user = findUserByChatId(chatId);
+
+  if (!user) {
+    return userBotRequest('answerCallbackQuery', {
+      callback_query_id: queryId,
+      text: '⚠️ অনুগ্রহ করে প্রথমে আপনার অ্যাকাউন্ট লিঙ্ক করুন।',
+      show_alert: true
+    });
+  }
+
+  const isExec = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
+
+  if (data === 'HUB_FIND') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🔍 অনুগ্রহ করে মেশিনের <b>সিরিয়াল নম্বর, মডেল বা অ্যাসেট আইডি</b> লিখে পাঠান (যেমন: <code>D/N-A-92</code> বা <code>857</code>):',
+      parse_mode: 'HTML'
+    });
+  }
+
+  if (data === 'HUB_TRANSFER') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '🚚 Request Transfer' });
+  }
+
+  if (data === 'HUB_SERVICE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '🛠️ Service Machine' });
+  }
+
+  if (data === 'HUB_BREAKDOWN') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '🚨 Report Breakdown' });
+  }
+
+  if (data === 'HUB_DUE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '/due' });
+  }
+
+  if (data === 'HUB_OVERDUE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '/overdue' });
+  }
+
+  if (data === 'HUB_SERVICES_7') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '/services 7' });
+  }
+
+  if (data === 'HUB_SERVICES_30') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '/services 30' });
+  }
+
+  if (data === 'HUB_PM') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '🛠️ PM Checklist' });
+  }
+
+  if (data === 'HUB_AMBULANCE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '🚑 Ambulance Fleet' });
+  }
+
+  if (data === 'HUB_STATUS') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '📊 Factory Status' });
+  }
+
+  if (data === 'HUB_TRANSFERS') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return handleUserBotMessage({ chat: { id: chatId }, text: '📦 Transfers' });
+  }
+
+  // Pre-filled prompts for machine actions
+  if (data.startsWith('PROMPT_TR:')) {
+    const serial = data.replace('PROMPT_TR:', '');
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `🚚 <b>ট্রান্সফার রিকোয়েস্ট ফরম্যাট:</b>\nমেশিন <code>${serial}</code> ট্রান্সফার করতে লিখুন:\n\n<code>/transfer ${serial} &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>\n\n<i>উদাহরণ:</i>\n<code>/transfer ${serial} BG-C Line rebalance</code>`,
+      parse_mode: 'HTML'
+    });
+  }
+
+  if (data.startsWith('PROMPT_SRV:')) {
+    const serial = data.replace('PROMPT_SRV:', '');
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `🛠️ <b>সার্ভিসিং লগ ফরম্যাট:</b>\nমেশিন <code>${serial}</code> সার্ভিসিং শেষে এন্ট্রি করতে লিখুন:\n\n<code>/service ${serial} &lt;কাজের বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/service ${serial} Needle set, timing tuned, oil added</code>`,
+      parse_mode: 'HTML'
+    });
+  }
+
+  if (data.startsWith('PROMPT_BD:')) {
+    const serial = data.replace('PROMPT_BD:', '');
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `🚨 <b>ব্রেকডাউন নোটিশ ফরম্যাট:</b>\nমেশিন <code>${serial}</code> নষ্ট হলে জরুরি নোটিশ পাঠাতে লিখুন:\n\n<code>/breakdown ${serial} &lt;সমস্যার বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/breakdown ${serial} Motor stopped, needle broken</code>`,
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Direct move or gate pass approve in UserBot for Executives
+  if (isExec && (data.startsWith('ADMIN_APPROVE_TR:') || data.startsWith('ADMIN_DIRECT_MOVE:'))) {
+    const isDirect = data.startsWith('ADMIN_DIRECT_MOVE:');
+    const trId = isDirect ? data.replace('ADMIN_DIRECT_MOVE:', '') : data.replace('ADMIN_APPROVE_TR:', '');
+    const tr = (db.transfer_requests || []).find(r => r.id === trId);
+    if (!tr) {
+      return userBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: 'রেকর্ড পাওয়া যায়নি।' });
+    }
+
+    tr.status = 'APPROVED';
+    tr.approvedBy = user.id;
+    tr.approvedByName = user.name;
+    tr.approvedAt = new Date().toISOString();
+
+    const targetMachine = (db.machines || []).find(m => m.id === tr.machineId || (m.serialNumber && m.serialNumber === tr.serialNumber));
+    if (targetMachine) {
+      if (tr.destUnitId) targetMachine.unitId = tr.destUnitId;
+      if (tr.destUnit || tr.destLocation?.unit) targetMachine.unit = tr.destUnit || tr.destLocation.unit;
+      if (tr.destFloorId) targetMachine.floorId = tr.destFloorId;
+      if (tr.destFloor || tr.destLocation?.floor) targetMachine.floor = tr.destFloor || tr.destLocation.floor;
+      if (tr.destLineId) targetMachine.lineId = tr.destLineId;
+      if (tr.destLine || tr.destLocation?.line) targetMachine.line = tr.destLine || tr.destLocation.line;
+      targetMachine.updatedAt = new Date().toISOString();
+
+      if (!db.machine_history) db.machine_history = [];
+      db.machine_history.unshift({
+        id: `hist-tr-${Date.now()}`,
+        machineId: targetMachine.id,
+        serialNumber: targetMachine.serialNumber,
+        action: 'MACHINE_TRANSFERRED',
+        details: `Transferred to ${tr.destPath || tr.destLocation?.line || 'New Location'} via Gate Pass #${tr.requestNumber || tr.id}`,
+        timestamp: new Date().toISOString(),
+        userId: user.id,
+        username: user.username
+      });
+    }
+
+    saveDatabase(db);
+    logAuditAndAlert(db, user, 'APPROVE_GATE_PASS_EXECUTIVE', 'TRANSFER', tr.id, `Executive authorized gate pass #${tr.requestNumber || tr.id}`, true);
+    broadcastEvent('transfer:approved', { transferId: tr.id, approver: user.name });
+
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: `✅ Digital Gate Pass Authorized!` });
+
+    const digitalSlip = formatDigitalGatePass(tr, user.name);
+
+    return userBotRequest('editMessageText', {
+      chat_id: chatId,
+      message_id: messageId,
+      text: digitalSlip,
+      parse_mode: 'HTML'
+    });
+  }
+
+  if (isExec && data.startsWith('ADMIN_KEEP_PENDING:')) {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: '📋 Saved as pending gate pass.' });
+    return userBotRequest('editMessageText', {
+      chat_id: chatId,
+      message_id: messageId,
+      text: '📋 <b>ট্রান্সফার রিকোয়েস্ট পেন্ডিং হিসেবে সংরক্ষিত রাখা হয়েছে।</b>\nপ্রয়োজনে পরবর্তীতে <code>Pending Gate Passes</code> মেনু থেকে অনুমোদন করতে পারবেন।',
+      parse_mode: 'HTML'
+    });
+  }
+
+  await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
 }
 
 // Background Dual-Bot Polling Daemon
@@ -2696,7 +2991,7 @@ async function startUserBotPolling() {
           if (update.message) {
             handleUserBotMessage(update.message).catch(err => console.error('[UserBot] Error:', err));
           } else if (update.callback_query) {
-            handleAdminBotCallback(update.callback_query).catch(err => console.error('[UserBot Callback] Error:', err));
+            handleUserBotCallback(update.callback_query).catch(err => console.error('[UserBot Callback] Error:', err));
           }
         }
       }

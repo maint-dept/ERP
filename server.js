@@ -483,7 +483,7 @@ const server = http.createServer((req, res) => {
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const qUserId = parsedUrl.searchParams.get('userId');
     const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}') : {};
-    const user = (db.users || []).find(u => u.id === qUserId);
+    const user = (db.users || []).find(u => u.id === qUserId) || (qUserId ? null : (db.users || []).find(u => u.id === 'usr-super-admin'));
     const isExecutive = Boolean(user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin'));
     const isLinked = Boolean(user && (user.telegramChatId || user.telegramAdminChatId));
 
@@ -658,6 +658,7 @@ const server = http.createServer((req, res) => {
           if (fs.existsSync(DB_FILE)) {
             try {
               const existing = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}');
+              // Protect settings from accidental revert: preserve authoritative homepageVisibilityMode and adminLoginSlug
               if (existing.settings && parsed.settings) {
                 if (existing.settings.homepageVisibilityMode && (parsed.settings.homepageVisibilityMode === 'public' || !parsed.settings.homepageVisibilityMode)) {
                   const currTs = existing.settings.homepageVisibilityUpdatedAt ? new Date(existing.settings.homepageVisibilityUpdatedAt).getTime() : 0;
@@ -676,6 +677,22 @@ const server = http.createServer((req, res) => {
                     parsed.settings.adminLoginSlugUpdatedAt = existing.settings.adminLoginSlugUpdatedAt;
                   }
                 }
+              }
+
+              // Protect Telegram Bot links & credentials from accidental client overwrites
+              if (Array.isArray(existing.users) && Array.isArray(parsed.users)) {
+                parsed.users.forEach(pu => {
+                  const eu = existing.users.find(u => u.id === pu.id || u.username === pu.username);
+                  if (eu) {
+                    if (eu.telegramChatId && !pu.telegramChatId) pu.telegramChatId = eu.telegramChatId;
+                    if (eu.telegramAdminChatId && !pu.telegramAdminChatId) pu.telegramAdminChatId = eu.telegramAdminChatId;
+                    if (eu.telegramUsername && !pu.telegramUsername) pu.telegramUsername = eu.telegramUsername;
+                    if (eu.telegramLinkedAt && !pu.telegramLinkedAt) pu.telegramLinkedAt = eu.telegramLinkedAt;
+                  }
+                });
+              }
+              if (existing.pending_telegram_codes) {
+                parsed.pending_telegram_codes = { ...(existing.pending_telegram_codes || {}), ...(parsed.pending_telegram_codes || {}) };
               }
             } catch (_) {}
           }
