@@ -235,12 +235,14 @@ function renderConnectedView(container, user, meta) {
       </div>
       <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: var(--text-main); line-height: 1.6;">
         <li>🔍 <strong>Factory-Wide Machine Search:</strong> Query any machine with <code>/find &lt;serial&gt;</code> in both bots</li>
+        <li>🚚 <strong>Machine Transfer &amp; Relocation:</strong> Request or execute transfers with <code>/transfer &lt;serial&gt; &lt;line&gt;</code></li>
+        <li>🛠️ <strong>Machine Servicing &amp; PM:</strong> Log repairs and restore running status with <code>/service &lt;serial&gt; &lt;work&gt;</code></li>
         ${isExecutive ? `
           <li>👑 <strong>Executive Gate Pass Approvals:</strong> 1-click Approve/Reject with digital cryptographic slip</li>
           <li>🛡️ <strong>Live Security & Audit Trail:</strong> Real-time streaming of system events & breakdowns</li>
           <li>📢 <strong>Broadcast Announcements:</strong> Send factory-wide push notices via <code>/broadcast</code></li>
         ` : `
-          <li>🛠️ <strong>PM Checklists:</strong> Preventive Maintenance task lists & quick sign-off</li>
+          <li>📋 <strong>PM Checklists:</strong> Preventive Maintenance task lists via <code>/pm</code></li>
           <li>🔧 <strong>My Tools:</strong> Check all tools issued to your ID</li>
         `}
         <li>🚑 <strong>Emergency Ambulance Fleet:</strong> Standby machine alerts for zero line downtime</li>

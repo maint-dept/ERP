@@ -899,11 +899,17 @@ tr.draggable-row.drag-over-bottom {
 .excel-grid-table thead th.col-freeze-check { z-index: 34; }
 
 /* All user-configured frozen data columns */
-.excel-grid-table thead th.col-frozen-cell,
-.excel-grid-table tbody td.col-frozen-cell {
-  background-color: #0b1329 !important;
+.excel-grid-table thead th.col-frozen-cell {
+  background-color: var(--table-th-bg, #0b1329) !important;
+  color: var(--table-th-color, #cbd5e1) !important;
   background-clip: border-box !important;
-  border-right: 1px solid #1e293b !important;
+  border-right: 1px solid var(--table-th-border, #1e293b) !important;
+  border-bottom: var(--table-th-border-bottom, 2px solid #0284c7) !important;
+}
+.excel-grid-table tbody td.col-frozen-cell {
+  background-color: var(--bg-card, #0f172a);
+  background-clip: border-box !important;
+  border-right: 1px solid var(--border-color, #1e293b) !important;
 }
 .excel-grid-table thead th.col-frozen-cell { z-index: 32; }
 .excel-grid-table tbody td.col-frozen-cell { z-index: 12; }
@@ -5629,6 +5635,40 @@ body.theme-light .panel-header {
   color: #0f172a !important;
 }
 
+/* Light Theme: Dashboard Percentages, Tracks & High-Contrast Stat Value Badges */
+body.theme-light .dash-dist-pct {
+  color: #64748b !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+body.theme-light .dash-dist-track {
+  background: #e2e8f0 !important;
+}
+body.theme-light .stat-cyan {
+  color: #0284c7 !important;
+  text-shadow: none !important;
+}
+body.theme-light .stat-emerald {
+  color: #059669 !important;
+  text-shadow: none !important;
+}
+body.theme-light .stat-purple {
+  color: #7c3aed !important;
+  text-shadow: none !important;
+}
+body.theme-light .stat-amber {
+  color: #d97706 !important;
+  text-shadow: none !important;
+}
+body.theme-light .stat-rose {
+  color: #dc2626 !important;
+  text-shadow: none !important;
+}
+body.theme-light .stat-slate {
+  color: #475569 !important;
+  text-shadow: none !important;
+}
+
 /* 10. Data Tables & Zebra Striping */
 body.theme-light .data-table,
 body.theme-light table,
@@ -5879,13 +5919,28 @@ body.theme-light .btn-print-fmt.active,
 body.theme-light .btn-print-fmt.active *,
 body.theme-light .btn-uam-quick-chip.active,
 body.theme-light .btn-uam-quick-chip.active *,
-body.theme-light .nav-item.active,
-body.theme-light .nav-item.active *,
 body.theme-light .tools-tab-btn.active,
 body.theme-light .tools-tab-btn.active * {
   background: #1f1c17 !important;
   color: #fffdf8 !important;
   border-color: #1f1c17 !important;
+}
+
+/* Light Theme Active Sidebar Navigation Item (Ocean Blue Accent - Matches Dark Mode Parity) */
+body.theme-light .nav-item.active {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  border: 1px solid rgba(2, 132, 199, 0.35) !important;
+  border-left: 3.5px solid #0284c7 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12) !important;
+}
+body.theme-light .nav-item.active * {
+  color: #0284c7 !important;
+}
+body.theme-light .nav-item.active .nav-icon-box {
+  background: rgba(2, 132, 199, 0.15) !important;
+  color: #0284c7 !important;
 }
 
 /* Print Page Format Selector & Document Canvas */
@@ -6076,9 +6131,11 @@ html.theme-light *::-webkit-scrollbar-thumb:hover {
     position: -webkit-sticky !important;
     position: sticky !important;
     z-index: 33 !important;
-    background-color: #0b1329 !important;
+    background-color: var(--table-th-bg, #0b1329) !important;
+    color: var(--table-th-color, #cbd5e1) !important;
     background-clip: border-box !important;
-    border-right: 1px solid #1e293b !important;
+    border-right: 1px solid var(--table-th-border, #1e293b) !important;
+    border-bottom: var(--table-th-border-bottom, 2px solid #0284c7) !important;
   }
   .excel-grid-table tbody td.col-frozen-cell {
     position: -webkit-sticky !important;

@@ -227,6 +227,18 @@
     } catch (_) { }
   </script>
   <style id="theme-hard-override">
+    :root {
+      --table-th-bg: #0b1329;
+      --table-th-color: #cbd5e1;
+      --table-th-border: #1e293b;
+      --table-th-border-bottom: 2px solid #0284c7;
+    }
+    html.theme-light, body.theme-light {
+      --table-th-bg: #f8fafc !important;
+      --table-th-color: #0f172a !important;
+      --table-th-border: #cbd5e1 !important;
+      --table-th-border-bottom: 2.5px solid #0284c7 !important;
+    }
     /* Force Light Theme Header & Frozen Column Clean Styling (Cache-Immune) */
     html.theme-light .excel-grid-table thead th,
     html.theme-light .excel-grid-table thead th.col-freeze-sl,
@@ -324,6 +336,38 @@
       border-radius: 12px !important;
       padding: 14px 16px !important;
       box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06) !important;
+    }
+    body.theme-light .dash-dist-pct {
+      color: #64748b !important;
+      font-weight: 700 !important;
+      opacity: 1 !important;
+    }
+    body.theme-light .dash-dist-track {
+      background: #e2e8f0 !important;
+    }
+    body.theme-light .stat-cyan {
+      color: #0284c7 !important;
+      text-shadow: none !important;
+    }
+    body.theme-light .stat-emerald {
+      color: #059669 !important;
+      text-shadow: none !important;
+    }
+    body.theme-light .stat-purple {
+      color: #7c3aed !important;
+      text-shadow: none !important;
+    }
+    body.theme-light .stat-amber {
+      color: #d97706 !important;
+      text-shadow: none !important;
+    }
+    body.theme-light .stat-rose {
+      color: #dc2626 !important;
+      text-shadow: none !important;
+    }
+    body.theme-light .stat-slate {
+      color: #475569 !important;
+      text-shadow: none !important;
     }
   </style>
 

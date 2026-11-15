@@ -551,10 +551,11 @@ thead th.col-freeze-name,
 thead th.col-frozen-cell {
   position: sticky !important;
   z-index: 30 !important;
-  background-color: #0b1329 !important;
+  background-color: var(--table-th-bg, #0b1329) !important;
+  color: var(--table-th-color, #cbd5e1) !important;
   background-clip: border-box !important;
-  border-right: 1px solid #1e293b !important;
-  border-bottom: 2px solid #0284c7 !important;
+  border-right: 1px solid var(--table-th-border, #1e293b) !important;
+  border-bottom: var(--table-th-border-bottom, 2px solid #0284c7) !important;
 }
 
 tbody tr td.col-freeze-sl,

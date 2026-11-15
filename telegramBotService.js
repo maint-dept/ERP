@@ -503,12 +503,14 @@ function buildDynamicUserMenu(user) {
   const keyboard = [];
   const commands = [];
 
-  const canMachines = hasPermission(user, 'machines', 'VIEW');
-  const canPM = hasPermission(user, 'preventive_maintenance', 'VIEW');
-  const canTools = hasPermission(user, 'tools_management', 'VIEW');
-  const canTransfers = hasPermission(user, 'transfers', 'VIEW');
+  const isExec = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
+  const canMachines = hasPermission(user, 'machines', 'VIEW') || isExec;
+  const canPM = hasPermission(user, 'preventive_maintenance', 'VIEW') || isExec;
+  const canTools = hasPermission(user, 'tools_management', 'VIEW') || isExec;
+  const canTransfers = hasPermission(user, 'transfers', 'VIEW') || isExec;
   const canReportBreakdown = canMachines || canPM || canTransfers;
 
+  // Row 1: Search & Breakdown
   const row1 = [];
   if (canMachines) {
     row1.push({ text: '🔍 Search Machine' });
@@ -520,29 +522,40 @@ function buildDynamicUserMenu(user) {
   }
   if (row1.length > 0) keyboard.push(row1);
 
+  // Row 2: Servicing & PM Checklist
   const row2 = [];
   if (canPM) {
-    row2.push({ text: '🛠️ PM Checklist' });
-    commands.push('🛠️ /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
-  }
-  if (canTools) {
-    row2.push({ text: '🔧 My Tools' });
-    commands.push('🔧 /tools — আপনার নামে বরাদ্দকৃত টুলস ও যন্ত্রপাতি');
+    row2.push({ text: '🛠️ Service Machine' });
+    commands.push('🛠️ /service <serial> <remarks> — সার্ভিসিং ও পিএম সম্পন্ন লগ');
+    row2.push({ text: '📋 PM Checklist' });
+    commands.push('📋 /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
   }
   if (row2.length > 0) keyboard.push(row2);
 
+  // Row 3: Transfers (Request & Tracking)
   const row3 = [];
   if (canTransfers) {
-    row3.push({ text: '🚚 Transfers' });
-    commands.push('🚚 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
-  }
-  if (canMachines) {
-    row3.push({ text: '🚑 Ambulance Fleet' });
-    commands.push('🚑 /ambulance — স্ট্যান্ডবাই অ্যাম্বুলেন্স মেশিন তালিকা');
+    row3.push({ text: '🚚 Request Transfer' });
+    commands.push('🚚 /transfer <serial> <dest_line> [reason] — মেশিন স্থানান্তর রিকোয়েস্ট');
+    row3.push({ text: '📦 Transfers' });
+    commands.push('📦 /transfers — চলমান মেশিন ট্রান্সফার রিকোয়েস্ট');
   }
   if (row3.length > 0) keyboard.push(row3);
 
-  keyboard.push([{ text: '🚪 Disconnect' }]);
+  // Row 4: Tools & Ambulance
+  const row4 = [];
+  if (canTools) {
+    row4.push({ text: '🔧 My Tools' });
+    commands.push('🔧 /tools — বরাদ্দকৃত টুলস ও যন্ত্রপাতি');
+  }
+  if (canMachines) {
+    row4.push({ text: '🚑 Ambulance Fleet' });
+    commands.push('🚑 /ambulance — স্ট্যান্ডবাই অ্যাম্বুলেন্স তালিকা');
+  }
+  if (row4.length > 0) keyboard.push(row4);
+
+  // Row 5: Factory Status & Disconnect
+  keyboard.push([{ text: '📊 Factory Status' }, { text: '🚪 Disconnect' }]);
 
   return {
     keyboard,
@@ -550,6 +563,253 @@ function buildDynamicUserMenu(user) {
       ? commands.join('\n') 
       : '⚠️ আপনার অ্যাকাউন্টে বর্তমানে কোনো সক্রিয় ফিচার পারমিশন বরাদ্দ নেই।'
   };
+}
+
+// ==========================================
+// MACHINE TRANSFER ENGINE (TELEGRAM CORE)
+// ==========================================
+function processMachineTransferRequest(db, user, serialOrQuery, destText, reason, isAutoApprove = false) {
+  const cleanSerial = String(serialOrQuery || '').trim().toLowerCase();
+  const machine = (db.machines || []).find(m => 
+    (m.serialNumber && m.serialNumber.toLowerCase() === cleanSerial) ||
+    (m.systemAssetId && m.systemAssetId.toLowerCase() === cleanSerial) ||
+    (m.id && m.id.toLowerCase() === cleanSerial)
+  );
+
+  if (!machine) {
+    return { error: `❌ '<code>${serialOrQuery}</code>' সিরিয়ালের কোনো মেশিন খুঁজে পাওয়া যায়নি।` };
+  }
+
+  // Check user permission & scope
+  if (!isLocationInUserScope(user, machine, db)) {
+    return { error: `⛔ <b>অ্যাক্সেস সীমাবদ্ধ:</b> মেশিন <code>${machine.serialNumber}</code> আপনার নির্ধারিত ইউনিটের বাইরে।` };
+  }
+
+  // Parse destination
+  const cleanDest = String(destText || '').trim();
+  if (!cleanDest) {
+    return { error: '❌ গন্তব্য লাইন বা ফ্লোরের নাম উল্লেখ করুন (যেমন: <code>BG-B</code> বা <code>Jamuna</code>)।' };
+  }
+
+  // Resolve target Line, Floor, Unit
+  let targetLine = null;
+  let targetFloor = null;
+  let targetUnit = null;
+
+  const qDestLower = cleanDest.toLowerCase();
+  // 1. Try Line exact/partial
+  targetLine = (db.lines || []).find(l => l.name && l.name.toLowerCase() === qDestLower) ||
+               (db.lines || []).find(l => l.name && l.name.toLowerCase().includes(qDestLower));
+
+  if (targetLine) {
+    targetFloor = (db.floors || []).find(f => f.id === targetLine.floorId);
+    if (targetFloor) {
+      targetUnit = (db.units || []).find(u => u.id === targetFloor.unitId);
+    }
+  }
+
+  // 2. If line not found, check floor
+  if (!targetFloor) {
+    targetFloor = (db.floors || []).find(f => f.name && f.name.toLowerCase() === qDestLower) ||
+                  (db.floors || []).find(f => f.name && f.name.toLowerCase().includes(qDestLower));
+    if (targetFloor) {
+      targetUnit = (db.units || []).find(u => u.id === targetFloor.unitId);
+    }
+  }
+
+  // 3. Fallback unit
+  if (!targetUnit) {
+    targetUnit = (db.units || []).find(u => u.name && u.name.toLowerCase().includes(qDestLower)) ||
+                 (db.units || []).find(u => u.id === machine.unitId);
+  }
+
+  const destLineName = targetLine ? targetLine.name : cleanDest;
+  const destFloorName = targetFloor ? targetFloor.name : (machine.floor || 'Floor');
+  const destUnitName = targetUnit ? targetUnit.name : (machine.unit || 'AKM Knit Wear Ltd.');
+
+  const sourcePath = `${machine.unit || 'AKM'} > ${machine.floor || '—'} > ${machine.line || '—'}`;
+  const destPath = `${destUnitName} > ${destFloorName} > ${destLineName}`;
+
+  if (sourcePath.toLowerCase() === destPath.toLowerCase()) {
+    return { error: '❌ <b>একই লোকেশন:</b> মেশিনটি ইতিমধ্যে এই লাইনেই অবস্থান করছে।' };
+  }
+
+  const reqNumber = `TR-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+  const reqId = `trq-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const cleanReason = reason || 'Floor line capacity rebalancing';
+
+  if (!db.transfer_requests) db.transfer_requests = [];
+
+  const trRecord = {
+    id: reqId,
+    requestNumber: reqNumber,
+    machineId: machine.id,
+    serialNumber: machine.serialNumber,
+    machineName: machine.machineName,
+    machineInfo: {
+      machineName: machine.machineName,
+      brand: machine.brand,
+      model: machine.model,
+      serialNumber: machine.serialNumber
+    },
+    sourceGroupId: machine.groupId || 'grp-1',
+    sourceUnitId: machine.unitId,
+    sourceFloorId: machine.floorId,
+    sourceLineId: machine.lineId,
+    sourceLocation: {
+      unit: machine.unit,
+      floor: machine.floor,
+      line: machine.line
+    },
+    sourcePath: sourcePath,
+    destGroupId: targetUnit ? (targetUnit.groupId || 'grp-1') : 'grp-1',
+    destUnitId: targetUnit ? targetUnit.id : machine.unitId,
+    destFloorId: targetFloor ? targetFloor.id : machine.floorId,
+    destLineId: targetLine ? targetLine.id : null,
+    destLocation: {
+      unit: destUnitName,
+      floor: destFloorName,
+      line: destLineName
+    },
+    destPath: destPath,
+    destUnit: destUnitName,
+    destFloor: destFloorName,
+    destLine: destLineName,
+    reason: cleanReason,
+    status: isAutoApprove ? 'APPROVED' : 'PENDING',
+    requestedBy: user.id,
+    requestedByName: user.name,
+    requestedAt: new Date().toISOString(),
+    approvedBy: isAutoApprove ? user.id : null,
+    approvedByName: isAutoApprove ? user.name : null,
+    approvedAt: isAutoApprove ? new Date().toISOString() : null
+  };
+
+  db.transfer_requests.unshift(trRecord);
+
+  // If auto-approved by Admin, also update machine immediately
+  if (isAutoApprove) {
+    if (targetUnit) machine.unitId = targetUnit.id;
+    machine.unit = destUnitName;
+    if (targetFloor) machine.floorId = targetFloor.id;
+    machine.floor = destFloorName;
+    if (targetLine) machine.lineId = targetLine.id;
+    machine.line = destLineName;
+    machine.updatedAt = new Date().toISOString();
+
+    if (!db.machine_history) db.machine_history = [];
+    db.machine_history.unshift({
+      id: `hist-tr-${Date.now()}`,
+      machineId: machine.id,
+      serialNumber: machine.serialNumber,
+      action: 'MACHINE_TRANSFERRED',
+      details: `Direct transferred to ${destPath} by ${user.name} (#${reqNumber})`,
+      timestamp: new Date().toISOString(),
+      userId: user.id,
+      username: user.username
+    });
+  }
+
+  saveDatabase(db);
+
+  // Audit
+  logAuditAndAlert(db, user, isAutoApprove ? 'MACHINE_TRANSFERRED_DIRECT' : 'MACHINE_TRANSFER_REQUESTED', 'TRANSFER', trRecord.id, `Transfer #${reqNumber} for ${machine.serialNumber}: ${sourcePath} -> ${destPath} (${cleanReason})`, true);
+  broadcastEvent(isAutoApprove ? 'transfer:approved' : 'transfer:created', { transferId: trRecord.id, serialNumber: machine.serialNumber });
+
+  if (!isAutoApprove) {
+    notifyApproversOfTransfer(trRecord);
+  }
+
+  return { ok: true, transfer: trRecord, machine, isAutoApprove };
+}
+
+// ==========================================
+// MACHINE SERVICING & PM ENGINE (TELEGRAM)
+// ==========================================
+function processMachineServicingEntry(db, user, serialOrQuery, remarksText, customSticker = null) {
+  const cleanSerial = String(serialOrQuery || '').trim().toLowerCase();
+  const machine = (db.machines || []).find(m => 
+    (m.serialNumber && m.serialNumber.toLowerCase() === cleanSerial) ||
+    (m.systemAssetId && m.systemAssetId.toLowerCase() === cleanSerial) ||
+    (m.id && m.id.toLowerCase() === cleanSerial)
+  );
+
+  if (!machine) {
+    return { error: `❌ '<code>${serialOrQuery}</code>' সিরিয়ালের কোনো মেশিন খুঁজে পাওয়া যায়নি।` };
+  }
+
+  // Check user permission & scope
+  if (!isLocationInUserScope(user, machine, db)) {
+    return { error: `⛔ <b>অ্যাক্সেস সীমাবদ্ধ:</b> মেশিন <code>${machine.serialNumber}</code> আপনার নির্ধারিত আওতাভুক্ত নয়।` };
+  }
+
+  const cleanRemarks = String(remarksText || '').trim() || 'General servicing and maintenance maintenance check.';
+  const stickerNo = customSticker || `STK-${Math.floor(100000 + Math.random() * 900000)}`;
+
+  // Update Machine: restore to Active/Running if under maintenance or breakdown
+  const wasUnderMaintenance = machine.status === 'UNDER_MAINTENANCE' || machine.running === 0;
+  machine.status = 'ACTIVE';
+  machine.running = 1;
+  machine.usable_idle = 0;
+  machine.repairable_idle = 0;
+  machine.remarks = `Serviced on ${new Date().toLocaleDateString('en-GB')}: ${cleanRemarks}`;
+  machine.lastServiceDate = new Date().toISOString().split('T')[0];
+  machine.serviceStickerSerial = stickerNo;
+  machine.updatedAt = new Date().toISOString();
+
+  // Create PM Record in db.preventive_maintenance
+  if (!db.preventive_maintenance) db.preventive_maintenance = [];
+
+  const pmRecord = {
+    id: `pm-rec-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    machineId: machine.id,
+    serialNumber: machine.serialNumber,
+    machineName: machine.machineName,
+    brand: machine.brand,
+    model: machine.model,
+    unit: machine.unit,
+    unitId: machine.unitId,
+    floor: machine.floor,
+    floorId: machine.floorId,
+    line: machine.line,
+    lineId: machine.lineId,
+    serviceDate: new Date().toISOString().split('T')[0],
+    serviceType: wasUnderMaintenance ? 'BREAKDOWN_RESTORATION' : 'PREVENTIVE_SERVICE',
+    serviceStatus: 'COMPLETED',
+    approvalStatus: 'APPROVED',
+    serviceStickerSerial: stickerNo,
+    servicedBy: user.name,
+    servicedById: user.id,
+    serviceRemarks: cleanRemarks,
+    nextServiceDate: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    loggedBy: user.username,
+    loggedById: user.id
+  };
+
+  db.preventive_maintenance.unshift(pmRecord);
+
+  // Add to machine history
+  if (!db.machine_history) db.machine_history = [];
+  db.machine_history.unshift({
+    id: `hist-${Date.now()}`,
+    machineId: machine.id,
+    serialNumber: machine.serialNumber,
+    action: 'MACHINE_SERVICED',
+    details: `Serviced by ${user.name} (${stickerNo}): ${cleanRemarks}. Status restored to ACTIVE & RUNNING.`,
+    timestamp: new Date().toISOString(),
+    userId: user.id,
+    username: user.username
+  });
+
+  saveDatabase(db);
+
+  // Audit and alert
+  logAuditAndAlert(db, user, 'MACHINE_SERVICED_TELEGRAM', 'MACHINE', machine.serialNumber, `Serviced (${stickerNo}) by ${user.name}: ${cleanRemarks}. Restored to RUNNING.`, true);
+  broadcastEvent('machine:serviced', { serialNumber: machine.serialNumber, servicedBy: user.name, sticker: stickerNo });
+
+  return { ok: true, machine, pmRecord, stickerNo, wasUnderMaintenance };
 }
 
 // ============================================================================
@@ -947,8 +1207,193 @@ ${commandsText}
     });
   }
 
+  // Request Transfer Prompt or Button
+  if (text === '🚚 Request Transfer') {
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+🚚 <b>মেশিন ট্রান্সফার রিকোয়েস্ট (Transfer Request):</b>
+━━━━━━━━━━━━━━━━━━━━
+ফ্যাক্টরির এক ইউনিট/ফ্লোর/লাইন থেকে অন্য স্থানে মেশিন স্থানান্তরের জন্য নিচের ফরম্যাটে মেসেজ লিখুন:
+
+<code>/transfer &lt;মেশিন সিরিয়াল&gt; &lt;গন্তব্য লাইন/ফ্লোর&gt; [কারণ]</code>
+
+<i>বাস্তব উদাহরণ:</i>
+<code>/transfer D/N-A-92 BG-C Balancing line capacity</code>
+<code>/transfer 2172 Line-04 Urgent replacement</code>
+<code>/transfer APW-15 Buriganga Floor change</code>
+
+💡 <i>নোট: সুপার অ্যাডমিনদের রিকোয়েস্ট সরাসরি সম্পন্ন করার সুযোগ থাকবে। সাধারণ কর্মীদের রিকোয়েস্ট অ্যাডমিন সেন্টিনেল বটে অনুমোদনের জন্য যাবে।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Execute / Submit Machine Transfer Request
+  if (text.startsWith('/transfer ') || text.startsWith('/relocate ')) {
+    const rawArgs = text.replace(/^\/(transfer|relocate)\s+/i, '').trim();
+    const parts = rawArgs.split(/\s+/);
+
+    if (parts.length < 2) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+⚠️ <b>ভুল ফরম্যাট!</b> অনুগ্রহ করে নিচের নিয়মে লিখুন:
+<code>/transfer &lt;মেশিন সিরিয়াল&gt; &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>
+
+<i>উদাহরণ:</i>
+<code>/transfer D/N-A-92 BG-C Production balance</code>
+`.trim(),
+        parse_mode: 'HTML'
+      });
+    }
+
+    const serial = parts[0];
+    const dest = parts[1];
+    const reason = parts.slice(2).join(' ') || 'Line capacity rebalancing';
+    const db = getDatabase();
+
+    const isExec = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
+    const result = processMachineTransferRequest(db, user, serial, dest, reason, false);
+
+    if (result.error) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: result.error,
+        parse_mode: 'HTML'
+      });
+    }
+
+    if (isExec) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+🚚 <b>মেশিন ট্রান্সফার রিকোয়েস্ট তৈরি হয়েছে!</b>
+━━━━━━━━━━━━━━━━━━━━
+🆔 <b>আইডি:</b> <code>${result.transfer.requestNumber}</code>
+⚙️ <b>মেশিন:</b> ${result.machine.machineName} (<code>${result.machine.serialNumber}</code>)
+📍 <b>বর্তমান স্থান:</b> ${result.transfer.sourcePath}
+🎯 <b>গন্তব্য:</b> ${result.transfer.destPath}
+📝 <b>কারণ:</b> ${result.transfer.reason}
+
+👑 <b>অ্যাডমিন প্রিভিলেজ:</b> আপনি কি এখনই সরাসরি মেশিনটির লোকেশন ট্রান্সফার সম্পন্ন করতে চান?
+`.trim(),
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '⚡ DIRECT APPROVE & MOVE NOW', callback_data: `ADMIN_DIRECT_MOVE:${result.transfer.id}` },
+              { text: '📋 KEEP AS PENDING GATE PASS', callback_data: `ADMIN_KEEP_PENDING:${result.transfer.id}` }
+            ]
+          ]
+        }
+      });
+    }
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+✅ <b>মেশিন ট্রান্সফার রিকোয়েস্ট সাবমিট হয়েছে!</b>
+━━━━━━━━━━━━━━━━━━━━
+🆔 <b>গেটপাস ট্র্যাকিং নং:</b> <code>${result.transfer.requestNumber}</code>
+⚙️ <b>মেশিন:</b> ${result.machine.machineName} (<code>${result.machine.serialNumber}</code>)
+📍 <b>বর্তমান স্থান:</b> ${result.transfer.sourcePath}
+🎯 <b>অনুরোধকৃত গন্তব্য:</b> ${result.transfer.destPath}
+📝 <b>কারণ:</b> ${result.transfer.reason}
+🚦 <b>স্ট্যাটাস:</b> <b>অ্যাডমিন গেটপাস অনুমোদনের অপেক্ষায় (PENDING)</b>
+
+<i>অ্যাডমিন Sentinel বট (@MaintAdminbot)-এ অনুমোদনের জন্য পুশ অ্যালার্ট পাঠানো হয়েছে।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Service Machine Prompt or Button
+  if (text === '🛠️ Service Machine') {
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+🛠️ <b>মেশিন সার্ভিসিং ও পিএম লগ (Machine Servicing Entry):</b>
+━━━━━━━━━━━━━━━━━━━━
+মেশিনের সার্ভিসিং, মেরামত বা প্রিভেন্টিভ মেইনটেন্যান্স (PM) সম্পন্ন করার পর নিচের ফরম্যাটে মেসেজ পাঠান:
+
+<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;সার্ভিসিং কাজের বিবরণ&gt;</code>
+
+<i>বাস্তব উদাহরণ:</i>
+<code>/service D/N-A-92 Motor tuned, needle bar aligned, oil lubricated</code>
+<code>/service 2172 Hook changed, timing set sticker: 248190</code>
+
+💡 <i>সুবিধা: মেশিনটি ব্রেকডাউন বা আন্ডার-মেইনটেন্যান্সে থাকলে স্বয়ংক্রিয়ভাবে ACTIVE ও RUNNING হিসেবে ফ্লোরে ফেরত যাবে এবং মেশিনের লাইফটাইম পাসপোর্টে লগ সেভ হবে।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Execute Machine Servicing Entry
+  if (text.startsWith('/service ') || text.startsWith('/pm_complete ')) {
+    const rawClean = text.replace(/^\/(service|pm_complete)\s+/i, '').trim();
+    const firstSpaceIdx = rawClean.indexOf(' ');
+
+    if (firstSpaceIdx === -1) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+⚠️ <b>ভুল ফরম্যাট!</b> অনুগ্রহ করে কাজের বিবরণ সহ লিখুন:
+<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;সার্ভিসিং কাজের বিবরণ&gt;</code>
+
+<i>উদাহরণ:</i>
+<code>/service D/N-A-92 Motor tuned, oil lubricated</code>
+`.trim(),
+        parse_mode: 'HTML'
+      });
+    }
+
+    const serial = rawClean.substring(0, firstSpaceIdx).trim();
+    let remarks = rawClean.substring(firstSpaceIdx + 1).trim();
+    let customSticker = null;
+
+    const stkMatch = remarks.match(/(?:sticker|stk)\s*[:=]\s*([a-zA-Z0-9\-_]+)/i);
+    if (stkMatch) {
+      customSticker = stkMatch[1];
+      remarks = remarks.replace(stkMatch[0], '').trim();
+    }
+
+    const db = getDatabase();
+    const result = processMachineServicingEntry(db, user, serial, remarks, customSticker);
+
+    if (result.error) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: result.error,
+        parse_mode: 'HTML'
+      });
+    }
+
+    const statusBadge = result.wasUnderMaintenance 
+      ? '🟢 <b>RESTORED TO RUNNING</b> (ব্রেকডাউন থেকে সচল করা হয়েছে)' 
+      : '🟢 <b>ACTIVE & ON-SCHEDULE</b>';
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+✅ <b>মেশিন সার্ভিসিং সফলভাবে সম্পন্ন হয়েছে!</b>
+━━━━━━━━━━━━━━━━━━━━
+⚙️ <b>মেশিন:</b> ${result.machine.machineName} (<code>${result.machine.serialNumber}</code>)
+🏷️ <b>সার্ভিস স্টিকার নং:</b> <code>${result.stickerNo}</code>
+📍 <b>লোকেশন:</b> ${result.machine.floor || '—'}, Line: <b>${result.machine.line || '—'}</b>
+👤 <b>টেকনিশিয়ান:</b> ${user.name} (${user.presetName || user.role})
+📝 <b>সার্ভিসিং কাজ:</b> <i>${remarks}</i>
+🚦 <b>ফ্যাক্টরি স্ট্যাটাস:</b> ${statusBadge}
+📅 <b>পরবর্তী সার্ভিস:</b> ${result.pmRecord.nextServiceDate} (90 দিন পর)
+━━━━━━━━━━━━━━━━━━━━
+<i>মেশিনের অফিসিয়াল লাইফটাইম পাসপোর্ট ও সেন্ট্রাল প্রিভেন্টিভ মেইনটেন্যান্স ডাটাবেজে স্থায়ীভাবে রেকর্ড সংযুক্ত হয়েছে।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
   // Transfers Button or /transfers
-  if (text === '🚚 Transfers' || text === '/transfers') {
+  if (text === '🚚 Transfers' || text === '📦 Transfers' || text === '/transfers') {
     if (!hasPermission(user, 'transfers', 'VIEW')) {
       return userBotRequest('sendMessage', {
         chat_id: chatId,
@@ -1216,6 +1661,7 @@ async function handleAdminBotMessage(msg) {
   // ==========================================
   const adminKeyboard = [
     [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
+    [{ text: '🚚 Request Transfer' }, { text: '🛠️ Service Machine' }],
     [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
     [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
     [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
@@ -1243,6 +1689,8 @@ async function handleAdminBotMessage(msg) {
 <b>Executive Live Menu:</b>
 🔍 <b>Search Machine</b> — Instant Machinery Lookup & Line
 🚚 <b>Pending Gate Passes</b> — Review & Authorize
+🚚 <b>Request Transfer</b> — Relocate Machinery Across Units
+🛠️ <b>Service Machine</b> — Maintenance & PM Sign-off
 📊 <b>Factory Status</b> — Live Infrastructure Health
 🛡️ <b>Audit Trail</b> — Real-time System Change Log
 🚑 <b>Ambulance Fleet</b> — Standby Fleet Tracking
@@ -1510,12 +1958,175 @@ async function handleAdminBotMessage(msg) {
     });
   }
 
+  // Request Transfer Prompt or Button
+  if (text === '🚚 Request Transfer') {
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+🚚 <b>এক্সিকিউটিভ মেশিন ট্রান্সফার (Executive Relocation):</b>
+━━━━━━━━━━━━━━━━━━━━
+ফ্যাক্টরির যেকোনো মেশিন এক ইউনিট/ফ্লোর/লাইন থেকে অন্য স্থানে ট্রান্সফার করতে লিখুন:
+
+<code>/transfer &lt;মেশিন সিরিয়াল&gt; &lt;গন্তব্য লাইন/ফ্লোর&gt; [কারণ]</code>
+
+<i>উদাহরণ:</i>
+<code>/transfer D/N-A-92 BG-C Capacity rebalance</code>
+<code>/transfer 2172 Line-04 Line change</code>
+<code>/transfer APW-15 Buriganga Floor transfer</code>
+
+💡 <i>সুপার অ্যাডমিন হিসেবে আপনি রিকোয়েস্ট তৈরি করার সাথে সাথে ১-ক্লিকে সরাসরি ট্রান্সফার এক্সিকিউট করতে পারবেন।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Execute / Submit Machine Transfer Request in Admin Bot
+  if (text.startsWith('/transfer ') || text.startsWith('/relocate ')) {
+    const rawArgs = text.replace(/^\/(transfer|relocate)\s+/i, '').trim();
+    const parts = rawArgs.split(/\s+/);
+
+    if (parts.length < 2) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+⚠️ <b>ভুল ফরম্যাট!</b> অনুগ্রহ করে নিচের নিয়মে লিখুন:
+<code>/transfer &lt;মেশিন সিরিয়াল&gt; &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>
+
+<i>উদাহরণ:</i>
+<code>/transfer D/N-A-92 BG-C Production balance</code>
+`.trim(),
+        parse_mode: 'HTML'
+      });
+    }
+
+    const serial = parts[0];
+    const dest = parts[1];
+    const reason = parts.slice(2).join(' ') || 'Executive capacity rebalancing';
+    const result = processMachineTransferRequest(db, user, serial, dest, reason, false);
+
+    if (result.error) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: result.error,
+        parse_mode: 'HTML'
+      });
+    }
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+🚚 <b>এক্সিকিউটিভ মেশিন ট্রান্সফার রিকোয়েস্ট তৈরি হয়েছে!</b>
+━━━━━━━━━━━━━━━━━━━━
+🆔 <b>গেটপাস আইডি:</b> <code>${result.transfer.requestNumber}</code>
+⚙️ <b>মেশিন:</b> ${result.machine.machineName} (<code>${result.machine.serialNumber}</code>)
+📍 <b>বর্তমান স্থান:</b> ${result.transfer.sourcePath}
+🎯 <b>অনুরোধকৃত গন্তব্য:</b> ${result.transfer.destPath}
+📝 <b>কারণ:</b> ${result.transfer.reason}
+
+👑 <i>আপনি কি এখনই সরাসরি মেশিনটির লোকেশন ট্রান্সফার সম্পন্ন করতে চান?</i>
+`.trim(),
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '⚡ DIRECT APPROVE & MOVE NOW', callback_data: `ADMIN_DIRECT_MOVE:${result.transfer.id}` },
+            { text: '📋 KEEP AS PENDING GATE PASS', callback_data: `ADMIN_KEEP_PENDING:${result.transfer.id}` }
+          ]
+        ]
+      }
+    });
+  }
+
+  // Service Machine Prompt or Button
+  if (text === '🛠️ Service Machine') {
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+🛠️ <b>মেশিন সার্ভিসিং ও পিএম লগ (Machine Servicing Entry):</b>
+━━━━━━━━━━━━━━━━━━━━
+মেশিনের সার্ভিসিং, মেরামত বা প্রিভেন্টিভ মেইনটেন্যান্স (PM) সম্পন্ন করার পর নিচের ফরম্যাটে মেসেজ পাঠান:
+
+<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;সার্ভিসিং কাজের বিবরণ&gt;</code>
+
+<i>বাস্তব উদাহরণ:</i>
+<code>/service D/N-A-92 Motor tuned, needle bar aligned, oil lubricated</code>
+<code>/service 2172 Hook changed, timing set sticker: 248190</code>
+
+💡 <i>সুবিধা: মেশিনটি ব্রেকডাউন বা আন্ডার-মেইনটেন্যান্সে থাকলে স্বয়ংক্রিয়ভাবে ACTIVE ও RUNNING হিসেবে ফ্লোরে ফেরত যাবে এবং মেশিনের লাইফটাইম পাসপোর্টে লগ সেভ হবে।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Execute Machine Servicing Entry in Admin Bot
+  if (text.startsWith('/service ') || text.startsWith('/pm_complete ')) {
+    const rawClean = text.replace(/^\/(service|pm_complete)\s+/i, '').trim();
+    const firstSpaceIdx = rawClean.indexOf(' ');
+
+    if (firstSpaceIdx === -1) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: `
+⚠️ <b>ভুল ফরম্যাট!</b> অনুগ্রহ করে কাজের বিবরণ সহ লিখুন:
+<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;সার্ভিসিং কাজের বিবরণ&gt;</code>
+
+<i>উদাহরণ:</i>
+<code>/service D/N-A-92 Motor tuned, oil lubricated</code>
+`.trim(),
+        parse_mode: 'HTML'
+      });
+    }
+
+    const serial = rawClean.substring(0, firstSpaceIdx).trim();
+    let remarks = rawClean.substring(firstSpaceIdx + 1).trim();
+    let customSticker = null;
+
+    const stkMatch = remarks.match(/(?:sticker|stk)\s*[:=]\s*([a-zA-Z0-9\-_]+)/i);
+    if (stkMatch) {
+      customSticker = stkMatch[1];
+      remarks = remarks.replace(stkMatch[0], '').trim();
+    }
+
+    const result = processMachineServicingEntry(db, user, serial, remarks, customSticker);
+
+    if (result.error) {
+      return adminBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: result.error,
+        parse_mode: 'HTML'
+      });
+    }
+
+    const statusBadge = result.wasUnderMaintenance 
+      ? '🟢 <b>RESTORED TO RUNNING</b> (ব্রেকডাউন থেকে সচল করা হয়েছে)' 
+      : '🟢 <b>ACTIVE & ON-SCHEDULE</b>';
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `
+✅ <b>মেশিন সার্ভিসিং সফলভাবে সম্পন্ন হয়েছে!</b>
+━━━━━━━━━━━━━━━━━━━━
+⚙️ <b>মেশিন:</b> ${result.machine.machineName} (<code>${result.machine.serialNumber}</code>)
+🏷️ <b>সার্ভিস স্টিকার নং:</b> <code>${result.stickerNo}</code>
+📍 <b>লোকেশন:</b> ${result.machine.floor || '—'}, Line: <b>${result.machine.line || '—'}</b>
+👤 <b>এক্সিকিউটিভ/টেকনিশিয়ান:</b> ${user.name} (${user.role})
+📝 <b>সার্ভিসিং কাজ:</b> <i>${remarks}</i>
+🚦 <b>ফ্যাক্টরি স্ট্যাটাস:</b> ${statusBadge}
+📅 <b>পরবর্তী সার্ভিস:</b> ${result.pmRecord.nextServiceDate} (90 দিন পর)
+━━━━━━━━━━━━━━━━━━━━
+<i>মেশিনের অফিসিয়াল লাইফটাইম পাসপোর্ট ও সেন্ট্রাল প্রিভেন্টিভ মেইনটেন্যান্স ডাটাবেজে স্থায়ীভাবে রেকর্ড সংযুক্ত হয়েছে।</i>
+`.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
   // Machine Search Query for Admin (/find <query>, /search <query>, or direct serial/model lookup)
   if (text.startsWith('/find ') || text.startsWith('/search ') || (!text.startsWith('/') && text.length >= 2)) {
     const isSpecialButton = [
-      '🔍 Search Machine', '🚚 Pending Gate Passes', '📊 Factory Status', 
-      '📋 Executive Brief', '🛡️ Audit Trail', '🚑 Ambulance Fleet', 
-      '🗄️ Database Health', '💾 Backup Database', '📢 Broadcast Alert'
+      '🔍 Search Machine', '🚚 Pending Gate Passes', '🚚 Request Transfer', 
+      '🛠️ Service Machine', '📊 Factory Status', '📋 Executive Brief', 
+      '🛡️ Audit Trail', '🚑 Ambulance Fleet', '🗄️ Database Health', 
+      '💾 Backup Database', '📢 Broadcast Alert'
     ].includes(text);
 
     if (!isSpecialButton) {
@@ -1569,8 +2180,9 @@ async function handleAdminBotCallback(cbQuery) {
   const db = getDatabase();
 
   // Authorize Gate Pass with Official Digital Verification Slip
-  if (data.startsWith('ADMIN_APPROVE_TR:')) {
-    const trId = data.replace('ADMIN_APPROVE_TR:', '');
+  if (data.startsWith('ADMIN_APPROVE_TR:') || data.startsWith('ADMIN_DIRECT_MOVE:')) {
+    const isDirect = data.startsWith('ADMIN_DIRECT_MOVE:');
+    const trId = isDirect ? data.replace('ADMIN_DIRECT_MOVE:', '') : data.replace('ADMIN_APPROVE_TR:', '');
     const tr = (db.transfer_requests || []).find(r => r.id === trId);
     if (!tr) {
       return adminBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: 'রেকর্ড পাওয়া যায়নি।' });
@@ -1580,6 +2192,30 @@ async function handleAdminBotCallback(cbQuery) {
     tr.approvedBy = user.id;
     tr.approvedByName = user.name;
     tr.approvedAt = new Date().toISOString();
+
+    // Physically move machine in db.machines
+    const targetMachine = (db.machines || []).find(m => m.id === tr.machineId || (m.serialNumber && m.serialNumber === tr.serialNumber));
+    if (targetMachine) {
+      if (tr.destUnitId) targetMachine.unitId = tr.destUnitId;
+      if (tr.destUnit || tr.destLocation?.unit) targetMachine.unit = tr.destUnit || tr.destLocation.unit;
+      if (tr.destFloorId) targetMachine.floorId = tr.destFloorId;
+      if (tr.destFloor || tr.destLocation?.floor) targetMachine.floor = tr.destFloor || tr.destLocation.floor;
+      if (tr.destLineId) targetMachine.lineId = tr.destLineId;
+      if (tr.destLine || tr.destLocation?.line) targetMachine.line = tr.destLine || tr.destLocation.line;
+      targetMachine.updatedAt = new Date().toISOString();
+
+      if (!db.machine_history) db.machine_history = [];
+      db.machine_history.unshift({
+        id: `hist-tr-${Date.now()}`,
+        machineId: targetMachine.id,
+        serialNumber: targetMachine.serialNumber,
+        action: 'MACHINE_TRANSFERRED',
+        details: `Transferred to ${tr.destPath || tr.destLocation?.line || 'New Location'} via Gate Pass #${tr.requestNumber || tr.id}`,
+        timestamp: new Date().toISOString(),
+        userId: user.id,
+        username: user.username
+      });
+    }
 
     saveDatabase(db);
     logAuditAndAlert(db, user, 'APPROVE_GATE_PASS_EXECUTIVE', 'TRANSFER', tr.id, `Executive authorized gate pass #${tr.requestNumber || tr.id}`, true);
@@ -1593,6 +2229,16 @@ async function handleAdminBotCallback(cbQuery) {
       chat_id: chatId,
       message_id: messageId,
       text: digitalSlip,
+      parse_mode: 'HTML'
+    });
+  }
+
+  if (data.startsWith('ADMIN_KEEP_PENDING:')) {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: '📋 Saved as pending gate pass.' });
+    return adminBotRequest('editMessageText', {
+      chat_id: chatId,
+      message_id: messageId,
+      text: '📋 <b>ট্রান্সফার রিকোয়েস্ট পেন্ডিং হিসেবে সংরক্ষিত রাখা হয়েছে।</b>\nপ্রয়োজনে পরবর্তীতে <code>Pending Gate Passes</code> মেনু থেকে অনুমোদন করতে পারবেন।',
       parse_mode: 'HTML'
     });
   }
@@ -1670,6 +2316,8 @@ async function startUserBotPolling() {
           userOffset = update.update_id + 1;
           if (update.message) {
             handleUserBotMessage(update.message).catch(err => console.error('[UserBot] Error:', err));
+          } else if (update.callback_query) {
+            handleAdminBotCallback(update.callback_query).catch(err => console.error('[UserBot Callback] Error:', err));
           }
         }
       }

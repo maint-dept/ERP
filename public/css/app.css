@@ -49,6 +49,12 @@
 
   --header-height: 64px;
   --sidebar-width: 280px;
+
+  /* Universal Table Header Tokens */
+  --table-th-bg: #0b1329;
+  --table-th-color: #cbd5e1;
+  --table-th-border: #1e293b;
+  --table-th-border-bottom: 2px solid #0284c7;
 }
 
 /* Modern Executive Light Theme (1:1 Proportional Mirror with Dark Mode) */
@@ -65,6 +71,12 @@ body.theme-light {
   --border-light: #f1f5f9;
   --border-subtle: #f8fafc;
   --line-contrast: #cbd5e1;
+
+  /* Universal Table Header Tokens in Light Mode */
+  --table-th-bg: #f8fafc;
+  --table-th-color: #0f172a;
+  --table-th-border: #cbd5e1;
+  --table-th-border-bottom: 2.5px solid #0284c7;
 
   --accent: #0284c7;
   --accent-soft: #e0f2fe;

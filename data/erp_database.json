@@ -321080,7 +321080,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-08T08:14:05.815Z"
+        "updatedAt": "2026-11-15T02:39:23.138Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321098,8 +321098,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-08T08:14:05.815Z",
-        "lastSync": "11/15/2026, 8:43:27 AM"
+        "updatedAt": "2026-11-15T02:39:23.139Z",
+        "lastSync": "11/15/2026, 9:17:59 AM"
       }
     ],
     "emailConfig": {
@@ -333088,8 +333088,9 @@
       "pendingEmail": "motaher.cse@gmail.com",
       "emailVerifyOTP": "432615",
       "emailVerifyOTPExpiry": "2026-11-14T13:48:45.116Z",
-      "telegramAdminChatId": null,
       "telegramChatId": null,
+      "telegramVerified": false,
+      "telegramAdminChatId": null,
       "telegramUsername": null,
       "telegramLinkedAt": null
     },
@@ -336877,6 +336878,94 @@
     }
   ],
   "transfer_requests": [
+    {
+      "id": "trq-1794712936833-251",
+      "requestNumber": "TR-2026-194938",
+      "machineId": "mac-1791545375469-1-94525",
+      "serialNumber": "D/N-A-92",
+      "machineName": "Double Needle Lock Stitch Machine",
+      "machineInfo": {
+        "machineName": "Double Needle Lock Stitch Machine",
+        "brand": "JUKI",
+        "model": "LH-3588A-7",
+        "serialNumber": "D/N-A-92"
+      },
+      "sourceGroupId": "grp-1",
+      "sourceUnitId": "unt-1",
+      "sourceFloorId": "flo-1788686928901-929",
+      "sourceLineId": "lin-1791538463069-17-73052",
+      "sourceLocation": {
+        "unit": "AKM Knit Wear Ltd.",
+        "floor": "Jamuna",
+        "line": "JA-APW Room"
+      },
+      "sourcePath": "AKM Knit Wear Ltd. > Jamuna > JA-APW Room",
+      "destGroupId": "grp-1",
+      "destUnitId": "unt-1",
+      "destFloorId": "flo-1788686930004-760",
+      "destLineId": "lin-1788687035957-5172",
+      "destLocation": {
+        "unit": "AKM Knit Wear Ltd.",
+        "floor": "Buriganga",
+        "line": "BG-C"
+      },
+      "destPath": "AKM Knit Wear Ltd. > Buriganga > BG-C",
+      "destUnit": "AKM Knit Wear Ltd.",
+      "destFloor": "Buriganga",
+      "destLine": "BG-C",
+      "reason": "Urgent shift",
+      "status": "PENDING",
+      "requestedBy": "usr-super-admin",
+      "requestedByName": "Engr. Motaher Hossain",
+      "requestedAt": "2026-11-15T03:22:16.833Z",
+      "approvedBy": null,
+      "approvedByName": null,
+      "approvedAt": null
+    },
+    {
+      "id": "trq-1794712925975-190",
+      "requestNumber": "TR-2026-532449",
+      "machineId": "mac-1791545375469-1-94525",
+      "serialNumber": "D/N-A-92",
+      "machineName": "Double Needle Lock Stitch Machine",
+      "machineInfo": {
+        "machineName": "Double Needle Lock Stitch Machine",
+        "brand": "JUKI",
+        "model": "LH-3588A-7",
+        "serialNumber": "D/N-A-92"
+      },
+      "sourceGroupId": "grp-1",
+      "sourceUnitId": "unt-1",
+      "sourceFloorId": "flo-1788686928901-929",
+      "sourceLineId": "lin-1791538463069-17-73052",
+      "sourceLocation": {
+        "unit": "AKM Knit Wear Ltd.",
+        "floor": "Jamuna",
+        "line": "JA-APW Room"
+      },
+      "sourcePath": "AKM Knit Wear Ltd. > Jamuna > JA-APW Room",
+      "destGroupId": "grp-1",
+      "destUnitId": "unt-1",
+      "destFloorId": "flo-1788686930004-760",
+      "destLineId": "lin-1788687035957-5172",
+      "destLocation": {
+        "unit": "AKM Knit Wear Ltd.",
+        "floor": "Buriganga",
+        "line": "BG-C"
+      },
+      "destPath": "AKM Knit Wear Ltd. > Buriganga > BG-C",
+      "destUnit": "AKM Knit Wear Ltd.",
+      "destFloor": "Buriganga",
+      "destLine": "BG-C",
+      "reason": "Urgent production shift",
+      "status": "PENDING",
+      "requestedBy": "usr-super-admin",
+      "requestedByName": "Engr. Motaher Hossain",
+      "requestedAt": "2026-11-15T03:22:05.975Z",
+      "approvedBy": null,
+      "approvedByName": null,
+      "approvedAt": null
+    },
     {
       "id": "trq-101",
       "requestNumber": "TR-2026-000001",
@@ -528988,6 +529077,5 @@
     }
   ],
   "needle_transactions": [],
-  "needle_floor_budgets": [],
-  "pending_telegram_codes": {}
+  "needle_floor_budgets": []
 }
