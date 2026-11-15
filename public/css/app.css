@@ -67,6 +67,14 @@
   --table-boundary-shadow: 4px 0 10px -2px rgba(0, 0, 0, 0.45);
 }
 
+/* Instant Zero-Jank Theme Switcher Token (Blocks Layout Animations during Class Toggle) */
+.no-transitions,
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition: none !important;
+}
+
 /* Modern Executive Light Theme (1:1 Proportional Mirror with Dark Mode) */
 html.theme-light,
 html.theme-light body,
@@ -1883,6 +1891,7 @@ body.modal-open div {
 .page-view {
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
   overscroll-behavior: auto;
   scroll-behavior: auto;
   scrollbar-width: auto;
@@ -1916,12 +1925,10 @@ body.modal-open div {
 
 @keyframes viewFadeGlide {
   0% {
-    opacity: 0.88;
-    transform: translateY(3px);
+    opacity: 0.94;
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -1933,8 +1940,13 @@ body.modal-open div {
   gap: 10px;
   min-height: 0;
   contain: layout;
-  animation: viewFadeGlide 0.14s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  animation: viewFadeGlide 0.1s ease-out;
+}
+
+.inventory-page-wrapper {
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
 }
 
 .excel-grid-container, .table-responsive {

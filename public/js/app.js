@@ -367,9 +367,6 @@ class ERPApplication {
     state.on('theme:changed', () => {
       // Zero-jank instant theme transition: CSS variables & .theme-light class seamlessly update
       // all colors, borders, and rows without tearing down DOM or shifting layout.
-      if (typeof enhanceDomIcons === 'function') {
-        enhanceDomIcons(document.body);
-      }
     });
     state.on('inventory:updated', () => {
       if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {

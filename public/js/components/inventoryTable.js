@@ -1527,7 +1527,7 @@ export function renderInventoryTable() {
       </div>
 
       <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Virtual Scroll -->
-      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 350px; max-height: calc(100vh - 275px); overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; position: relative;">
+      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 auto; min-height: 0; max-height: none; height: auto; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; position: relative;">
         <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), slWidth + checkWidth)}px; table-layout: fixed;">
           <thead>
             ${headerHtml}

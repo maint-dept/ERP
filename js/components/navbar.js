@@ -666,6 +666,8 @@ export function initNavbarEvents() {
   if (dropdownThemeBtn) {
     dropdownThemeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Block all CSS transitions during class change to prevent layout jumping/squeezing
+      document.documentElement.classList.add('no-transitions');
       const isLight = !document.body.classList.contains('theme-light');
       document.body.classList.toggle('theme-light', isLight);
       document.documentElement.classList.toggle('theme-light', isLight);
@@ -673,6 +675,11 @@ export function initNavbarEvents() {
       if (typeof state !== 'undefined' && state.emit) {
         state.emit('theme:changed', isLight ? 'light' : 'dark');
       }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.documentElement.classList.remove('no-transitions');
+        });
+      });
 
       const topThemeBtn = document.getElementById('btn-theme-toggle');
       if (topThemeBtn) {
@@ -1007,6 +1014,8 @@ export function initNavbarEvents() {
   const themeBtn = document.getElementById('btn-theme-toggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
+      // Block all CSS transitions during class change to prevent layout jumping/squeezing
+      document.documentElement.classList.add('no-transitions');
       const isLight = !document.body.classList.contains('theme-light');
       document.body.classList.toggle('theme-light', isLight);
       document.documentElement.classList.toggle('theme-light', isLight);
@@ -1014,6 +1023,11 @@ export function initNavbarEvents() {
       if (typeof state !== 'undefined' && state.emit) {
         state.emit('theme:changed', isLight ? 'light' : 'dark');
       }
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.documentElement.classList.remove('no-transitions');
+        });
+      });
       const themeIconEl = themeBtn.querySelector('.theme-icon') || themeBtn;
       themeIconEl.innerHTML = isLight ? icon('moon', { size: 15, color: '#38bdf8' }) : icon('sun', { size: 15, color: '#f59e0b' });
       themeBtn.title = isLight ? 'Theme: Switch to Dark Mode' : 'Theme: Switch to Daylight / Light Mode';

@@ -183,11 +183,12 @@
 .inventory-page-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
   gap: 6px;
-  overflow: hidden; /* Prevents outer page vertical scrollbar so toolbar stays fixed */
+  overflow: hidden !important; /* Prevents outer page vertical scrollbar so toolbar stays fixed */
+  box-sizing: border-box;
 }
 
 @media (min-width: 769px) {
