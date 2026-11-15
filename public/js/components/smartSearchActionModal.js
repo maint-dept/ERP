@@ -1087,7 +1087,7 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * ⚡ Quick Features Hub • কুইক ফিচার হাব
+ * ⚡ Quick Features Hub
  * 1-Click Operations HUD with Scoped Servicing KPIs, Fast Relocation / Transfer,
  * and Live Instant Machine Search.
  */
@@ -1200,7 +1200,7 @@ export function openQuickFeaturesHub() {
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 22px; line-height: 1;">⚡</span>
-              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">Quick Features Hub • কুইক ফিচার হাব</h2>
+              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">Quick Features Hub</h2>
               <span style="background: rgba(2, 132, 199, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px;">Live Scope</span>
             </div>
             <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">
@@ -1220,39 +1220,39 @@ export function openQuickFeaturesHub() {
               <span id="qf-toggle-serviced-days" style="text-decoration: underline; font-size: 9.5px; opacity: 0.85;" title="Click to view 30 days">30d: ${servicedLast30.length}</span>
             </div>
             <div style="font-size: 22px; font-weight: 800; color: #34d399; font-family: var(--font-mono); margin-top: 3px;" id="qf-val-serviced">${servicedLast7.length}</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">মেশিন গত ৭ দিনে সার্ভিসিং সম্পন্ন</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Completed services in last 7 days</div>
           </div>
 
           <div class="qf-kpi-card" id="qf-kpi-due" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 3.5px solid #f59e0b; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
             <div style="font-size: 10.5px; font-weight: 700; color: #fcd34d; text-transform: uppercase; letter-spacing: 0.3px;">⏰ Due Today / Schedule</div>
             <div style="font-size: 22px; font-weight: 800; color: #fbbf24; font-family: var(--font-mono); margin-top: 3px;">${dueItems.length}</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">আজ বা শিডিউলে ডিউ থাকা সার্ভিস</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Scheduled maintenance due today</div>
           </div>
 
           <div class="qf-kpi-card" id="qf-kpi-overdue" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-left: 3.5px solid #ef4444; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
             <div style="font-size: 10.5px; font-weight: 700; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.3px;">🔴 Overdue Alert</div>
             <div style="font-size: 22px; font-weight: 800; color: #f87171; font-family: var(--font-mono); margin-top: 3px;">${overdueItems.length}</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">জরুরি ওভারডিউ সার্ভিসিং প্রয়োজন</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Urgent overdue services requiring action</div>
           </div>
 
           <div class="qf-kpi-card" id="qf-kpi-transfers" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 3.5px solid #8b5cf6; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
             <div style="font-size: 10.5px; font-weight: 700; color: #c4b5fd; text-transform: uppercase; letter-spacing: 0.3px;">🚚 Pending Transfers</div>
             <div style="font-size: 22px; font-weight: 800; color: #a78bfa; font-family: var(--font-mono); margin-top: 3px;">${pendingTransfers.length}</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">চলমান স্থানান্তর গেটপাস রিকোয়েস্ট</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">Active machine relocation requests</div>
           </div>
         </div>
 
         <!-- 1-Click Operations Launcher Grid -->
         <div style="margin-bottom: 18px;">
           <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-            ⚡ 1-Click Fast Actions (এক ক্লিকে মূল ফিচারসমূহ)
+            ⚡ 1-Click Fast Actions
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
             <button id="btn-qf-action-transfer" class="btn" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
               <span style="font-size: 18px;">🚚</span>
               <div>
                 <div>Request Transfer</div>
-                <div style="font-size: 10px; font-weight: 500; color: #7dd3fc;">স্থানান্তর রিকোয়েস্ট পাঠান</div>
+                <div style="font-size: 10px; font-weight: 500; color: #7dd3fc;">Create relocation gate pass</div>
               </div>
             </button>
 
@@ -1260,7 +1260,7 @@ export function openQuickFeaturesHub() {
               <span style="font-size: 18px;">🛠️</span>
               <div>
                 <div>Quick Service Entry</div>
-                <div style="font-size: 10px; font-weight: 500; color: #86efac;">সার্ভিস ও স্টিকার এন্ট্রি</div>
+                <div style="font-size: 10px; font-weight: 500; color: #86efac;">Log service & sticker</div>
               </div>
             </button>
 
@@ -1268,7 +1268,7 @@ export function openQuickFeaturesHub() {
               <span style="font-size: 18px;">🚨</span>
               <div>
                 <div>Report Breakdown</div>
-                <div style="font-size: 10px; font-weight: 500; color: #fca5a5;">জরুরি ব্রেকডাউন নোটিশ</div>
+                <div style="font-size: 10px; font-weight: 500; color: #fca5a5;">Urgent breakdown alert</div>
               </div>
             </button>
 
@@ -1276,7 +1276,7 @@ export function openQuickFeaturesHub() {
               <span style="font-size: 18px;">📋</span>
               <div>
                 <div>PM Hub & Checklist</div>
-                <div style="font-size: 10px; font-weight: 500; color: #fde68a;">প্রিভেন্টিভ মেইনটেন্যান্স</div>
+                <div style="font-size: 10px; font-weight: 500; color: #fde68a;">Preventive maintenance</div>
               </div>
             </button>
 
@@ -1284,7 +1284,7 @@ export function openQuickFeaturesHub() {
               <span style="font-size: 18px;">🔄</span>
               <div>
                 <div>Relocate & Verify</div>
-                <div style="font-size: 10px; font-weight: 500; color: #d8b4fe;">লোকেশন ভেরিফিকেশন হাব</div>
+                <div style="font-size: 10px; font-weight: 500; color: #d8b4fe;">Location verification hub</div>
               </div>
             </button>
 
@@ -1292,7 +1292,7 @@ export function openQuickFeaturesHub() {
               <span style="font-size: 18px;">📷</span>
               <div>
                 <div>QR / Barcode Scanner</div>
-                <div style="font-size: 10px; font-weight: 500; color: #7dd3fc;">ক্যামেরা দিয়ে স্ক্যান</div>
+                <div style="font-size: 10px; font-weight: 500; color: #7dd3fc;">Live camera scanner</div>
               </div>
             </button>
           </div>
@@ -1302,7 +1302,7 @@ export function openQuickFeaturesHub() {
         <div style="border-top: 1px solid rgba(56, 189, 248, 0.15); padding-top: 14px;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
             <label for="inp-qf-search" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
-              🔍 Instant Machine Finder (মেশিন সার্চ ও লাইভ স্ট্যাটাস)
+              🔍 Instant Machine Finder & Live Status
             </label>
             <span style="font-size: 11px; color: #38bdf8;">${scopedMachines.length} machines in scope</span>
           </div>
@@ -1320,7 +1320,7 @@ export function openQuickFeaturesHub() {
           <!-- Dynamic Results Container -->
           <div id="qf-search-results-list" class="custom-scrollbar" style="margin-top: 10px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
             <div style="text-align: center; padding: 18px; color: #64748b; font-size: 12px;">
-              উপরে সার্চ বক্সে মেশিনের সিরিয়াল নম্বর, মডেল বা লাইন লিখে সরাসরি এক ক্লিকে কাজ করুন।
+              Type machine serial, model, or line in search box above to execute instant actions.
             </div>
           </div>
         </div>
@@ -1443,7 +1443,7 @@ export function openQuickFeaturesHub() {
   function renderFilteredMachineList(items) {
     if (!resultsList) return;
     if (items.length === 0) {
-      resultsList.innerHTML = `<div style="text-align: center; padding: 14px; color: #94a3b8; font-size: 12px;">কোনো রেকর্ড পাওয়া যায়নি।</div>`;
+      resultsList.innerHTML = `<div style="text-align: center; padding: 14px; color: #94a3b8; font-size: 12px;">No matching records found.</div>`;
       return;
     }
     resultsList.innerHTML = items.slice(0, 15).map(item => `
@@ -1482,7 +1482,7 @@ export function openQuickFeaturesHub() {
     searchInput.addEventListener('input', () => {
       const q = searchInput.value.trim().toLowerCase();
       if (!q) {
-        resultsList.innerHTML = `<div style="text-align: center; padding: 18px; color: #64748b; font-size: 12px;">উপরে সার্চ বক্সে মেশিনের সিরিয়াল নম্বর, মডেল বা লাইন লিখে সরাসরি এক ক্লিকে কাজ করুন।</div>`;
+        resultsList.innerHTML = `<div style="text-align: center; padding: 18px; color: #64748b; font-size: 12px;">Type machine serial, model, or line in search box above to execute instant actions.</div>`;
         return;
       }
 
@@ -1496,7 +1496,7 @@ export function openQuickFeaturesHub() {
       }).slice(0, 10);
 
       if (matches.length === 0) {
-        resultsList.innerHTML = `<div style="text-align: center; padding: 16px; color: #f87171; font-size: 12px;">❌ '<code>${escapeHtml(q)}</code>' দিয়ে আপনার অ্যাক্সেস এরিয়ায় কোনো মেশিন পাওয়া যায়নি।</div>`;
+        resultsList.innerHTML = `<div style="text-align: center; padding: 16px; color: #f87171; font-size: 12px;">❌ No machines found matching '<code>${escapeHtml(q)}</code>' in your assigned scope.</div>`;
         return;
       }
 
