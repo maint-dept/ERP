@@ -307,18 +307,18 @@ export function renderSingleMachineRow(m, idx, ctx) {
     (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_theme') === 'light')
   );
   const rowBg = isSelected 
-    ? (isLightMode ? '#dbeafe' : '#1e40af') 
-    : (isLightMode ? (idx % 2 === 0 ? '#ffffff' : '#f1f5f9') : (idx % 2 === 0 ? '#0f172a' : '#0c1427'));
-  const cellColor = isLightMode ? '#0f172a' : '#f8fafc';
-  const cellBorderRight = isLightMode ? '1px solid #cbd5e1' : '1px solid #1e293b';
-  const cellBorderBottom = isLightMode ? '1px solid #cbd5e1' : '1px solid #1e293b';
-  const boundaryBorder = isLightMode ? '2px solid #cbd5e1' : '2px solid rgba(56, 189, 248, 0.45)';
-  const boundaryShadow = isLightMode ? '4px 0 8px -2px rgba(15, 23, 42, 0.08)' : '4px 0 10px -2px rgba(0, 0, 0, 0.45)';
+    ? 'var(--table-row-bg-selected, #1e40af)' 
+    : (idx % 2 === 0 ? 'var(--table-row-bg-even, #0f172a)' : 'var(--table-row-bg-odd, #0c1427)');
+  const cellColor = 'var(--table-cell-color, #f8fafc)';
+  const cellBorderRight = 'var(--table-cell-border, 1px solid #1e293b)';
+  const cellBorderBottom = 'var(--table-cell-border, 1px solid #1e293b)';
+  const boundaryBorder = 'var(--table-boundary-border, 2px solid rgba(56, 189, 248, 0.45))';
+  const boundaryShadow = 'var(--table-boundary-shadow, 4px 0 10px -2px rgba(0, 0, 0, 0.45))';
 
   let row = `<tr class="machine-row ${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
 
   // 1. SL (Sticky Left: 0px)
-  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: ${isLightMode ? '#475569' : 'var(--text-muted)'} !important; font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-color: ${rowBg} !important; border-right: ${cellBorderRight} !important; border-bottom: ${cellBorderBottom} !important; background-clip: border-box !important;">${displaySlNo}</td>`;
+  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--table-th-color, #cbd5e1) !important; font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-color: ${rowBg} !important; border-right: ${cellBorderRight} !important; border-bottom: ${cellBorderBottom} !important; background-clip: border-box !important;">${displaySlNo}</td>`;
 
   // 2. Selection Checkbox (Sticky Left: slWidth)
   const isOperable = authService.canOperateMachine(m);
@@ -976,12 +976,12 @@ export function renderInventoryTable() {
     (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_theme') === 'light')
   );
 
-  const thBg = isLightMode ? '#f8fafc' : '#0b1329';
-  const thColor = isLightMode ? '#0f172a' : '#cbd5e1';
-  const thBorderRight = isLightMode ? '1px solid #cbd5e1' : '1px solid #1e293b';
-  const thBorderBottom = isLightMode ? '2.5px solid #0284c7' : '2px solid #0284c7';
-  const boundaryBorder = isLightMode ? '2px solid #cbd5e1' : '2px solid rgba(56, 189, 248, 0.45)';
-  const boundaryShadow = isLightMode ? '4px 0 8px -2px rgba(15, 23, 42, 0.08)' : '4px 0 10px -2px rgba(0, 0, 0, 0.45)';
+  const thBg = 'var(--table-th-bg, #0b1329)';
+  const thColor = 'var(--table-th-color, #cbd5e1)';
+  const thBorderRight = 'var(--table-th-border, 1px solid #1e293b)';
+  const thBorderBottom = 'var(--table-th-border-bottom, 2px solid #0284c7)';
+  const boundaryBorder = 'var(--table-boundary-border, 2px solid rgba(56, 189, 248, 0.45))';
+  const boundaryShadow = 'var(--table-boundary-shadow, 4px 0 10px -2px rgba(0, 0, 0, 0.45))';
 
   // Build Table Header Columns with Guaranteed Inline Background Injection
   let headerHtml = `
@@ -1253,7 +1253,7 @@ export function renderInventoryTable() {
             </button>
 
             ${authService.hasAccess('machines', 'DELETE') ? `
-              <button id="btn-top-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px; background: ${selectedIds.size > 0 ? '#dc2626' : 'rgba(220, 38, 38, 0.18)'}; border: 1px solid ${selectedIds.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedIds.size > 0 ? '#fff' : '#fca5a5'}; cursor: ${selectedIds.size > 0 ? 'pointer' : 'not-allowed'}; opacity: ${selectedIds.size > 0 ? '1' : '0.6'}; display: inline-flex; align-items: center; gap: 4px;" ${selectedIds.size === 0 ? 'disabled' : ''} title="${selectedIds.size > 0 ? `Delete ${selectedIds.size} selected machine(s)` : 'Select machines to delete'}">
+              <button id="btn-top-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px; background: ${selectedIds.size > 0 ? '#dc2626' : (isLightMode ? '#fee2e2' : 'rgba(220, 38, 38, 0.18)')}; border: 1px solid ${selectedIds.size > 0 ? '#ef4444' : (isLightMode ? '#fca5a5' : 'rgba(239, 68, 68, 0.35)')}; color: ${selectedIds.size > 0 ? '#fff' : (isLightMode ? '#dc2626' : '#fca5a5')}; cursor: ${selectedIds.size > 0 ? 'pointer' : 'not-allowed'}; opacity: ${selectedIds.size > 0 ? '1' : '0.85'}; display: inline-flex; align-items: center; gap: 4px;" ${selectedIds.size === 0 ? 'disabled' : ''} title="${selectedIds.size > 0 ? `Delete ${selectedIds.size} selected machine(s)` : 'Select machines to delete'}">
                 <span>${icon('trash', { size: 13 })}</span> <span>Delete Selected ${selectedIds.size > 0 ? `(${selectedIds.size})` : ''}</span>
               </button>
             ` : ''}

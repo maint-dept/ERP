@@ -5046,7 +5046,7 @@ body.theme-light .uam-header-title,
 body.theme-light .custom-notif-header h3 {
   font-family: var(--font-main) !important;
   font-weight: 700 !important;
-  letter-spacing: -0.2px !important;
+  letter-spacing: normal !important;
   color: #0f172a !important;
 }
 
@@ -5161,7 +5161,7 @@ body.theme-light .nav-group-header.parent-active {
   background: rgba(2, 132, 199, 0.08) !important;
   color: #0284c7 !important;
   font-weight: 700 !important;
-  border-left: 3.5px solid #0284c7 !important;
+  border: 1px solid transparent !important;
   box-shadow: none !important;
 }
 
@@ -5203,10 +5203,13 @@ body.theme-light .nav-submenu {
 
 body.theme-light .nav-subitem {
   color: #334155 !important;
-  font-weight: 500 !important;
+  font-weight: 550 !important;
+  font-size: 12px !important;
   border-radius: 6px !important;
-  margin: 1px 0 1px 12px !important;
-  transition: all 0.18s ease !important;
+  margin: 0 !important;
+  padding: 6.5px 9px !important;
+  border-left: 2.5px solid transparent !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 body.theme-light .nav-subitem:hover {
@@ -5216,9 +5219,10 @@ body.theme-light .nav-subitem:hover {
 }
 
 body.theme-light .nav-subitem.active {
-  background-color: #e0f2fe !important;
+  background: #e0f2fe !important;
   color: #0284c7 !important;
   font-weight: 700 !important;
+  border-left: 2.5px solid #0284c7 !important;
   box-shadow: 0 1px 3px rgba(2, 132, 199, 0.1) !important;
 }
 

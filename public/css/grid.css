@@ -1126,21 +1126,21 @@ td.col-actions-cell {
    EXCEL GRID & TABLE LIGHT THEME FULL COMPATIBILITY (ORACLE APEX STANDARD)
    ========================================================================== */
 body.theme-light .excel-grid-table thead th {
-  background-color: #efe9dd !important;
-  color: #1f1c17 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
   font-weight: 700 !important;
   font-size: 11.5px !important;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #d3cab7 !important;
-  border-right: 1px solid #e2dbcc !important;
-  border-left: 1px solid #e2dbcc !important;
-  border-top: 1px solid #e2dbcc !important;
+  letter-spacing: normal !important;
+  border-bottom: 2.5px solid #0284c7 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-left: none !important;
+  border-top: 1px solid #cbd5e1 !important;
   text-transform: uppercase;
 }
 
 body.theme-light .excel-grid-table thead th:hover {
-  background-color: #e5decb !important;
-  color: #d9480f !important;
+  background-color: #f1f5f9 !important;
+  color: #0284c7 !important;
 }
 
 body.theme-light .col-freeze-sl,
@@ -1227,10 +1227,10 @@ body.theme-light thead th.col-frozen-boundary {
 
 /* Light Theme: Crisp Hairline Warm Borders & Deep Ink Typography */
 body.theme-light .excel-grid-table tbody td {
-  border-bottom: 1px solid #e2dbcc !important;
-  border-right: 1px solid #e2dbcc !important;
-  border-left: 1px solid #e2dbcc !important;
-  color: #1f1c17 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-left: none !important;
+  color: #0f172a !important;
   font-weight: 600 !important;
   font-size: 12px;
 }
