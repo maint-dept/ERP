@@ -560,7 +560,291 @@ function renderQuickFeaturesHub(user, db, isExecutive = false) {
     ]);
   }
 
+  inline_keyboard.push([
+    { text: '🔄 Refresh Hub Metrics', callback_data: 'HUB_REFRESH' }
+  ]);
+
   return { text, inline_keyboard, metrics, metrics30 };
+}
+
+// Robust In-Place Message Editor with fallback and suppression of unmodified error
+async function safeEditMessage(botReqFn, chatId, messageId, text, reply_markup) {
+  try {
+    return await botReqFn('editMessageText', {
+      chat_id: chatId,
+      message_id: messageId,
+      text: text,
+      parse_mode: 'HTML',
+      reply_markup: reply_markup
+    });
+  } catch (err) {
+    if (err.message && err.message.includes('message is not modified')) {
+      return { ok: true, not_modified: true };
+    }
+    return await botReqFn('sendMessage', {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML',
+      reply_markup: reply_markup
+    });
+  }
+}
+
+// In-Place Renderers for Quick Features Hub sub-views
+function renderDueView(user, db) {
+  const metrics = calculateScopedServiceMetrics(db, user, 7);
+  let text = `⏰ <b>Due Maintenance Fleet (${metrics.dueCount} machines):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (metrics.dueItems.length === 0) {
+    text += '<i>✅ No pending due services found in your operational scope.</i>\n';
+  } else {
+    metrics.dueItems.forEach((d, idx) => {
+      text += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line || '—'}</b>, Floor: ${d.floor || '—'} | Due: <code>${d.dueDate}</code>\n`;
+    });
+    if (metrics.dueCount > metrics.dueItems.length) {
+      text += `\n<i>...and ${metrics.dueCount - metrics.dueItems.length} more machines scheduled.</i>\n`;
+    }
+  }
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh Due', callback_data: 'HUB_DUE' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderOverdueView(user, db) {
+  const metrics = calculateScopedServiceMetrics(db, user, 7);
+  let text = `🚨 <b>CRITICAL OVERDUE MAINTENANCE (${metrics.overdueCount} machines):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (metrics.overdueItems.length === 0) {
+    text += '<i>✅ Zero overdue machines! Maintenance schedule 100% compliant.</i>\n';
+  } else {
+    metrics.overdueItems.forEach((d, idx) => {
+      text += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line || '—'}</b>, Floor: ${d.floor || '—'} | Overdue: <code>${d.dueDate}</code>\n`;
+    });
+    if (metrics.overdueCount > metrics.overdueItems.length) {
+      text += `\n<i>...and ${metrics.overdueCount - metrics.overdueItems.length} more overdue machines.</i>\n`;
+    }
+  }
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh Overdue', callback_data: 'HUB_OVERDUE' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderServicesView(user, db, days = 7) {
+  const metrics = calculateScopedServiceMetrics(db, user, days);
+  let text = `🛠️ <b>Completed Maintenance Services (Past ${days} Days - ${metrics.recentServicedCount}):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (metrics.recentServiced.length === 0) {
+    text += `<i>No services recorded in the last ${days} days for your scope.</i>\n`;
+  } else {
+    metrics.recentServiced.forEach((p, idx) => {
+      text += `${idx + 1}. <b>${p.machineName || 'Machine'}</b> (<code>${p.serialNumber || '—'}</code>)\n   📅 Date: <code>${p.serviceDate || '—'}</code> | 👤 <b>${p.servicedBy || '—'}</b>\n`;
+    });
+    if (metrics.recentServicedCount > metrics.recentServiced.length) {
+      text += `\n<i>...and ${metrics.recentServicedCount - metrics.recentServiced.length} more records.</i>\n`;
+    }
+  }
+  const otherDays = days === 7 ? 30 : 7;
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: `📊 View ${otherDays} Days`, callback_data: otherDays === 7 ? 'HUB_SERVICES_7' : 'HUB_SERVICES_30' }
+      ],
+      [
+        { text: '🔄 Refresh Log', callback_data: days === 7 ? 'HUB_SERVICES_7' : 'HUB_SERVICES_30' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderPmView(user, db) {
+  const today = new Date().toISOString().split('T')[0];
+  const pms = (db.preventive_maintenance || []).filter(p => isLocationInUserScope(user, p, db) && (p.serviceDate === today || p.nextServiceDate === today || p.status === 'SCHEDULED' || p.serviceStatus === 'DUE'));
+  let text = `📋 <b>Preventive Maintenance Checklist:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (pms.length === 0) {
+    text += '<i>✅ No pending PM routines scheduled for today in your area.</i>\n';
+  } else {
+    pms.slice(0, 8).forEach((p, i) => {
+      text += `${i+1}. <b>${p.machineName || 'Machine'}</b> (<code>${p.serialNumber || '—'}</code>)\n   📍 Line: ${p.line || '—'} | Status: <b>${p.serviceStatus || p.status || 'PENDING'}</b>\n`;
+    });
+    if (pms.length > 8) {
+      text += `\n<i>...and ${pms.length - 8} more scheduled PMs.</i>\n`;
+    }
+  }
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh PM', callback_data: 'HUB_PM' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderAmbulanceView(user, db) {
+  const ambulances = (db.machines || []).filter(m => m.isAmbulance === true && isMachineInUserScope(user, m, db));
+  let text = `🚑 <b>Standby Ambulance Fleet (${ambulances.length} Ready):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (ambulances.length === 0) {
+    text += '<i>No standby ambulance machines located in your current scope.</i>\n';
+  } else {
+    ambulances.slice(0, 10).forEach((m, i) => {
+      text += `${i+1}. <b>${m.machineName || 'Sewing Machine'}</b> (<code>${m.serialNumber || '—'}</code>)\n   📍 Floor: ${m.floor || '—'}, Line: ${m.line || '—'}\n`;
+    });
+    if (ambulances.length > 10) {
+      text += `\n<i>...and ${ambulances.length - 10} more ready.</i>\n`;
+    }
+  }
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh Fleet', callback_data: 'HUB_AMBULANCE' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderStatusView(user, db) {
+  const machines = (db.machines || []).filter(m => isMachineInUserScope(user, m, db));
+  const total = machines.length;
+  const running = machines.filter(m => m.running || m.status === 'RUNNING').length;
+  const ambulance = machines.filter(m => m.isAmbulance).length;
+  const repairable = machines.filter(m => m.status === 'REPAIRABLE' || m.repairable).length;
+  const other = Math.max(0, total - running - ambulance - repairable);
+
+  let text = `📊 <b>Factory Operational Status (Scoped):</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+    `📍 <b>Scope:</b> <code>${formatUserScopeDescription(user, db)}</code>\n` +
+    `🏭 <b>Total Fleet:</b> <code>${total.toLocaleString()}</code> machines\n` +
+    `🟢 <b>Running:</b> <code>${running.toLocaleString()}</code> (${total > 0 ? ((running/total)*100).toFixed(1) : 0}%)\n` +
+    `🚑 <b>Ambulance Standby:</b> <code>${ambulance}</code>\n` +
+    `🟡 <b>Repairable / Maintenance:</b> <code>${repairable}</code>\n` +
+    `⚪ <b>Idle / Usable:</b> <code>${other}</code>\n`;
+
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh Status', callback_data: 'HUB_STATUS' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderTransfersView(user, db) {
+  const pendingTransfers = (db.transfer_requests || []).filter(r => {
+    if (r.status !== 'PENDING' && r.status !== 'IN_PROGRESS') return false;
+    const isOwner = r.requestedBy === user.name || r.requestedBy === user.username || r.userId === user.id;
+    if (isOwner) return true;
+    const fromMatch = isLocationInUserScope(user, { floor: r.fromFloor, unit: r.fromUnit, line: r.fromLine }, db);
+    const toMatch = isLocationInUserScope(user, { floor: r.toFloor, unit: r.toUnit, line: r.toLine }, db);
+    return fromMatch || toMatch;
+  });
+
+  let text = `📦 <b>Active Machine Transfers (${pendingTransfers.length}):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (pendingTransfers.length === 0) {
+    text += '<i>✅ No pending transfer requests in your scope.</i>\n';
+  } else {
+    pendingTransfers.slice(0, 6).forEach((t, i) => {
+      text += `${i+1}. <b>${t.machineName || 'Machine'}</b> (<code>${t.serialNumber || '—'}</code>)\n` +
+        `   From: ${t.fromFloor || '—'} (${t.fromLine || '—'}) ➔ To: ${t.toFloor || '—'} (${t.toLine || '—'})\n` +
+        `   Status: <b>${t.status}</b>\n`;
+    });
+    if (pendingTransfers.length > 6) {
+      text += `\n<i>...and ${pendingTransfers.length - 6} more transfers.</i>\n`;
+    }
+  }
+
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh Transfers', callback_data: 'HUB_TRANSFERS' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+function renderAuditView(db) {
+  const logs = (db.audit_logs || []).slice(0, 8);
+  let text = `🛡️ <b>Recent Executive Audit Trail:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (logs.length === 0) {
+    text += '<i>No audit logs recorded yet.</i>\n';
+  } else {
+    logs.forEach((l, idx) => {
+      text += `${idx + 1}. [<code>${l.action || 'LOG'}</code>] <b>${l.username || 'System'}</b>\n   ${l.details || '—'} (<i>${l.timestamp ? l.timestamp.split('T')[0] : '—'}</i>)\n`;
+    });
+  }
+  const reply_markup = {
+    inline_keyboard: [
+      [
+        { text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' },
+        { text: '🔄 Refresh Audit', callback_data: 'ADMIN_AUDIT' }
+      ]
+    ]
+  };
+  return { text: text.trim(), reply_markup };
+}
+
+// Register native Telegram Command Menu Drawer (setMyCommands) for both bots
+async function registerBotCommands() {
+  const userCommands = [
+    { command: 'hub', description: '⚡ Open Quick Features Hub' },
+    { command: 'find', description: '🔍 Search Machine by Serial/Model' },
+    { command: 'due', description: '⏰ Due Maintenance & Schedules' },
+    { command: 'overdue', description: '🚨 Critical Overdue Alerts' },
+    { command: 'services', description: '📊 7/30-Day Serviced Fleet' },
+    { command: 'status', description: '📊 Factory Operational Status' },
+    { command: 'pm', description: '📋 PM Schedule & Checklist' },
+    { command: 'transfer', description: '🚚 Request Machine Transfer' },
+    { command: 'service', description: '🛠️ Quick Log Service Entry' },
+    { command: 'breakdown', description: '🚨 Report Machine Breakdown' },
+    { command: 'ambulance', description: '🚑 Standby Ambulance Fleet' },
+    { command: 'help', description: '❓ View Allowed Commands' }
+  ];
+
+  const adminCommands = [
+    { command: 'hub', description: '⚡ Central Quick Features Hub' },
+    { command: 'status', description: '📊 Live Factory Health & Fleet' },
+    { command: 'transfers', description: '🚚 Pending Gate Passes & Transfers' },
+    { command: 'find', description: '🔍 Machine Finder & Tracking' },
+    { command: 'due', description: '⏰ Factory Due Maintenance' },
+    { command: 'overdue', description: '🚨 Factory Critical Overdue Alerts' },
+    { command: 'services', description: '📊 Fleet Servicing History (7/30D)' },
+    { command: 'pm', description: '📋 PM Schedule & Checklist' },
+    { command: 'brief', description: '📋 Daily Executive Brief' },
+    { command: 'audit', description: '🛡️ Real-time System Audit Trail' },
+    { command: 'backup', description: '💾 Database Backup & Disk Snapshot' },
+    { command: 'ambulance', description: '🚑 Ambulance Fleet Standby' },
+    { command: 'help', description: '❓ Executive Command Reference' }
+  ];
+
+  try {
+    const resUser = await userBotRequest('setMyCommands', { commands: userCommands });
+    console.log('[Telegram] ✅ User Bot Commands registered:', resUser);
+  } catch (err) {
+    console.error('[Telegram] Failed to register user bot commands:', err.message);
+  }
+
+  try {
+    const resAdmin = await adminBotRequest('setMyCommands', { commands: adminCommands });
+    console.log('[Telegram] ✅ Admin Sentinel Bot Commands registered:', resAdmin);
+  } catch (err) {
+    console.error('[Telegram] Failed to register admin bot commands:', err.message);
+  }
 }
 
 // Dynamic Adaptive RBAC Menu Builder for Operations Bot (@MainterpBot)
@@ -1082,7 +1366,7 @@ ${hub.text}
 ${commandsText}
 `.trim(),
         parse_mode: 'HTML',
-        reply_markup: { keyboard, resize_keyboard: true }
+        reply_markup: { keyboard, resize_keyboard: true, is_persistent: true }
       });
     }
   }
@@ -1143,7 +1427,7 @@ ${hub.text}
 ${commandsText}
 `.trim(),
       parse_mode: 'HTML',
-      reply_markup: { keyboard, resize_keyboard: true }
+      reply_markup: { keyboard, resize_keyboard: true, is_persistent: true }
     });
   } else if (candidateToken && /^\d{6}$/.test(candidateToken)) {
     return userBotRequest('sendMessage', {
@@ -1182,8 +1466,8 @@ ${commandsText}
 
   const isExec = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
 
-  // Quick Features Hub (/quick or /menu or button)
-  if (text === '⚡ Quick Features Hub' || text === '⚡ Quick Features' || text === 'Quick Features' || text === '/quick' || text === '/menu') {
+  // Quick Features Hub (/quick, /hub, /menu or button)
+  if (text === '⚡ Quick Features Hub' || text === '⚡ Quick Features' || text === 'Quick Features' || text === '/quick' || text === '/menu' || text === '/hub') {
     const hub = renderQuickFeaturesHub(user, db, isExec);
     return userBotRequest('sendMessage', {
       chat_id: chatId,
@@ -1214,7 +1498,7 @@ ${commandsText}
 <i>নিচের বাটনগুলোতে ট্যাপ করে সরাসরি অপশন ব্যবহার করুন:</i>
 `.trim(),
       parse_mode: 'HTML',
-      reply_markup: { keyboard, resize_keyboard: true }
+      reply_markup: { keyboard, resize_keyboard: true, is_persistent: true }
     });
   }
 
@@ -1824,7 +2108,7 @@ async function handleAdminBotMessage(msg) {
 ${hub.text}
 `.trim(),
         parse_mode: 'HTML',
-        reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
+        reply_markup: { keyboard: adminKeyboard, resize_keyboard: true, is_persistent: true }
       });
     }
   }
@@ -1852,10 +2136,10 @@ ${hub.text}
       logAuditAndAlert(db, targetUser, 'ADMIN_BOT_LINKED', 'USER', targetUser.id, `Executive Admin Bot connected with Dual Sync`, true);
 
       const adminKeyboard = [
-        [{ text: '🔍 Search Machine' }, { text: '🚚 Pending Gate Passes' }],
-        [{ text: '📊 Factory Status' }, { text: '📋 Executive Brief' }],
-        [{ text: '🛡️ Audit Trail' }, { text: '🚑 Ambulance Fleet' }],
-        [{ text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
+        [{ text: '⚡ Quick Features Hub' }, { text: '🔍 Search Machine' }],
+        [{ text: '🚚 Pending Gate Passes' }, { text: '📊 Factory Status' }],
+        [{ text: '📋 Executive Brief' }, { text: '🛡️ Audit Trail' }],
+        [{ text: '🚑 Ambulance Fleet' }, { text: '🗄️ Database Health' }]
       ];
 
       const machines = db.machines || [];
@@ -1883,7 +2167,7 @@ ${hub.text}
 💡 <i>উভয় বট (@MaintAdminbot এবং @MainterpBot) আপনার জন্য সক্রিয়। নিচের বাটনগুলো দিয়ে তাৎক্ষণিক গেটপাস অনুমোদন, ফ্যাক্টরি মনিটরিং ও মেশিন সার্চ করুন:</i>
 `.trim(),
         parse_mode: 'HTML',
-        reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
+        reply_markup: { keyboard: adminKeyboard, resize_keyboard: true, is_persistent: true }
       });
     } else if (targetUser) {
       return adminBotRequest('sendMessage', {
@@ -1933,8 +2217,8 @@ ${hub.text}
     [{ text: '💾 Backup Database' }, { text: '🗄️ Database Health' }, { text: '📢 Broadcast Alert' }]
   ];
 
-  // Quick Features Hub (/quick or /menu or button)
-  if (text === '⚡ Quick Features Hub' || text === '⚡ Quick Features' || text === 'Quick Features' || text === '/quick' || text === '/menu') {
+  // Quick Features Hub (/quick, /hub, /menu or button)
+  if (text === '⚡ Quick Features Hub' || text === '⚡ Quick Features' || text === 'Quick Features' || text === '/quick' || text === '/menu' || text === '/hub') {
     const hub = renderQuickFeaturesHub(user, db, true);
     return adminBotRequest('sendMessage', {
       chat_id: chatId,
@@ -1975,7 +2259,7 @@ ${hub.text}
 📢 <b>Broadcast Alert</b> — Send Factory-wide Notice
 `.trim(),
       parse_mode: 'HTML',
-      reply_markup: { keyboard: adminKeyboard, resize_keyboard: true }
+      reply_markup: { keyboard: adminKeyboard, resize_keyboard: true, is_persistent: true }
     });
   }
 
@@ -2706,83 +2990,180 @@ async function handleAdminBotCallback(cbQuery) {
     });
   }
 
+  if (data === 'HUB_MAIN' || data === 'HUB_REFRESH') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: '🔄 Updated!' });
+    const hub = renderQuickFeaturesHub(user, db, true);
+    return safeEditMessage(adminBotRequest, chatId, messageId, hub.text, { inline_keyboard: hub.inline_keyboard });
+  }
+
+  if (data === 'LAUNCH_QUICK_HUB') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const hub = renderQuickFeaturesHub(user, db, true);
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: hub.text,
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: hub.inline_keyboard }
+    });
+  }
+
   if (data === 'ADMIN_TRANSFERS' || data === 'HUB_TRANSFERS') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/transfers' });
+    const view = renderTransfersView(user, db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
   }
 
   if (data === 'ADMIN_STATUS' || data === 'HUB_STATUS') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/status' });
+    const view = renderStatusView(user, db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
   }
 
   if (data === 'ADMIN_AUDIT') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/audit' });
+    const view = renderAuditView(db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
   }
 
   if (data === 'ADMIN_BACKUP' || data === 'HUB_BACKUP') {
-    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '💾 Backup Database' });
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: '💾 Backup created!' });
+    saveDatabase(db);
+    const snapTime = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka' });
+    return safeEditMessage(adminBotRequest, chatId, messageId,
+      `💾 <b>DATABASE SNAPSHOT SUCCESSFUL!</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
+      `✅ Instant database snapshot persisted to disk at <b>${snapTime}</b> (Dhaka Time).\n` +
+      `📦 <b>Fleet Total:</b> ${(db.machines || []).length.toLocaleString()} machines\n` +
+      `🛡️ <b>Audit Logs:</b> ${(db.audit_logs || []).length.toLocaleString()} records`,
+      {
+        inline_keyboard: [
+          [{ text: '⬅️ Back to Quick Hub', callback_data: 'HUB_MAIN' }]
+        ]
+      }
+    );
   }
 
   if (data === 'ADMIN_AMBULANCE' || data === 'HUB_AMBULANCE') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    const ambulances = (db.machines || []).filter(m => m.isAmbulance === true);
-    let reply = `🚑 <b>Ambulance Fleet Status (${ambulances.length} Ready):</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
-    ambulances.slice(0, 10).forEach((m, i) => {
-      reply += `${i+1}. <b>${m.machineName}</b> (<code>${m.serialNumber}</code>) — Floor: ${m.floor || '—'}, Line: ${m.line || '—'}\n`;
-    });
-    return adminBotRequest('sendMessage', { chat_id: chatId, text: reply, parse_mode: 'HTML' });
+    const view = renderAmbulanceView(user, db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_DUE') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderDueView(user, db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_OVERDUE') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderOverdueView(user, db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_SERVICES_7') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderServicesView(user, db, 7);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_SERVICES_30') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderServicesView(user, db, 30);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_PM') {
+    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderPmView(user, db);
+    return safeEditMessage(adminBotRequest, chatId, messageId, view.text, view.reply_markup);
   }
 
   if (data === 'HUB_FIND') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '🔍 Search Machine' });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🔍 অনুগ্রহ করে মেশিনের <b>সিরিয়াল নম্বর, মডেল বা অ্যাসেট আইডি</b> লিখে পাঠান (যেমন: <code>D/N-A-92</code> বা <code>857</code>):',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
   if (data === 'HUB_TRANSFER') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '🚚 Request Transfer' });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🚚 <b>ট্রান্সফার রিকোয়েস্ট করতে নিচের ফরম্যাটে লিখে পাঠান:</b>\n\n<code>/transfer &lt;মেশিন সিরিয়াল&gt; &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>\n\n<i>উদাহরণ:</i>\n<code>/transfer D/N-A-92 BG-C Line rebalance</code>',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
   if (data === 'HUB_SERVICE') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '🛠️ Service Machine' });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🛠️ <b>সার্ভিসিং লগ করতে নিচের ফরম্যাটে লিখে পাঠান:</b>\n\n<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;কাজের বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/service D/N-A-92 Needle changed, timing adjusted, oil lubricated</code>',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
   if (data === 'HUB_BREAKDOWN') {
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
     return adminBotRequest('sendMessage', {
       chat_id: chatId,
-      text: '🚨 জরুরি ব্রেকডাউন নোটিশ পাঠাতে লিখুন:\n<code>/breakdown &lt;মেশিন সিরিয়াল&gt; &lt;সমস্যা&gt;</code>',
-      parse_mode: 'HTML'
+      text: '🚨 <b>জরুরি ব্রেকডাউন নোটিশ পাঠাতে লিখুন:</b>\n\n<code>/breakdown &lt;মেশিন সিরিয়াল&gt; &lt;সমস্যা&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/breakdown D/N-A-92 Motor jammed, needle stuck</code>',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
     });
   }
 
-  if (data === 'HUB_DUE') {
+  // Pre-filled prompts for machine actions in Admin Bot
+  if (data.startsWith('PROMPT_TR:')) {
+    const serial = data.replace('PROMPT_TR:', '');
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/due' });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `🚚 <b>ট্রান্সফার রিকোয়েস্ট ফরম্যাট:</b>\nমেশিন <code>${serial}</code> ট্রান্সফার করতে লিখুন:\n\n<code>/transfer ${serial} &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>\n\n<i>উদাহরণ:</i>\n<code>/transfer ${serial} BG-C Line rebalance</code>`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
-  if (data === 'HUB_OVERDUE') {
+  if (data.startsWith('PROMPT_SRV:')) {
+    const serial = data.replace('PROMPT_SRV:', '');
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/overdue' });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `🛠️ <b>সার্ভিসিং লগ ফরম্যাট:</b>\nমেশিন <code>${serial}</code> সার্ভিসিং শেষে এন্ট্রি করতে লিখুন:\n\n<code>/service ${serial} &lt;কাজের বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/service ${serial} Needle set, timing tuned, oil added</code>`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
-  if (data === 'HUB_SERVICES_7') {
+  if (data.startsWith('PROMPT_BD:')) {
+    const serial = data.replace('PROMPT_BD:', '');
     await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/services 7' });
-  }
-
-  if (data === 'HUB_SERVICES_30') {
-    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/services 30' });
-  }
-
-  if (data === 'HUB_PM') {
-    await adminBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleAdminBotMessage({ chat: { id: chatId }, text: '/pm' });
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: `🚨 <b>ব্রেকডাউন নোটিশ ফরম্যাট:</b>\nমেশিন <code>${serial}</code> নষ্ট হলে জরুরি নোটিশ পাঠাতে লিখুন:\n\n<code>/breakdown ${serial} &lt;সমস্যার বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/breakdown ${serial} Motor stopped, needle broken</code>`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 }
 
@@ -2805,68 +3186,117 @@ async function handleUserBotCallback(cbQuery) {
 
   const isExec = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
 
+  if (data === 'HUB_MAIN' || data === 'HUB_REFRESH') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId, text: '🔄 Updated!' });
+    const hub = renderQuickFeaturesHub(user, db, isExec);
+    return safeEditMessage(userBotRequest, chatId, messageId, hub.text, { inline_keyboard: hub.inline_keyboard });
+  }
+
+  if (data === 'LAUNCH_QUICK_HUB') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const hub = renderQuickFeaturesHub(user, db, isExec);
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: hub.text,
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: hub.inline_keyboard }
+    });
+  }
+
+  if (data === 'HUB_DUE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderDueView(user, db);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_OVERDUE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderOverdueView(user, db);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_SERVICES_7') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderServicesView(user, db, 7);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_SERVICES_30') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderServicesView(user, db, 30);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_PM') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderPmView(user, db);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_AMBULANCE') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderAmbulanceView(user, db);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_STATUS') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderStatusView(user, db);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
+  if (data === 'HUB_TRANSFERS') {
+    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
+    const view = renderTransfersView(user, db);
+    return safeEditMessage(userBotRequest, chatId, messageId, view.text, view.reply_markup);
+  }
+
   if (data === 'HUB_FIND') {
     await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: '🔍 অনুগ্রহ করে মেশিনের <b>সিরিয়াল নম্বর, মডেল বা অ্যাসেট আইডি</b> লিখে পাঠান (যেমন: <code>D/N-A-92</code> বা <code>857</code>):',
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
     });
   }
 
   if (data === 'HUB_TRANSFER') {
     await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '🚚 Request Transfer' });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🚚 <b>ট্রান্সফার রিকোয়েস্ট করতে নিচের ফরম্যাটে লিখে পাঠান:</b>\n\n<code>/transfer &lt;মেশিন সিরিয়াল&gt; &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>\n\n<i>উদাহরণ:</i>\n<code>/transfer D/N-A-92 BG-C Line rebalance</code>',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
   if (data === 'HUB_SERVICE') {
     await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '🛠️ Service Machine' });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🛠️ <b>সার্ভিসিং লগ করতে নিচের ফরম্যাটে লিখে পাঠান:</b>\n\n<code>/service &lt;মেশিন সিরিয়াল&gt; &lt;কাজের বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/service D/N-A-92 Needle changed, timing adjusted, oil lubricated</code>',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
   if (data === 'HUB_BREAKDOWN') {
     await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '🚨 Report Breakdown' });
-  }
-
-  if (data === 'HUB_DUE') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '/due' });
-  }
-
-  if (data === 'HUB_OVERDUE') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '/overdue' });
-  }
-
-  if (data === 'HUB_SERVICES_7') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '/services 7' });
-  }
-
-  if (data === 'HUB_SERVICES_30') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '/services 30' });
-  }
-
-  if (data === 'HUB_PM') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '🛠️ PM Checklist' });
-  }
-
-  if (data === 'HUB_AMBULANCE') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '🚑 Ambulance Fleet' });
-  }
-
-  if (data === 'HUB_STATUS') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '📊 Factory Status' });
-  }
-
-  if (data === 'HUB_TRANSFERS') {
-    await userBotRequest('answerCallbackQuery', { callback_query_id: queryId });
-    return handleUserBotMessage({ chat: { id: chatId }, text: '📦 Transfers' });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: '🚨 <b>জরুরি ব্রেকডাউন নোটিশ পাঠাতে লিখুন:</b>\n\n<code>/breakdown &lt;মেশিন সিরিয়াল&gt; &lt;সমস্যার বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/breakdown D/N-A-92 Motor jammed, needle stuck</code>',
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
+    });
   }
 
   // Pre-filled prompts for machine actions
@@ -2876,7 +3306,10 @@ async function handleUserBotCallback(cbQuery) {
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: `🚚 <b>ট্রান্সফার রিকোয়েস্ট ফরম্যাট:</b>\nমেশিন <code>${serial}</code> ট্রান্সফার করতে লিখুন:\n\n<code>/transfer ${serial} &lt;গন্তব্য লাইন বা ফ্লোর&gt; [কারণ]</code>\n\n<i>উদাহরণ:</i>\n<code>/transfer ${serial} BG-C Line rebalance</code>`,
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
     });
   }
 
@@ -2886,7 +3319,10 @@ async function handleUserBotCallback(cbQuery) {
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: `🛠️ <b>সার্ভিসিং লগ ফরম্যাট:</b>\nমেশিন <code>${serial}</code> সার্ভিসিং শেষে এন্ট্রি করতে লিখুন:\n\n<code>/service ${serial} &lt;কাজের বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/service ${serial} Needle set, timing tuned, oil added</code>`,
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
     });
   }
 
@@ -2896,7 +3332,10 @@ async function handleUserBotCallback(cbQuery) {
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: `🚨 <b>ব্রেকডাউন নোটিশ ফরম্যাট:</b>\nমেশিন <code>${serial}</code> নষ্ট হলে জরুরি নোটিশ পাঠাতে লিখুন:\n\n<code>/breakdown ${serial} &lt;সমস্যার বিবরণ&gt;</code>\n\n<i>উদাহরণ:</i>\n<code>/breakdown ${serial} Motor stopped, needle broken</code>`,
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: '⚡ Open Quick Hub', callback_data: 'LAUNCH_QUICK_HUB' }]]
+      }
     });
   }
 
@@ -3031,6 +3470,7 @@ async function startAdminBotPolling() {
 }
 
 function startPollingLoop() {
+  registerBotCommands().catch(err => console.error('[Telegram] registerBotCommands failed:', err.message));
   startUserBotPolling();
   startAdminBotPolling();
 }
