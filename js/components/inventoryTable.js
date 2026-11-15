@@ -318,18 +318,18 @@ export function renderSingleMachineRow(m, idx, ctx) {
   let row = `<tr class="machine-row ${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
 
   // 1. SL (Sticky Left: 0px)
-  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--table-th-color, #cbd5e1) !important; font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-color: ${rowBg} !important; border-right: ${cellBorderRight} !important; border-bottom: ${cellBorderBottom} !important; background-clip: border-box !important;">${displaySlNo}</td>`;
+  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--table-th-color, #cbd5e1) !important; font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-color: ${rowBg}; border-right: ${cellBorderRight} !important; border-bottom: ${cellBorderBottom} !important; background-clip: border-box !important;">${displaySlNo}</td>`;
 
   // 2. Selection Checkbox (Sticky Left: slWidth)
   const isOperable = authService.canOperateMachine(m);
-  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-color: ${rowBg} !important; border-bottom: ${cellBorderBottom} !important; border-right: ${checkIsLastFrozen ? boundaryBorder : cellBorderRight} !important; ${checkIsLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
+  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-color: ${rowBg}; border-bottom: ${cellBorderBottom} !important; border-right: ${checkIsLastFrozen ? boundaryBorder : cellBorderRight} !important; ${checkIsLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
 
   // Render columns in calculated sequence
   columnLayout.forEach(col => {
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
     const tdStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 12 : 10} !important; background-color: ${rowBg} !important; color: ${cellColor} !important; border-bottom: ${cellBorderBottom} !important; border-right: ${col.isLastFrozen ? boundaryBorder : cellBorderRight} !important; ${col.isLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 12 : 10} !important; background-color: ${rowBg}; color: ${cellColor} !important; border-bottom: ${cellBorderBottom} !important; border-right: ${col.isLastFrozen ? boundaryBorder : cellBorderRight} !important; ${col.isLastFrozen ? `box-shadow: ${boundaryShadow} !important;` : ''} background-clip: border-box !important;` 
       : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
     row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
   });

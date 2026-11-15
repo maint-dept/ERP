@@ -682,8 +682,28 @@ td.col-actions-cell {
 .excel-grid-table tbody tr:hover td.col-freeze-2,
 .excel-grid-table tbody tr:hover td.col-freeze-3,
 .excel-grid-table tbody tr:hover td.col-freeze-4,
-.excel-grid-table tbody tr:hover td.col-frozen-cell {
-  background-color: #1e3a5f !important;
+.excel-grid-table tbody tr:hover td.col-frozen-cell,
+.excel-grid-table tbody tr:hover td.col-frozen-boundary,
+.excel-grid-table tbody tr.machine-row:hover td,
+.excel-grid-table tbody tr.machine-row:hover td.col-freeze-sl,
+.excel-grid-table tbody tr.machine-row:hover td.col-freeze-check,
+.excel-grid-table tbody tr.machine-row:hover td.col-frozen-cell,
+.excel-grid-table tbody tr.machine-row:hover td.col-frozen-boundary {
+  background-color: var(--table-row-bg-hover, #1e3a5f) !important;
+}
+
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-1,
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-2,
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-3,
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-4,
+body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell,
+body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-boundary,
+body.theme-light .excel-grid-table tbody tr.machine-row:hover td,
+body.theme-light .excel-grid-table tbody tr.machine-row:hover td.col-freeze-sl,
+body.theme-light .excel-grid-table tbody tr.machine-row:hover td.col-freeze-check,
+body.theme-light .excel-grid-table tbody tr.machine-row:hover td.col-frozen-cell,
+body.theme-light .excel-grid-table tbody tr.machine-row:hover td.col-frozen-boundary {
+  background-color: var(--table-row-bg-hover, #e0f2fe) !important;
 }
 
 /* Universal Selected Row Highlight across ALL Columns */
@@ -706,8 +726,28 @@ td.col-actions-cell {
 .excel-grid-table tbody tr.selected td.col-freeze-2,
 .excel-grid-table tbody tr.selected td.col-freeze-3,
 .excel-grid-table tbody tr.selected td.col-freeze-4,
-.excel-grid-table tbody tr.selected td.col-frozen-cell {
-  background-color: #1e40af !important;
+.excel-grid-table tbody tr.selected td.col-frozen-cell,
+.excel-grid-table tbody tr.selected td.col-frozen-boundary,
+.excel-grid-table tbody tr.machine-row.selected td,
+.excel-grid-table tbody tr.machine-row.selected td.col-freeze-sl,
+.excel-grid-table tbody tr.machine-row.selected td.col-freeze-check,
+.excel-grid-table tbody tr.machine-row.selected td.col-frozen-cell,
+.excel-grid-table tbody tr.machine-row.selected td.col-frozen-boundary {
+  background-color: var(--table-row-bg-selected, #1e40af) !important;
+}
+
+body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-1,
+body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-2,
+body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-3,
+body.theme-light .excel-grid-table tbody tr.selected td.col-freeze-4,
+body.theme-light .excel-grid-table tbody tr.selected td.col-frozen-cell,
+body.theme-light .excel-grid-table tbody tr.selected td.col-frozen-boundary,
+body.theme-light .excel-grid-table tbody tr.machine-row.selected td,
+body.theme-light .excel-grid-table tbody tr.machine-row.selected td.col-freeze-sl,
+body.theme-light .excel-grid-table tbody tr.machine-row.selected td.col-freeze-check,
+body.theme-light .excel-grid-table tbody tr.machine-row.selected td.col-frozen-cell,
+body.theme-light .excel-grid-table tbody tr.machine-row.selected td.col-frozen-boundary {
+  background-color: #dbeafe !important;
 }
 
 /* Serial Number Cell Highlighting */
