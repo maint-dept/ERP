@@ -4,15 +4,15 @@
  * Universal Floor Command HUD with Strict Location & Permission Scoping
  */
 
-import { storage } from '../db/storage.js?v=4.46.1';
-import { TABLE_NAMES } from '../db/schema.js?v=4.46.1';
-import { authService } from '../services/authService.js?v=4.46.1';
-import { router } from '../services/router.js?v=4.46.1';
-import { state } from '../state.js?v=4.46.1';
-import { playScanBeep } from './qrScannerModal.js?v=4.46.1';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.1';
-import { openMachinePassportModal } from './machineHistoryView.js?v=4.46.1';
-import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
+import { storage } from '../db/storage.js?v=4.52.0';
+import { TABLE_NAMES } from '../db/schema.js?v=4.52.0';
+import { authService } from '../services/authService.js?v=4.52.0';
+import { router } from '../services/router.js?v=4.52.0';
+import { state } from '../state.js?v=4.52.0';
+import { playScanBeep } from './qrScannerModal.js?v=4.52.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.52.0';
+import { openMachinePassportModal } from './machineHistoryView.js?v=4.52.0';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.52.0';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -1082,4 +1082,482 @@ if (typeof window !== 'undefined') {
   window.searchMachinesWithScope = searchMachinesWithScope;
   window.getMachineDisplayId = getMachineDisplayId;
   window.getMachineAssetId = getMachineAssetId;
+  window.openQuickFeaturesHub = openQuickFeaturesHub;
+  window.closeQuickFeaturesHub = closeQuickFeaturesHub;
 }
+
+/**
+ * ⚡ Quick Features Hub • কুইক ফিচার হাব
+ * 1-Click Operations HUD with Scoped Servicing KPIs, Fast Relocation / Transfer,
+ * and Live Instant Machine Search.
+ */
+export function openQuickFeaturesHub() {
+  closeQuickFeaturesHub();
+  closeSmartMachineActionModal();
+
+  const currentUser = authService.getCurrentUser() || { name: 'Staff', role: 'OPERATOR' };
+  const isSuperAdmin = authService.isSuperAdmin(currentUser);
+  const isAdmin = authService.isAdmin(currentUser);
+
+  const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  const pms = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+  const transferRequests = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
+
+  // Scoped Machines
+  const scopedMachines = machines.filter(m => {
+    if (isSuperAdmin) return true;
+    return authService.canOperateMachine(m, currentUser) || !authService.isMachineViewOnlyForUser(m, currentUser, true);
+  });
+
+  const machineIdSet = new Set(scopedMachines.map(m => m.id));
+  const serialSet = new Set(scopedMachines.map(m => (m.serialNumber || '').toLowerCase()));
+
+  // Dates
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const d7 = new Date(); d7.setDate(now.getDate() - 7);
+  const d7Str = d7.toISOString().split('T')[0];
+  const d30 = new Date(); d30.setDate(now.getDate() - 30);
+  const d30Str = d30.toISOString().split('T')[0];
+
+  // Scoped PM Records
+  const scopedPms = pms.filter(p => {
+    if (isSuperAdmin) return true;
+    if (p.machineId && machineIdSet.has(p.machineId)) return true;
+    if (p.serialNumber && serialSet.has(p.serialNumber.toLowerCase())) return true;
+    return false;
+  });
+
+  // KPI 1: Serviced Last 7 Days & 30 Days
+  const servicedLast7 = scopedPms.filter(p => {
+    const sDate = p.serviceDate || (p.createdAt ? p.createdAt.split('T')[0] : '');
+    return sDate >= d7Str && (p.serviceStatus === 'COMPLETED' || p.status === 'COMPLETED');
+  });
+  const servicedLast30 = scopedPms.filter(p => {
+    const sDate = p.serviceDate || (p.createdAt ? p.createdAt.split('T')[0] : '');
+    return sDate >= d30Str && (p.serviceStatus === 'COMPLETED' || p.status === 'COMPLETED');
+  });
+
+  // KPI 2: Service Due & Overdue
+  const dueItems = [];
+  const overdueItems = [];
+  const processedSerials = new Set();
+
+  scopedPms.forEach(p => {
+    const s = (p.serialNumber || '').toLowerCase();
+    if (!s || processedSerials.has(s)) return;
+    const nextDate = p.nextServiceDate;
+    if (p.serviceStatus === 'OVERDUE' || (nextDate && nextDate < todayStr && p.serviceStatus !== 'COMPLETED')) {
+      processedSerials.add(s);
+      overdueItems.push(p);
+    } else if (p.serviceStatus === 'DUE' || (nextDate && nextDate <= todayStr && p.serviceStatus !== 'COMPLETED')) {
+      processedSerials.add(s);
+      dueItems.push(p);
+    }
+  });
+
+  // Also check machines
+  scopedMachines.forEach(m => {
+    const s = (m.serialNumber || '').toLowerCase();
+    if (!s || processedSerials.has(s)) return;
+    const nextDate = m.nextServiceDate || m.nextPmDate || m.pmDueDate;
+    if (nextDate) {
+      if (nextDate < todayStr) {
+        processedSerials.add(s);
+        overdueItems.push(m);
+      } else if (nextDate <= todayStr) {
+        processedSerials.add(s);
+        dueItems.push(m);
+      }
+    }
+  });
+
+  // Pending Transfers in scope
+  const pendingTransfers = transferRequests.filter(r => {
+    if (r.status !== 'PENDING' && r.status !== 'IN_PROGRESS') return false;
+    if (isSuperAdmin) return true;
+    const isOwner = r.requestedBy === currentUser.name || r.requestedBy === currentUser.username || r.userId === currentUser.id;
+    if (isOwner) return true;
+    return false;
+  });
+
+  // User scope description
+  let scopeLabel = 'All Factory Units (Super Admin)';
+  if (!isSuperAdmin) {
+    const parts = [];
+    if (currentUser.assignedUnit || currentUser.unit) parts.push(currentUser.assignedUnit || currentUser.unit);
+    if (currentUser.assignedFloor || currentUser.floor) parts.push(currentUser.assignedFloor || currentUser.floor);
+    if (currentUser.assignedLine || currentUser.line) parts.push(currentUser.assignedLine || currentUser.line);
+    scopeLabel = parts.length > 0 ? parts.join(' • ') : 'Restricted Assigned Floor';
+  }
+
+  const modalHtml = `
+    <div id="quick-features-modal-overlay" class="modal-overlay" style="z-index: 10080; background: rgba(5, 10, 20, 0.88); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; padding: 12px; position: fixed; inset: 0;">
+      <div class="quick-features-container custom-scrollbar" style="background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 18px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.95); color: #f8fafc; font-family: var(--font-main);">
+        
+        <!-- Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding-bottom: 14px; margin-bottom: 16px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 22px; line-height: 1;">⚡</span>
+              <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">Quick Features Hub • কুইক ফিচার হাব</h2>
+              <span style="background: rgba(2, 132, 199, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px;">Live Scope</span>
+            </div>
+            <p style="margin: 4px 0 0; font-size: 12px; color: #94a3b8;">
+              👤 <b>${escapeHtml(currentUser.name)}</b> (${escapeHtml(currentUser.presetName || currentUser.role)}) &nbsp;|&nbsp; 📍 <i>${escapeHtml(scopeLabel)}</i>
+            </p>
+          </div>
+          <button id="btn-close-quick-features" class="btn btn-secondary btn-xs" style="border-radius: 8px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); cursor: pointer;" title="Close (Esc)">
+            ✕
+          </button>
+        </div>
+
+        <!-- Scoped KPI Cards (Clickable) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px;">
+          <div class="qf-kpi-card" id="qf-kpi-serviced" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 3.5px solid #10b981; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: space-between;">
+              <span>🛠️ Serviced (${servicedLast7.length} in 7d)</span>
+              <span id="qf-toggle-serviced-days" style="text-decoration: underline; font-size: 9.5px; opacity: 0.85;" title="Click to view 30 days">30d: ${servicedLast30.length}</span>
+            </div>
+            <div style="font-size: 22px; font-weight: 800; color: #34d399; font-family: var(--font-mono); margin-top: 3px;" id="qf-val-serviced">${servicedLast7.length}</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">মেশিন গত ৭ দিনে সার্ভিসিং সম্পন্ন</div>
+          </div>
+
+          <div class="qf-kpi-card" id="qf-kpi-due" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 3.5px solid #f59e0b; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #fcd34d; text-transform: uppercase; letter-spacing: 0.3px;">⏰ Due Today / Schedule</div>
+            <div style="font-size: 22px; font-weight: 800; color: #fbbf24; font-family: var(--font-mono); margin-top: 3px;">${dueItems.length}</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">আজ বা শিডিউলে ডিউ থাকা সার্ভিস</div>
+          </div>
+
+          <div class="qf-kpi-card" id="qf-kpi-overdue" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-left: 3.5px solid #ef4444; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.3px;">🔴 Overdue Alert</div>
+            <div style="font-size: 22px; font-weight: 800; color: #f87171; font-family: var(--font-mono); margin-top: 3px;">${overdueItems.length}</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">জরুরি ওভারডিউ সার্ভিসিং প্রয়োজন</div>
+          </div>
+
+          <div class="qf-kpi-card" id="qf-kpi-transfers" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 3.5px solid #8b5cf6; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #c4b5fd; text-transform: uppercase; letter-spacing: 0.3px;">🚚 Pending Transfers</div>
+            <div style="font-size: 22px; font-weight: 800; color: #a78bfa; font-family: var(--font-mono); margin-top: 3px;">${pendingTransfers.length}</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">চলমান স্থানান্তর গেটপাস রিকোয়েস্ট</div>
+          </div>
+        </div>
+
+        <!-- 1-Click Operations Launcher Grid -->
+        <div style="margin-bottom: 18px;">
+          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+            ⚡ 1-Click Fast Actions (এক ক্লিকে মূল ফিচারসমূহ)
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
+            <button id="btn-qf-action-transfer" class="btn" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
+              <span style="font-size: 18px;">🚚</span>
+              <div>
+                <div>Request Transfer</div>
+                <div style="font-size: 10px; font-weight: 500; color: #7dd3fc;">স্থানান্তর রিকোয়েস্ট পাঠান</div>
+              </div>
+            </button>
+
+            <button id="btn-qf-action-service" class="btn" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
+              <span style="font-size: 18px;">🛠️</span>
+              <div>
+                <div>Quick Service Entry</div>
+                <div style="font-size: 10px; font-weight: 500; color: #86efac;">সার্ভিস ও স্টিকার এন্ট্রি</div>
+              </div>
+            </button>
+
+            <button id="btn-qf-action-breakdown" class="btn" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
+              <span style="font-size: 18px;">🚨</span>
+              <div>
+                <div>Report Breakdown</div>
+                <div style="font-size: 10px; font-weight: 500; color: #fca5a5;">জরুরি ব্রেকডাউন নোটিশ</div>
+              </div>
+            </button>
+
+            <button id="btn-qf-action-pm" class="btn" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
+              <span style="font-size: 18px;">📋</span>
+              <div>
+                <div>PM Hub & Checklist</div>
+                <div style="font-size: 10px; font-weight: 500; color: #fde68a;">প্রিভেন্টিভ মেইনটেন্যান্স</div>
+              </div>
+            </button>
+
+            <button id="btn-qf-action-relocate" class="btn" style="background: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
+              <span style="font-size: 18px;">🔄</span>
+              <div>
+                <div>Relocate & Verify</div>
+                <div style="font-size: 10px; font-weight: 500; color: #d8b4fe;">লোকেশন ভেরিফিকেশন হাব</div>
+              </div>
+            </button>
+
+            <button id="btn-qf-action-qr" class="btn" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer;">
+              <span style="font-size: 18px;">📷</span>
+              <div>
+                <div>QR / Barcode Scanner</div>
+                <div style="font-size: 10px; font-weight: 500; color: #7dd3fc;">ক্যামেরা দিয়ে স্ক্যান</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Integrated Fast Machine Finder Input -->
+        <div style="border-top: 1px solid rgba(56, 189, 248, 0.15); padding-top: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <label for="inp-qf-search" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+              🔍 Instant Machine Finder (মেশিন সার্চ ও লাইভ স্ট্যাটাস)
+            </label>
+            <span style="font-size: 11px; color: #38bdf8;">${scopedMachines.length} machines in scope</span>
+          </div>
+          <div style="position: relative;">
+            <input 
+              type="text" 
+              id="inp-qf-search" 
+              placeholder="Type Serial (e.g. D/N-A-92), Model (LK-1900), Asset ID, Line or Name..." 
+              autocomplete="off"
+              style="width: 100%; background: #070d1e; border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 10px 14px 10px 38px; color: #fff; font-size: 13.5px; font-weight: 600; outline: none; transition: border-color 0.2s;"
+            />
+            <span style="position: absolute; left: 12px; top: 11px; font-size: 14px; pointer-events: none; color: #38bdf8;">🔍</span>
+          </div>
+
+          <!-- Dynamic Results Container -->
+          <div id="qf-search-results-list" class="custom-scrollbar" style="margin-top: 10px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+            <div style="text-align: center; padding: 18px; color: #64748b; font-size: 12px;">
+              উপরে সার্চ বক্সে মেশিনের সিরিয়াল নম্বর, মডেল বা লাইন লিখে সরাসরি এক ক্লিকে কাজ করুন।
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', replaceEmojiInHtml(modalHtml));
+
+  const overlay = document.getElementById('quick-features-modal-overlay');
+  const closeBtn = document.getElementById('btn-close-quick-features');
+  const searchInput = document.getElementById('inp-qf-search');
+  const resultsList = document.getElementById('qf-search-results-list');
+
+  // Focus search
+  if (searchInput) {
+    setTimeout(() => searchInput.focus(), 80);
+  }
+
+  // Close handlers
+  if (closeBtn) closeBtn.addEventListener('click', closeQuickFeaturesHub);
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeQuickFeaturesHub();
+    });
+  }
+
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      closeQuickFeaturesHub();
+      window.removeEventListener('keydown', handleEsc);
+    }
+  };
+  window.addEventListener('keydown', handleEsc);
+
+  // 1-Click Action Handlers
+  document.getElementById('btn-qf-action-transfer')?.addEventListener('click', () => {
+    closeQuickFeaturesHub();
+    router.navigate('transfers');
+    state.set('currentView', 'transfers');
+  });
+
+  document.getElementById('btn-qf-action-service')?.addEventListener('click', () => {
+    closeQuickFeaturesHub();
+    router.navigate('preventive_maintenance');
+    state.set('currentView', 'preventive_maintenance');
+  });
+
+  document.getElementById('btn-qf-action-breakdown')?.addEventListener('click', () => {
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.placeholder = 'Type Serial of breakdown machine...';
+      searchInput.focus();
+    }
+  });
+
+  document.getElementById('btn-qf-action-pm')?.addEventListener('click', () => {
+    closeQuickFeaturesHub();
+    router.navigate('preventive_maintenance');
+    state.set('currentView', 'preventive_maintenance');
+  });
+
+  document.getElementById('btn-qf-action-relocate')?.addEventListener('click', () => {
+    closeQuickFeaturesHub();
+    router.navigate('relocate_verify');
+    state.set('currentView', 'relocate_verify');
+  });
+
+  document.getElementById('btn-qf-action-qr')?.addEventListener('click', () => {
+    closeQuickFeaturesHub();
+    if (typeof window.triggerGlobalQuickScanner === 'function') {
+      window.triggerGlobalQuickScanner();
+    }
+  });
+
+  // KPI Click Filters
+  document.getElementById('qf-kpi-serviced')?.addEventListener('click', () => {
+    renderFilteredMachineList(servicedLast7.map(p => ({
+      serialNumber: p.serialNumber,
+      machineName: p.machineName,
+      line: p.line,
+      floor: p.floor,
+      status: 'SERVICED',
+      badge: '🟢 SERVICED (7D)',
+      notes: p.serviceRemarks || `Serviced: ${p.serviceDate}`
+    })));
+  });
+
+  document.getElementById('qf-kpi-due')?.addEventListener('click', () => {
+    renderFilteredMachineList(dueItems.map(p => ({
+      serialNumber: p.serialNumber,
+      machineName: p.machineName || p.name,
+      line: p.line,
+      floor: p.floor,
+      status: 'DUE',
+      badge: '🟡 SERVICE DUE',
+      notes: `Next: ${p.nextServiceDate || todayStr}`
+    })));
+  });
+
+  document.getElementById('qf-kpi-overdue')?.addEventListener('click', () => {
+    renderFilteredMachineList(overdueItems.map(p => ({
+      serialNumber: p.serialNumber,
+      machineName: p.machineName || p.name,
+      line: p.line,
+      floor: p.floor,
+      status: 'OVERDUE',
+      badge: '🔴 OVERDUE ALERT',
+      notes: `Due was: ${p.nextServiceDate || 'Past date'}`
+    })));
+  });
+
+  document.getElementById('qf-kpi-transfers')?.addEventListener('click', () => {
+    closeQuickFeaturesHub();
+    router.navigate('transfers');
+    state.set('currentView', 'transfers');
+  });
+
+  function renderFilteredMachineList(items) {
+    if (!resultsList) return;
+    if (items.length === 0) {
+      resultsList.innerHTML = `<div style="text-align: center; padding: 14px; color: #94a3b8; font-size: 12px;">কোনো রেকর্ড পাওয়া যায়নি।</div>`;
+      return;
+    }
+    resultsList.innerHTML = items.slice(0, 15).map(item => `
+      <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px;">
+        <div>
+          <div style="font-weight: 700; font-size: 13px; color: #fff;">
+            ${escapeHtml(item.machineName || 'Machine')} 
+            <code style="color: #38bdf8; background: rgba(56,189,248,0.12); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; font-weight: 700;">${escapeHtml(item.serialNumber || '—')}</code>
+          </div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+            Floor: ${escapeHtml(item.floor || '—')}, Line: <b>${escapeHtml(item.line || '—')}</b> &nbsp;|&nbsp; <i>${escapeHtml(item.notes || '')}</i>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 5px; ${item.badge.includes('🔴') ? 'background: rgba(239,68,68,0.2); color: #f87171;' : (item.badge.includes('🟡') ? 'background: rgba(245,158,11,0.2); color: #fbbf24;' : 'background: rgba(16,185,129,0.2); color: #34d399;')}">
+            ${item.badge}
+          </span>
+          <button class="btn btn-xs btn-primary qf-btn-inspect" data-serial="${escapeHtml(item.serialNumber || '')}" style="font-size: 11px; padding: 3px 8px;">Action</button>
+        </div>
+      </div>
+    `).join('');
+
+    resultsList.querySelectorAll('.qf-btn-inspect').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const serial = btn.getAttribute('data-serial');
+        if (serial) {
+          closeQuickFeaturesHub();
+          openSmartMachineActionModal(serial);
+        }
+      });
+    });
+  }
+
+  // Live Instant Machine Search Handler
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) {
+        resultsList.innerHTML = `<div style="text-align: center; padding: 18px; color: #64748b; font-size: 12px;">উপরে সার্চ বক্সে মেশিনের সিরিয়াল নম্বর, মডেল বা লাইন লিখে সরাসরি এক ক্লিকে কাজ করুন।</div>`;
+        return;
+      }
+
+      const matches = scopedMachines.filter(m => {
+        const sn = (m.serialNumber || '').toLowerCase();
+        const mn = (m.machineName || m.name || '').toLowerCase();
+        const mod = (m.model || '').toLowerCase();
+        const ln = (m.line || '').toLowerCase();
+        const id = (m.systemAssetId || m.permanentMachineId || '').toLowerCase();
+        return sn.includes(q) || mn.includes(q) || mod.includes(q) || ln.includes(q) || id.includes(q);
+      }).slice(0, 10);
+
+      if (matches.length === 0) {
+        resultsList.innerHTML = `<div style="text-align: center; padding: 16px; color: #f87171; font-size: 12px;">❌ '<code>${escapeHtml(q)}</code>' দিয়ে আপনার অ্যাক্সেস এরিয়ায় কোনো মেশিন পাওয়া যায়নি।</div>`;
+        return;
+      }
+
+      resultsList.innerHTML = matches.map(m => {
+        const status = (m.status || 'ACTIVE').toUpperCase();
+        const isRunning = m.running || status === 'RUNNING';
+        const isMaint = status.includes('MAINT') || status.includes('BREAKDOWN');
+        const isAmb = m.isAmbulance;
+
+        let badge = '🟢 RUNNING';
+        let badgeStyle = 'background: rgba(16,185,129,0.2); color: #34d399;';
+        if (isMaint) {
+          badge = '🔴 BREAKDOWN';
+          badgeStyle = 'background: rgba(239,68,68,0.2); color: #f87171;';
+        } else if (isAmb) {
+          badge = '🚑 AMBULANCE';
+          badgeStyle = 'background: rgba(168,85,247,0.2); color: #c084fc;';
+        } else if (!isRunning) {
+          badge = '🟡 USABLE / IDLE';
+          badgeStyle = 'background: rgba(245,158,11,0.2); color: #fbbf24;';
+        }
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 12px;">
+            <div>
+              <div style="font-weight: 700; font-size: 13px; color: #fff;">
+                ${escapeHtml(m.machineName || m.name || 'Machine')} 
+                <code style="color: #38bdf8; background: rgba(56,189,248,0.12); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; font-weight: 700;">${escapeHtml(m.serialNumber || '—')}</code>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                Model: <b>${escapeHtml(m.model || '—')}</b> &nbsp;|&nbsp; Line: <b>${escapeHtml(m.line || '—')}</b>, Floor: ${escapeHtml(m.floor || '—')}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 5px; ${badgeStyle}">
+                ${badge}
+              </span>
+              <button class="btn btn-xs btn-primary qf-btn-inspect" data-serial="${escapeHtml(m.serialNumber || '')}" style="font-size: 11px; padding: 3px 8px;">Quick Action</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      resultsList.querySelectorAll('.qf-btn-inspect').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const serial = btn.getAttribute('data-serial');
+          if (serial) {
+            closeQuickFeaturesHub();
+            openSmartMachineActionModal(serial);
+          }
+        });
+      });
+    });
+  }
+}
+
+/**
+ * Closes the Quick Features Hub Modal
+ */
+export function closeQuickFeaturesHub() {
+  const existing = document.getElementById('quick-features-modal-overlay');
+  if (existing) existing.remove();
+}
+

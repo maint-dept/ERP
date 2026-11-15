@@ -3377,11 +3377,12 @@ export function syncInventorySelectionDOM(selectedIdsInput) {
       topBulkDelBtn.title = `Delete ${selectedIds.size} selected machine(s)`;
     } else {
       topBulkDelBtn.setAttribute('disabled', 'true');
-      topBulkDelBtn.style.opacity = '0.6';
+      topBulkDelBtn.style.opacity = '0.75';
       topBulkDelBtn.style.cursor = 'not-allowed';
-      topBulkDelBtn.style.background = 'rgba(220, 38, 38, 0.18)';
-      topBulkDelBtn.style.borderColor = 'rgba(239, 68, 68, 0.35)';
-      topBulkDelBtn.style.color = '#fca5a5';
+      const isLight = document.body.classList.contains('theme-light') || document.documentElement.classList.contains('theme-light');
+      topBulkDelBtn.style.background = isLight ? '#fee2e2' : 'rgba(220, 38, 38, 0.18)';
+      topBulkDelBtn.style.borderColor = isLight ? '#fca5a5' : 'rgba(239, 68, 68, 0.35)';
+      topBulkDelBtn.style.color = isLight ? '#dc2626' : '#fca5a5';
       topBulkDelBtn.innerHTML = `<span>${icon('trash', { size: 13 })}</span> <span>Delete Selected</span>`;
       topBulkDelBtn.title = 'Select machines to delete';
     }

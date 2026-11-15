@@ -529,6 +529,10 @@ function buildDynamicUserMenu(user) {
     commands.push('🛠️ /service <serial> <remarks> — সার্ভিসিং ও পিএম সম্পন্ন লগ');
     row2.push({ text: '📋 PM Checklist' });
     commands.push('📋 /pm — আজকের প্রিভেন্টিভ মেইনটেন্যান্স তালিকা');
+    row2.push({ text: '📊 Service Metrics' });
+    commands.push('📊 /services [days] — গত ৭ বা ৩০ দিনের সার্ভিসিং, ডিউ এবং ওভারডিউ মেট্রিক্স');
+    commands.push('⏰ /due — বর্তমানে ডিউ থাকা সার্ভিস তালিকা');
+    commands.push('🔴 /overdue — ওভারডিউ হয়ে থাকা মেশিনারি অ্যালার্ট');
   }
   if (row2.length > 0) keyboard.push(row2);
 
@@ -810,6 +814,123 @@ function processMachineServicingEntry(db, user, serialOrQuery, remarksText, cust
   broadcastEvent('machine:serviced', { serialNumber: machine.serialNumber, servicedBy: user.name, sticker: stickerNo });
 
   return { ok: true, machine, pmRecord, stickerNo, wasUnderMaintenance };
+}
+
+// ==========================================
+// SCOPED SERVICE METRICS ENGINE (TELEGRAM CORE)
+// ==========================================
+function calculateScopedServiceMetrics(db, user, days = 7) {
+  const numDays = Math.max(1, parseInt(days, 10) || 7);
+  const now = new Date();
+  const cutoff = new Date();
+  cutoff.setDate(now.getDate() - numDays);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  const todayStr = now.toISOString().split('T')[0];
+
+  const machines = (db.machines || []).filter(m => isMachineInUserScope(user, m, db));
+  const machineMap = new Map();
+  machines.forEach(m => {
+    if (m.serialNumber) machineMap.set(m.serialNumber.toLowerCase(), m);
+    if (m.id) machineMap.set(m.id, m);
+  });
+
+  const pms = (db.preventive_maintenance || []).filter(p => {
+    const m = (p.serialNumber && machineMap.get(p.serialNumber.toLowerCase())) ||
+              (p.machineId && machineMap.get(p.machineId)) ||
+              (db.machines || []).find(x => (x.serialNumber === p.serialNumber || x.id === p.machineId));
+    return m ? isMachineInUserScope(user, m, db) : isLocationInUserScope(user, p, db);
+  });
+
+  // 1. Recently completed services in the last X days
+  const recentServiced = pms.filter(p => {
+    const sDate = p.serviceDate || (p.createdAt ? p.createdAt.split('T')[0] : '');
+    return sDate >= cutoffStr && (p.serviceStatus === 'COMPLETED' || p.status === 'COMPLETED');
+  });
+
+  // 2. Due & Overdue services
+  const overdueItems = [];
+  const dueItems = [];
+  const seenSerials = new Set();
+
+  pms.forEach(p => {
+    const serial = (p.serialNumber || '').trim();
+    if (!serial || seenSerials.has(serial.toLowerCase())) return;
+    const nextDate = p.nextServiceDate;
+    if (p.serviceStatus === 'OVERDUE' || (nextDate && nextDate < todayStr && p.serviceStatus !== 'COMPLETED')) {
+      seenSerials.add(serial.toLowerCase());
+      overdueItems.push({
+        serialNumber: serial,
+        machineName: p.machineName || 'Machine',
+        line: p.line || '—',
+        floor: p.floor || '—',
+        dueDate: nextDate || 'Past schedule',
+        servicedBy: p.servicedBy || '—'
+      });
+    } else if (p.serviceStatus === 'DUE' || (nextDate && nextDate <= todayStr && p.serviceStatus !== 'COMPLETED')) {
+      seenSerials.add(serial.toLowerCase());
+      dueItems.push({
+        serialNumber: serial,
+        machineName: p.machineName || 'Machine',
+        line: p.line || '—',
+        floor: p.floor || '—',
+        dueDate: nextDate || todayStr,
+        servicedBy: p.servicedBy || '—'
+      });
+    }
+  });
+
+  // Also check machines directly if not already in PM records
+  machines.forEach(m => {
+    const serial = (m.serialNumber || '').trim();
+    if (!serial || seenSerials.has(serial.toLowerCase())) return;
+    const nextDate = m.nextServiceDate || m.nextPmDate || m.pmDueDate;
+    if (nextDate) {
+      if (nextDate < todayStr) {
+        seenSerials.add(serial.toLowerCase());
+        overdueItems.push({
+          serialNumber: serial,
+          machineName: m.machineName || m.name || 'Machine',
+          line: m.line || '—',
+          floor: m.floor || '—',
+          dueDate: nextDate,
+          servicedBy: '—'
+        });
+      } else if (nextDate <= todayStr) {
+        seenSerials.add(serial.toLowerCase());
+        dueItems.push({
+          serialNumber: serial,
+          machineName: m.machineName || m.name || 'Machine',
+          line: m.line || '—',
+          floor: m.floor || '—',
+          dueDate: nextDate,
+          servicedBy: '—'
+        });
+      }
+    }
+  });
+
+  // Pending transfers in user's scope
+  const pendingTransfers = (db.transfer_requests || []).filter(r => {
+    if (r.status !== 'PENDING' && r.status !== 'IN_PROGRESS') return false;
+    const isOwner = r.requestedBy === user.name || r.requestedBy === user.username || r.userId === user.id;
+    if (isOwner) return true;
+    const fromMatch = isLocationInUserScope(user, { floor: r.fromFloor, unit: r.fromUnit, line: r.fromLine }, db);
+    const toMatch = isLocationInUserScope(user, { floor: r.toFloor, unit: r.toUnit, line: r.toLine }, db);
+    return fromMatch || toMatch;
+  });
+
+  return {
+    numDays,
+    cutoffStr,
+    totalScopeMachines: machines.length,
+    recentServicedCount: recentServiced.length,
+    recentServiced: recentServiced.slice(0, 8),
+    dueCount: dueItems.length,
+    dueItems: dueItems.slice(0, 8),
+    overdueCount: overdueItems.length,
+    overdueItems: overdueItems.slice(0, 8),
+    pendingTransfersCount: pendingTransfers.length
+  };
 }
 
 // ============================================================================
@@ -1126,6 +1247,114 @@ ${commandsText}
     });
   }
 
+  // Service Metrics & Past X Days Summary (/services [days] or 📊 Service Metrics)
+  if (text === '📊 Service Metrics' || text.startsWith('/services') || text.startsWith('/pm_stats')) {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+
+    const db = getDatabase();
+    const parts = text.split(/\s+/);
+    const requestedDays = parts.length > 1 && parseInt(parts[1], 10) > 0 ? parseInt(parts[1], 10) : 7;
+    const metrics = calculateScopedServiceMetrics(db, user, requestedDays);
+
+    let reply = `
+📊 <b>সার্ভিসিং ও পিএম মেট্রিক্স (${requestedDays} দিনের রিপোর্ট):</b>
+━━━━━━━━━━━━━━━━━━━━
+📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(user, db)}</code>
+🏭 <b>আওতাভুক্ত মেশিন:</b> <code>${metrics.totalScopeMachines}</code> টি
+━━━━━━━━━━━━━━━━━━━━
+🛠️ <b>গত ${requestedDays} দিনে সম্পন্ন সার্ভিস:</b> <b>${metrics.recentServicedCount}</b> টি
+⏰ <b>আজ/শিডিউলে ডিউ (Due Now):</b> <b>${metrics.dueCount}</b> টি
+🔴 <b>জরুরি ওভারডিউ (Overdue Alert):</b> <b>${metrics.overdueCount}</b> টি
+🚚 <b>চলমান ট্রান্সফার রিকোয়েস্ট:</b> <b>${metrics.pendingTransfersCount}</b> টি
+━━━━━━━━━━━━━━━━━━━━
+`;
+
+    if (metrics.recentServiced.length > 0) {
+      reply += `\n<b>✅ সম্প্রতি সম্পন্ন সার্ভিসিং:</b>\n`;
+      metrics.recentServiced.forEach((s, idx) => {
+        reply += `${idx + 1}. <b>${s.machineName || 'Machine'}</b> (<code>${s.serialNumber || '—'}</code>)\n`;
+        reply += `   📍 Line: ${s.line || '—'}, Floor: ${s.floor || '—'}\n`;
+        reply += `   🏷️ Stk: <code>${s.serviceStickerSerial || '—'}</code> | 📅 ${s.serviceDate || '—'} by ${s.servicedBy || 'Tech'}\n`;
+      });
+    }
+
+    if (metrics.overdueItems.length > 0) {
+      reply += `\n<b>🔴 জরুরি ওভারডিউ অ্যালার্ট:</b>\n`;
+      metrics.overdueItems.forEach((o, idx) => {
+        reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>) | Line: <b>${o.line}</b> | Due: <code>${o.dueDate}</code>\n`;
+      });
+    }
+
+    reply += `\n<i>💡 টিপ: অন্য দিনের হিসাব দেখতে লিখুন <code>/services 15</code> বা <code>/services 30</code></i>`;
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Due List Command (/due)
+  if (text === '/due') {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
+      });
+    }
+    const db = getDatabase();
+    const metrics = calculateScopedServiceMetrics(db, user, 7);
+    if (metrics.dueItems.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ আপনার লোকেশন স্কোপে বর্তমানে কোনো পেন্ডিং ডিউ (Due) সার্ভিস নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+    let reply = `⏰ <b>বর্তমানে ডিউ থাকা মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    metrics.dueItems.forEach((d, idx) => {
+      reply += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line}</b>, Floor: ${d.floor} | Due: <code>${d.dueDate}</code>\n`;
+    });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Overdue List Command (/overdue)
+  if (text === '/overdue') {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
+      });
+    }
+    const db = getDatabase();
+    const metrics = calculateScopedServiceMetrics(db, user, 7);
+    if (metrics.overdueItems.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ চমৎকার! আপনার লোকেশন স্কোপে কোনো ওভারডিউ (Overdue) সার্ভিস নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+    let reply = `🔴 <b>জরুরি ওভারডিউ মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    metrics.overdueItems.forEach((o, idx) => {
+      reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>)\n   📍 Line: <b>${o.line}</b>, Floor: ${o.floor} | Overdue Date: <code>${o.dueDate}</code>\n`;
+    });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
   // My Tools Button or /tools
   if (text === '🔧 My Tools' || text === '/tools') {
     if (!hasPermission(user, 'tools_management', 'VIEW')) {
@@ -1159,6 +1388,114 @@ ${commandsText}
       reply += `   🔢 Qty: <b>${t.quantity || 1}</b> | Reg No: <code>${t.regNo || '—'}</code> | Date: ${t.issueDate || '—'}\n`;
     });
 
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Service Metrics & Past X Days Summary (/services [days] or 📊 Service Metrics)
+  if (text === '📊 Service Metrics' || text.startsWith('/services') || text.startsWith('/pm_stats')) {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয় (Hidden/Restricted)।'
+      });
+    }
+
+    const db = getDatabase();
+    const parts = text.split(/\s+/);
+    const requestedDays = parts.length > 1 && parseInt(parts[1], 10) > 0 ? parseInt(parts[1], 10) : 7;
+    const metrics = calculateScopedServiceMetrics(db, user, requestedDays);
+
+    let reply = `
+📊 <b>সার্ভিসিং ও পিএম মেট্রিক্স (${requestedDays} দিনের রিপোর্ট):</b>
+━━━━━━━━━━━━━━━━━━━━
+📍 <b>লোকেশন স্কোপ:</b> <code>${formatUserScopeDescription(user, db)}</code>
+🏭 <b>আওতাভুক্ত মেশিন:</b> <code>${metrics.totalScopeMachines}</code> টি
+━━━━━━━━━━━━━━━━━━━━
+🛠️ <b>গত ${requestedDays} দিনে সম্পন্ন সার্ভিস:</b> <b>${metrics.recentServicedCount}</b> টি
+⏰ <b>আজ/শিডিউলে ডিউ (Due Now):</b> <b>${metrics.dueCount}</b> টি
+🔴 <b>জরুরি ওভারডিউ (Overdue Alert):</b> <b>${metrics.overdueCount}</b> টি
+🚚 <b>চলমান ট্রান্সফার রিকোয়েস্ট:</b> <b>${metrics.pendingTransfersCount}</b> টি
+━━━━━━━━━━━━━━━━━━━━
+`;
+
+    if (metrics.recentServiced.length > 0) {
+      reply += `\n<b>✅ সম্প্রতি সম্পন্ন সার্ভিসিং:</b>\n`;
+      metrics.recentServiced.forEach((s, idx) => {
+        reply += `${idx + 1}. <b>${s.machineName || 'Machine'}</b> (<code>${s.serialNumber || '—'}</code>)\n`;
+        reply += `   📍 Line: ${s.line || '—'}, Floor: ${s.floor || '—'}\n`;
+        reply += `   🏷️ Stk: <code>${s.serviceStickerSerial || '—'}</code> | 📅 ${s.serviceDate || '—'} by ${s.servicedBy || 'Tech'}\n`;
+      });
+    }
+
+    if (metrics.overdueItems.length > 0) {
+      reply += `\n<b>🔴 জরুরি ওভারডিউ অ্যালার্ট:</b>\n`;
+      metrics.overdueItems.forEach((o, idx) => {
+        reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>) | Line: <b>${o.line}</b> | Due: <code>${o.dueDate}</code>\n`;
+      });
+    }
+
+    reply += `\n<i>💡 টিপ: অন্য দিনের হিসাব দেখতে লিখুন <code>/services 15</code> বা <code>/services 30</code></i>`;
+
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Due List Command (/due)
+  if (text === '/due') {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
+      });
+    }
+    const db = getDatabase();
+    const metrics = calculateScopedServiceMetrics(db, user, 7);
+    if (metrics.dueItems.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ আপনার লোকেশন স্কোপে বর্তমানে কোনো পেন্ডিং ডিউ (Due) সার্ভিস নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+    let reply = `⏰ <b>বর্তমানে ডিউ থাকা মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    metrics.dueItems.forEach((d, idx) => {
+      reply += `${idx + 1}. <b>${d.machineName}</b> (<code>${d.serialNumber}</code>)\n   📍 Line: <b>${d.line}</b>, Floor: ${d.floor} | Due: <code>${d.dueDate}</code>\n`;
+    });
+    return userBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Overdue List Command (/overdue)
+  if (text === '/overdue') {
+    if (!hasPermission(user, 'preventive_maintenance', 'VIEW')) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '⛔ এই অপশনটি আপনার অ্যাকাউন্টের জন্য অনুমোদিত নয়।'
+      });
+    }
+    const db = getDatabase();
+    const metrics = calculateScopedServiceMetrics(db, user, 7);
+    if (metrics.overdueItems.length === 0) {
+      return userBotRequest('sendMessage', {
+        chat_id: chatId,
+        text: '✅ চমৎকার! আপনার লোকেশন স্কোপে কোনো ওভারডিউ (Overdue) সার্ভিস নেই।',
+        parse_mode: 'HTML'
+      });
+    }
+    let reply = `🔴 <b>জরুরি ওভারডিউ মেশিনের তালিকা:</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    metrics.overdueItems.forEach((o, idx) => {
+      reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>)\n   📍 Line: <b>${o.line}</b>, Floor: ${o.floor} | Overdue Date: <code>${o.dueDate}</code>\n`;
+    });
     return userBotRequest('sendMessage', {
       chat_id: chatId,
       text: reply.trim(),
@@ -1736,6 +2073,48 @@ async function handleAdminBotMessage(msg) {
     return adminBotRequest('sendMessage', {
       chat_id: chatId,
       text: brief,
+      parse_mode: 'HTML'
+    });
+  }
+
+  // Executive Service Metrics & Past X Days Summary
+  if (text === '📊 Service Metrics' || text.startsWith('/services') || text.startsWith('/pm_stats')) {
+    const db = getDatabase();
+    const parts = text.split(/\s+/);
+    const requestedDays = parts.length > 1 && parseInt(parts[1], 10) > 0 ? parseInt(parts[1], 10) : 7;
+    const metrics = calculateScopedServiceMetrics(db, adminUser, requestedDays);
+
+    let reply = `
+👑 <b>EXECUTIVE SERVICE METRICS (${requestedDays}-DAY FACTORY BRIEF):</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏭 <b>Total Monitored Fleet:</b> <code>${metrics.totalScopeMachines.toLocaleString()}</code> machines
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛠️ <b>Serviced in Last ${requestedDays} Days:</b> <b>${metrics.recentServicedCount}</b> machines
+⏰ <b>Due in Schedule (Due Now):</b> <b>${metrics.dueCount}</b> machines
+🔴 <b>Critical Overdue Alerts:</b> <b>${metrics.overdueCount}</b> machines
+🚚 <b>Pending Gate Pass Relocations:</b> <b>${metrics.pendingTransfersCount}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+    if (metrics.recentServiced.length > 0) {
+      reply += `\n<b>✅ Recently Completed Services:</b>\n`;
+      metrics.recentServiced.forEach((s, idx) => {
+        reply += `${idx + 1}. <b>${s.machineName || 'Machine'}</b> (<code>${s.serialNumber || '—'}</code>)\n`;
+        reply += `   📍 Unit: ${s.unit || '—'}, Line: <b>${s.line || '—'}</b>\n`;
+        reply += `   🏷️ Stk: <code>${s.serviceStickerSerial || '—'}</code> | 📅 ${s.serviceDate || '—'} by ${s.servicedBy || 'Tech'}\n`;
+      });
+    }
+
+    if (metrics.overdueItems.length > 0) {
+      reply += `\n<b>🔴 Critical Overdue Service List:</b>\n`;
+      metrics.overdueItems.forEach((o, idx) => {
+        reply += `${idx + 1}. <b>${o.machineName}</b> (<code>${o.serialNumber}</code>) | Line: <b>${o.line}</b> | Due: <code>${o.dueDate}</code>\n`;
+      });
+    }
+
+    return adminBotRequest('sendMessage', {
+      chat_id: chatId,
+      text: reply.trim(),
       parse_mode: 'HTML'
     });
   }

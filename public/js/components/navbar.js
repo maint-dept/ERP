@@ -11,7 +11,7 @@ import { syncManager } from '../db/syncManager.js?v=4.47.0';
 import { router } from '../services/router.js?v=4.47.0';
 import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.47.0';
 import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.47.0';
-import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.47.0';
+import { searchMachinesWithScope, openSmartMachineActionModal, openQuickFeaturesHub } from './smartSearchActionModal.js?v=4.52.0';
 import { icon } from './icons.js?v=4.47.0';
 import { 
   getEmployeeMap, 
@@ -282,6 +282,18 @@ export function renderNavbar() {
           >
             <span style="display: inline-flex; align-items: center;">${icon('camera', { size: 13 })}</span>
             <span class="desktop-only" style="letter-spacing: 0.3px;">Scan</span>
+          </button>
+
+          <!-- ⚡ Quick Features Hub 1-Click Trigger -->
+          <button 
+            type="button" 
+            id="btn-quick-features-hub" 
+            class="btn btn-xs" 
+            title="⚡ Quick Features Hub • কুইক ফিচার হাব (Ctrl + K)" 
+            style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.22) 0%, rgba(14, 165, 233, 0.12) 100%); border: 1px solid rgba(56, 189, 248, 0.45); color: #38bdf8; font-weight: 700; border-radius: 6px; padding: 2px 8px; height: 26px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0; margin-left: 3px;"
+          >
+            <span style="font-size: 13px; line-height: 1;">⚡</span>
+            <span class="desktop-only" style="font-size: 11px;">Quick Features</span>
           </button>
         </div>
 
@@ -1338,7 +1350,17 @@ export function initNavbarEvents() {
     });
   }
 
-  // Bind Global Keyboard Shortcut Ctrl+K / Cmd+K (Focuses Search Bar instantly!)
+  // Quick Features Hub Button Listener
+  const btnQuickFeatures = document.getElementById('btn-quick-features-hub');
+  if (btnQuickFeatures) {
+    btnQuickFeatures.addEventListener('click', () => {
+      if (typeof openQuickFeaturesHub === 'function') {
+        openQuickFeaturesHub();
+      }
+    });
+  }
+
+  // Bind Global Keyboard Shortcut Ctrl+K / Cmd+K (Opens Quick Features Hub)
   if (!window._globalQuickScanKeyBound) {
     window._globalQuickScanKeyBound = true;
     window.addEventListener('keydown', (e) => {
@@ -1348,13 +1370,11 @@ export function initNavbarEvents() {
       }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        if (window.innerWidth <= 768) {
-          openMobileSearch();
+        if (typeof openQuickFeaturesHub === 'function') {
+          openQuickFeaturesHub();
         } else if (inpSearch) {
           inpSearch.focus();
           inpSearch.select();
-        } else {
-          triggerGlobalQuickScanner();
         }
       }
     });

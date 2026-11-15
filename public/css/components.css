@@ -4089,23 +4089,44 @@ body.theme-light [style*="color: #e2e8f0"]:not(.btn):not(.btn *):not(.modal-head
   color: #0f172a !important;
 }
 
-/* Explicit Crisp White Text Preservation for Colored Buttons, Badges & Modal Headers */
-body.theme-light .btn-primary,
-body.theme-light .btn-primary *,
-body.theme-light .btn-danger,
-body.theme-light .btn-danger *,
-body.theme-light .btn-success,
-body.theme-light .btn-success *,
-body.theme-light .btn-export-excel,
-body.theme-light .btn-export-excel *,
-body.theme-light [class*="btn-primary"] *,
-body.theme-light [class*="btn-danger"] *,
-body.theme-light [class*="btn-success"] *,
+/* Explicit Crisp White Text Preservation for Colored Buttons, Badges & Modal Headers (When Active/Enabled) */
+body.theme-light .btn-primary:not(:disabled):not([disabled]),
+body.theme-light .btn-primary:not(:disabled):not([disabled]) *,
+body.theme-light .btn-danger:not(:disabled):not([disabled]),
+body.theme-light .btn-danger:not(:disabled):not([disabled]) *,
+body.theme-light .btn-success:not(:disabled):not([disabled]),
+body.theme-light .btn-success:not(:disabled):not([disabled]) *,
+body.theme-light .btn-export-excel:not(:disabled):not([disabled]),
+body.theme-light .btn-export-excel:not(:disabled):not([disabled]) *,
+body.theme-light [class*="btn-primary"]:not(:disabled):not([disabled]) *,
+body.theme-light [class*="btn-danger"]:not(:disabled):not([disabled]) *,
+body.theme-light [class*="btn-success"]:not(:disabled):not([disabled]) *,
 body.theme-light .modal-header,
 body.theme-light .modal-header *,
 body.theme-light .badge-primary,
 body.theme-light .badge-primary * {
   color: #ffffff !important;
+}
+
+/* Daylight / Bright Mode Disabled State for Danger & Bulk Delete Buttons (High Contrast & Legible) */
+body.theme-light .btn-danger:disabled,
+body.theme-light .btn-danger[disabled],
+body.theme-light #btn-top-bulk-delete:disabled,
+body.theme-light #btn-top-bulk-delete[disabled],
+body.theme-light #btn-bulk-delete:disabled,
+body.theme-light #btn-bulk-delete[disabled],
+body.theme-light .btn-danger:disabled *,
+body.theme-light .btn-danger[disabled] *,
+body.theme-light #btn-top-bulk-delete:disabled *,
+body.theme-light #btn-top-bulk-delete[disabled] *,
+body.theme-light #btn-bulk-delete:disabled *,
+body.theme-light #btn-bulk-delete[disabled] * {
+  color: #ef4444 !important;
+  background: #fef2f2 !important;
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  opacity: 0.85 !important;
+  cursor: not-allowed !important;
 }
 
 body.theme-light [style*="color: var(--text-muted)"],
@@ -5909,8 +5930,8 @@ body.theme-light .btn-primary,
 body.theme-light .btn-primary *,
 body.theme-light .btn-success,
 body.theme-light .btn-success *,
-body.theme-light .btn-danger,
-body.theme-light .btn-danger *,
+body.theme-light .btn-danger:not(:disabled):not([disabled]),
+body.theme-light .btn-danger:not(:disabled):not([disabled]) *,
 body.theme-light .badge-active,
 body.theme-light .badge-running {
   color: #ffffff !important;
