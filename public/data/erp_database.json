@@ -321080,7 +321080,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T16:34:19.404Z"
+        "updatedAt": "2026-11-08T08:14:05.815Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321098,8 +321098,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-14T16:34:19.404Z",
-        "lastSync": "11/14/2026, 11:58:15 PM"
+        "updatedAt": "2026-11-08T08:14:05.815Z",
+        "lastSync": "11/15/2026, 2:53:20 AM"
       }
     ],
     "emailConfig": {
@@ -333079,15 +333079,19 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-14T16:34:45.810Z",
-      "updatedAt": "2026-11-14T16:34:45.810Z",
+      "lastLoginAt": "2026-11-14T20:34:34.340Z",
+      "updatedAt": "2026-11-14T20:34:34.344Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
-      "version": 11,
+      "version": 12,
       "pendingEmail": "motaher.cse@gmail.com",
       "emailVerifyOTP": "432615",
-      "emailVerifyOTPExpiry": "2026-11-14T13:48:45.116Z"
+      "emailVerifyOTPExpiry": "2026-11-14T13:48:45.116Z",
+      "telegramAdminChatId": null,
+      "telegramChatId": null,
+      "telegramUsername": null,
+      "telegramLinkedAt": null
     },
     {
       "id": "usr-1789211116425-361",
@@ -344811,6 +344815,26 @@
       "timestamp": "2026-11-14T16:34:45.811Z",
       "createdAt": "2026-11-14T16:34:45.811Z",
       "updatedAt": "2026-11-14T16:34:45.811Z"
+    },
+    {
+      "id": "aud-1794688474345-727",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-14T20:34:34.340Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-14T20:34:34.345Z",
+      "createdAt": "2026-11-14T20:34:34.346Z",
+      "updatedAt": "2026-11-14T20:34:34.346Z"
     }
   ],
   "notifications": [

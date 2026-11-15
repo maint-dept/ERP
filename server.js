@@ -484,13 +484,21 @@ const server = http.createServer((req, res) => {
     const qUserId = parsedUrl.searchParams.get('userId');
     const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}') : {};
     const user = (db.users || []).find(u => u.id === qUserId);
+    const isExecutive = Boolean(user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin'));
+    const isLinked = Boolean(user && (user.telegramChatId || user.telegramAdminChatId));
+
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     return res.end(JSON.stringify({
       status: 'ok',
-      linked: Boolean(user && user.telegramChatId),
+      linked: isLinked,
       telegramUsername: user?.telegramUsername || null,
       telegramLinkedAt: user?.telegramLinkedAt || null,
-      botUsername: 'MainterpBot'
+      telegramChatId: user?.telegramChatId || null,
+      telegramAdminChatId: user?.telegramAdminChatId || null,
+      isExecutive,
+      botUsername: isExecutive ? 'MaintAdminbot' : 'MainterpBot',
+      userBotUsername: 'MainterpBot',
+      adminBotUsername: 'MaintAdminbot'
     }));
   }
 

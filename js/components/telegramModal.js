@@ -98,50 +98,70 @@ async function loadTelegramStatus(user) {
 }
 
 function renderConnectView(container, user, meta) {
-  const isExecutive = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN';
+  const isExecutive = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
   const roleBadge = isExecutive 
-    ? '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px;">👑 Executive Admin Sentinel</span>'
+    ? '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px;">👑 Executive Sentinel &amp; Operations</span>'
     : '<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10px; padding: 2px 6px; border-radius: 4px;">🔧 Operations &amp; Mechanics</span>';
 
-  container.innerHTML = `
-    <div style="background: var(--bg-surface, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #1e293b); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
-          ${isExecutive ? 'Connect Executive Sentinel Bot' : 'Connect Operations Bot'}
-        </div>
-        ${roleBadge}
-      </div>
-      <div style="font-size: 12px; color: var(--text-muted); line-height: 1.55;">
-        ${isExecutive 
-          ? 'Connect <strong>@MaintAdminbot</strong> to receive real-time factory audit streams, emergency breakdown sirens, and authorize machine gate passes with 1-click.'
-          : 'Connect <strong>@MainterpBot</strong> to look up machine locations, complete daily PM checklists, and check your assigned tools.'}
-      </div>
+  const executiveExplanation = isExecutive ? `
+    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 10px 12px; font-size: 11.5px; color: var(--text-main); line-height: 1.5;">
+      👑 <strong>Dual-Bot Executive Sync:</strong> Entering this 6-digit code in either bot will activate full unrestricted access across both <strong>@MaintAdminbot</strong> (Executive Approvals &amp; Sirens) and <strong>@MainterpBot</strong> (Machinery &amp; Floor Operations).
     </div>
+  ` : '';
 
-    <!-- Generating code area -->
-    <div id="tg-code-box" style="text-align: center; padding: 14px; background: var(--bg-hover, rgba(56, 189, 248, 0.05)); border: 1.5px dashed var(--color-primary, #0284c7); border-radius: 8px;">
-      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700;">Your 6-Digit Link Code</div>
-      <div id="tg-display-code" style="font-family: var(--font-mono, monospace); font-size: 26px; font-weight: 800; color: #38bdf8; letter-spacing: 4px; margin: 8px 0;">
-        ------
-      </div>
-      <div style="font-size: 11px; color: var(--text-muted);">Valid for 15 minutes</div>
+  const buttonsHtml = isExecutive ? `
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <a id="btn-tg-open-app" href="https://t.me/MaintAdminbot" target="_blank" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; min-height: 40px; font-weight: 800; font-size: 12.5px; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #d97706; color: #fff;">
+        <span>👑</span> Open Executive Sentinel (@MaintAdminbot)
+      </a>
+      <a id="btn-tg-open-userbot" href="https://t.me/MainterpBot" target="_blank" class="btn btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; min-height: 38px; font-weight: 700; font-size: 12px;">
+        <span>⚙️</span> Open Operations Bot (@MainterpBot)
+      </a>
+      <button type="button" id="btn-tg-copy-code" class="btn btn-ghost" style="font-size: 12px; font-weight: 700; border: 1px solid var(--border-color);">
+        📋 Copy 6-Digit Link Code
+      </button>
     </div>
-
-    <!-- Action Buttons -->
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <a id="btn-tg-open-app" href="#" target="_blank" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; min-height: 42px; font-weight: 800; font-size: 13px;">
-        <span>✈️</span> Open in Telegram (@${meta.botUsername || 'MainterpBot'})
+  ` : `
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <a id="btn-tg-open-app" href="https://t.me/MainterpBot" target="_blank" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; min-height: 42px; font-weight: 800; font-size: 13px;">
+        <span>✈️</span> Open in Telegram (@MainterpBot)
       </a>
       <button type="button" id="btn-tg-copy-code" class="btn btn-secondary" style="font-size: 12px; font-weight: 700;">
         📋 Copy Link Code
       </button>
     </div>
+  `;
+
+  container.innerHTML = `
+    <div style="background: var(--bg-surface, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #1e293b); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
+          ${isExecutive ? 'Connect Executive Sentinel & Operations' : 'Connect Operations Bot'}
+        </div>
+        ${roleBadge}
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); line-height: 1.55;">
+        ${isExecutive 
+          ? 'Link your account to receive live factory breakdown sirens, authorize gate passes with 1-click, and query any machinery.'
+          : 'Connect <strong>@MainterpBot</strong> to look up machine locations, complete daily PM checklists, and check your assigned tools.'}
+      </div>
+      ${executiveExplanation}
+    </div>
+
+    <!-- Generating code area -->
+    <div id="tg-code-box" style="text-align: center; padding: 14px; background: var(--bg-hover, rgba(56, 189, 248, 0.05)); border: 1.5px dashed var(--color-primary, #0284c7); border-radius: 8px;">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700;">Your 6-Digit Link Code</div>
+      <div id="tg-display-code" style="font-family: var(--font-mono, monospace); font-size: 28px; font-weight: 800; color: #38bdf8; letter-spacing: 5px; margin: 8px 0;">
+        ------
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted);">Valid for 15 minutes • Auto-activating on code receipt</div>
+    </div>
+
+    <!-- Action Buttons -->
+    ${buttonsHtml}
 
     <div style="font-size: 11.5px; color: var(--text-muted); border-top: 1px solid var(--border-color, #1e293b); padding-top: 12px;">
-      💡 <strong>Alternative:</strong> Open Telegram, search for <code>@${meta.botUsername || 'MainterpBot'}</code>, and send:
-      <div style="margin-top: 4px; font-family: monospace; background: var(--bg-surface); padding: 4px 8px; border-radius: 4px; display: inline-block;">
-        /link <span id="tg-span-code">...</span>
-      </div>
+      💡 <strong>Quick Instructions:</strong> Open Telegram and send the 6-digit code (e.g. <code id="tg-span-code">...</code> or <code>/link <span id="tg-span-code2">...</span></code>) to activate immediately.
     </div>
   `;
 
@@ -156,12 +176,16 @@ function renderConnectView(container, user, meta) {
       if (data.status === 'ok') {
         const codeEl = document.getElementById('tg-display-code');
         const spanCode = document.getElementById('tg-span-code');
+        const spanCode2 = document.getElementById('tg-span-code2');
         const openBtn = document.getElementById('btn-tg-open-app');
+        const openUserBtn = document.getElementById('btn-tg-open-userbot');
         const copyBtn = document.getElementById('btn-tg-copy-code');
 
         if (codeEl) codeEl.textContent = data.code;
         if (spanCode) spanCode.textContent = data.code;
-        if (openBtn) openBtn.href = data.deepLink;
+        if (spanCode2) spanCode2.textContent = data.code;
+        if (openBtn) openBtn.href = data.adminBotDeepLink || data.deepLink;
+        if (openUserBtn) openUserBtn.href = data.userBotDeepLink || `https://t.me/MainterpBot?start=AMG_${data.code}`;
 
         if (copyBtn) {
           copyBtn.addEventListener('click', () => {
@@ -185,6 +209,7 @@ function renderConnectedView(container, user, meta) {
     pollTimer = null;
   }
 
+  const isExecutive = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || user.id === 'usr-super-admin';
   const linkedDate = meta.telegramLinkedAt ? new Date(meta.telegramLinkedAt).toLocaleDateString() : 'Active';
 
   container.innerHTML = `
@@ -194,9 +219,10 @@ function renderConnectedView(container, user, meta) {
         <div style="font-size: 13.5px; font-weight: 800; color: #10b981;">Telegram Connected</div>
         <div style="font-size: 12px; color: var(--text-main); margin-top: 2px;">
           Linked as: <strong>@${meta.telegramUsername || 'Telegram User'}</strong>
+          ${isExecutive ? ' <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 10px; padding: 1px 5px; border-radius: 4px;">Super Admin (Dual Bot)</span>' : ''}
         </div>
         <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
-          Connected since: ${linkedDate}
+          Connected since: ${linkedDate} • Factory-Wide Full Access
         </div>
       </div>
     </div>
@@ -207,18 +233,33 @@ function renderConnectedView(container, user, meta) {
         Active Features on Telegram:
       </div>
       <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: var(--text-main); line-height: 1.6;">
-        <li>🔍 <strong>Machine Search:</strong> Query any of 6,450 machines with <code>/find &lt;serial&gt;</code></li>
-        <li>🚚 <strong>Gate Pass Approvals:</strong> Receive instant transfer requests with 1-click Approve/Reject</li>
-        <li>🚑 <strong>Emergency Ambulance:</strong> Standby machine alerts for zero line downtime</li>
-        <li>🛠️ <strong>PM Checklists:</strong> Preventive Maintenance task lists & quick sign-off</li>
+        <li>🔍 <strong>Factory-Wide Machine Search:</strong> Query any machine with <code>/find &lt;serial&gt;</code> in both bots</li>
+        ${isExecutive ? `
+          <li>👑 <strong>Executive Gate Pass Approvals:</strong> 1-click Approve/Reject with digital cryptographic slip</li>
+          <li>🛡️ <strong>Live Security & Audit Trail:</strong> Real-time streaming of system events & breakdowns</li>
+          <li>📢 <strong>Broadcast Announcements:</strong> Send factory-wide push notices via <code>/broadcast</code></li>
+        ` : `
+          <li>🛠️ <strong>PM Checklists:</strong> Preventive Maintenance task lists & quick sign-off</li>
+          <li>🔧 <strong>My Tools:</strong> Check all tools issued to your ID</li>
+        `}
+        <li>🚑 <strong>Emergency Ambulance Fleet:</strong> Standby machine alerts for zero line downtime</li>
       </ul>
     </div>
 
     <!-- Actions -->
-    <div style="display: flex; gap: 10px; margin-top: 4px;">
-      <a href="https://t.me/${meta.botUsername || 'MainterpBot'}" target="_blank" class="btn btn-primary" style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 700;">
-        <span>💬</span> Chat with Bot
-      </a>
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      ${isExecutive ? `
+        <a href="https://t.me/MaintAdminbot" target="_blank" class="btn btn-primary" style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #d97706; color: #fff;">
+          <span>👑</span> @MaintAdminbot
+        </a>
+        <a href="https://t.me/MainterpBot" target="_blank" class="btn btn-secondary" style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700;">
+          <span>⚙️</span> @MainterpBot
+        </a>
+      ` : `
+        <a href="https://t.me/${meta.botUsername || 'MainterpBot'}" target="_blank" class="btn btn-primary" style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 700;">
+          <span>💬</span> Chat with Bot
+        </a>
+      `}
       <button type="button" id="btn-tg-unlink" class="btn btn-danger" style="font-size: 12px; font-weight: 700; padding: 0 14px;">
         Disconnect
       </button>
